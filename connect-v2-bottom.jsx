@@ -2,6 +2,10 @@
 
 /* ── Services V2 (full-gradient tiles) ─────────── */
 const servicesV2 = [
+
+
+
+  
   { id:'infra', label:'Infraestructura TI', desc:'Redes, servidores y conectividad que sostienen tu operación.', gradient:'var(--u-infra-g)', logo:window.__res('logoInfra','assets/logo-infraestructura.png'), icon:'network',
     detail:{
       fullName:'Infraestructura TI & NOC',
