@@ -1,0 +1,129 @@
+/* ============================================================
+   TIBOX · Color Tokens
+   Corporate base = deep navy. Brand accents = cube tri-color
+   (yellow / cyan / orange). Six business units each own a
+   signature gradient.
+   ============================================================ */
+:root {
+  /* ---- Navy / corporate scale -------------------------------
+     The fondo corporativo. Predominates main sections.        */
+  --navy-950: #020a1f;   /* deepest, near-black blue          */
+  --navy-900: #021233;   /* primary corporate background      */
+  --navy-850: #04173f;
+  --navy-800: #001544;   /* gradient top of corporate bg      */
+  --navy-700: #0a2050;
+  --navy-600: #143066;
+  --navy-500: #21407e;
+  --navy-400: #34548f;
+  --navy-300: #5a78ad;
+  --navy-200: #93a9c9;
+  --navy-100: #c7d3e4;
+  --navy-50:  #eef2f8;
+
+  /* ---- Brand cube accents (the logo) ----------------------- */
+  --brand-yellow: #ffc600;
+  --brand-cyan:   #00c8fa;
+  --brand-orange: #ff6707;
+
+  /* primary interactive accent = cyan (most "tech / trust")   */
+  --brand-cyan-600: #00a6e0;
+  --brand-cyan-700: #0086bd;
+  --brand-yellow-600: #e6ad00;
+  --brand-orange-600: #e85600;
+
+  /* ---- Neutrals (UI on light surfaces) --------------------- */
+  --white:    #ffffff;
+  --gray-50:  #f6f8fb;
+  --gray-100: #eef1f6;
+  --gray-200: #e0e5ee;
+  --gray-300: #c9d1de;
+  --gray-400: #9aa6b8;
+  --gray-500: #6b7889;
+  --gray-600: #4d5867;
+  --gray-700: #353f4d;
+  --gray-800: #1f2733;
+  --gray-900: #121821;
+
+  /* ---- Semantic status -------------------------------------- */
+  --success: #16b364;
+  --warning: #ffb300;
+  --danger:  #f0453a;
+  --info:    #00a6e0;
+
+  /* ============================================================
+     BUSINESS-UNIT IDENTITY COLORS
+     Each unit owns a gradient (g) + a solid (representative).
+     ============================================================ */
+  /* Analítica TI · amber → yellow */
+  --u-analitica-1: #ffab00;
+  --u-analitica-2: #ffee00;
+  --u-analitica:   #ffb300;
+  --u-analitica-g: linear-gradient(90deg, #ffab00 0%, #ffee00 100%); /* @kind color */
+
+  /* Ciberseguridad · magenta → coral-red */
+  --u-ciber-1: #d957c5;
+  --u-ciber-2: #f84f66;
+  --u-ciber:   #ec4f7e;
+  --u-ciber-g: linear-gradient(135deg, #d957c5 0%, #f84f66 100%); /* @kind color */
+
+  /* Consultoría TI · amber → coral */
+  --u-consultoria-1: #fec959;
+  --u-consultoria-2: #fd5856;
+  --u-consultoria:   #fe8a57;
+  --u-consultoria-g: linear-gradient(135deg, #fec959 0%, #fd5856 100%); /* @kind color */
+
+  /* Infraestructura TI · blue → cyan */
+  --u-infra-1: #0056e9;
+  --u-infra-2: #02b8ea;
+  --u-infra:   #0288ea;
+  --u-infra-g: linear-gradient(135deg, #0056e9 0%, #02b8ea 100%); /* @kind color */
+
+  /* Soluciones Cloud · violet → indigo */
+  --u-cloud-1: #b461f7;
+  --u-cloud-2: #5650a8;
+  --u-cloud:   #8a5cf0;
+  --u-cloud-g: linear-gradient(135deg, #b461f7 0%, #5650a8 100%); /* @kind color */
+
+  /* Soluciones Inteligentes · lime → green */
+  --u-smart-1: #aecf40;
+  --u-smart-2: #7ccc85;
+  --u-smart:   #95cd62;
+  --u-smart-g: linear-gradient(90deg, #aecf40 0%, #7ccc85 100%); /* @kind color */
+
+  /* ---- Signature brand gradients --------------------------- */
+  /* Corporate background — deep navy, subtle diagonal          */
+  --grad-corporate: linear-gradient(150deg, #001544 0%, #021233 55%, #050b1f 100%); /* @kind color */
+  /* Cube spectrum — used sparingly for hero accents / dividers */
+  --grad-cube: linear-gradient(100deg, #ffc600 0%, #ff6707 50%, #00c8fa 100%); /* @kind color */
+  /* Title gradient — cyan → blue, the brand's headline treatment (predomina celeste/azul) */
+  --grad-title: linear-gradient(100deg, #19d4ff 0%, #00a6f0 42%, #1f6df0 100%); /* @kind color */
+  /* Cyan glow — CTA / interactive emphasis                     */
+  --grad-cyan: linear-gradient(135deg, #00c8fa 0%, #0086bd 100%); /* @kind color */
+
+  /* ============================================================
+     SEMANTIC ALIASES (use these in components)
+     ============================================================ */
+  --bg-base:        var(--navy-900);
+  --bg-elevated:    var(--navy-800);
+  --bg-corporate:   var(--grad-corporate);
+  --surface-card:   var(--white);
+  --surface-muted:  var(--gray-50);
+  --surface-sunken: var(--gray-100);
+
+  --text-on-dark:        #ffffff;
+  --text-on-dark-muted:  var(--navy-200);
+  --text-heading:        var(--navy-900);
+  --text-body:           var(--gray-700);
+  --text-muted:          var(--gray-500);
+  --text-inverse:        #ffffff;
+
+  --accent:         var(--brand-cyan);
+  --accent-hover:   var(--brand-cyan-600);
+  --accent-press:   var(--brand-cyan-700);
+  --accent-contrast:#021233;
+
+  --border-subtle:  var(--gray-200);
+  --border-default: var(--gray-300);
+  --border-on-dark: rgba(255, 255, 255, 0.12);
+  --focus-ring:     rgba(0, 200, 250, 0.55);
+}

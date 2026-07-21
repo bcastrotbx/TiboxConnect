@@ -1,0 +1,9 @@
+/* ============================================================
+   TIBOX · Webfonts
+   Official typeface: Titillium Web (Accademia di Belle Arti di
+   Urbino / Google Fonts). Headings use 600–700 weights.
+   Self-hosting note: we load from Google Fonts CDN. To fully
+   self-host, drop the .woff2 files here and replace with local
+   @font-face src rules.
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&display=swap');

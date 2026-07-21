@@ -1,0 +1,76 @@
+/* ============================================================
+   TIBOX · Base element styles + helpers
+   Light, optional. Components don't depend on this, but it
+   sets sane defaults for specimen cards and UI kits.
+   ============================================================ */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--text-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: var(--font-display);
+  color: var(--text-heading);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-heading);
+  letter-spacing: var(--ls-tight);
+  margin: 0;
+}
+
+p { margin: 0; }
+
+a { color: var(--accent-press); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---- Reusable text helpers ------------------------------- */
+.tbx-overline {
+  font-size: var(--fs-overline);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-overline);
+  text-transform: uppercase;
+  color: var(--accent-press);
+}
+
+.tbx-gradient-text {
+  background: var(--grad-title);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---- Surfaces -------------------------------------------- */
+.tbx-corporate-bg {
+  background: var(--grad-corporate);
+  color: var(--text-on-dark);
+}
+
+/* subtle tech grid overlay for dark corporate sections */
+.tbx-grid-overlay {
+  background-image:
+    linear-gradient(rgba(0, 200, 250, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 200, 250, 0.06) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.tbx-glass {
+  background: var(--glass-light);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(var(--blur-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

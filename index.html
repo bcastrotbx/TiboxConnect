@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tibox Connect v2 — Portal de Conocimiento</title>
+<link rel="icon" href="assets/mark-cube.png" />
+<link rel="stylesheet" href="_ds/tibox-design-system-6dc0b329-c94d-4910-ab21-cacb54c8cc56/tokens/fonts.css" />
+<link rel="stylesheet" href="_ds/tibox-design-system-6dc0b329-c94d-4910-ab21-cacb54c8cc56/tokens/colors.css" />
+<link rel="stylesheet" href="_ds/tibox-design-system-6dc0b329-c94d-4910-ab21-cacb54c8cc56/tokens/typography.css" />
+<link rel="stylesheet" href="_ds/tibox-design-system-6dc0b329-c94d-4910-ab21-cacb54c8cc56/tokens/spacing.css" />
+<link rel="stylesheet" href="_ds/tibox-design-system-6dc0b329-c94d-4910-ab21-cacb54c8cc56/tokens/base.css" />
+<link rel="stylesheet" href="_ds/tibox-design-system-6dc0b329-c94d-4910-ab21-cacb54c8cc56/styles.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #F0F2F6; font-family: var(--font-sans); }
+  #root { display: flex; height: 100vh; overflow: hidden; }
+  .portal-sidebar {
+    height: 100vh;
+    flex-shrink: 0;
+    background: #050f2e;
+    display: flex; flex-direction: column;
+    overflow-y: auto; overflow-x: hidden;
+    scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.08) transparent;
+    border-right: 1px solid rgba(255,255,255,0.05);
+  }
+  .portal-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+  .portal-header {
+    height: 62px; min-height: 62px;
+    background: var(--white); border-bottom: 1px solid var(--gray-200);
+    display: flex; align-items: center; padding: 0 24px; gap: 12px;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .portal-content {
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+    background: #F0F2F6;
+    scrollbar-width: thin; scrollbar-color: var(--gray-300) transparent;
+  }
+  .content-wrap { padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+  .nav-section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.16em;
+    text-transform: uppercase; color: rgba(255,255,255,0.25);
+    padding: 18px 18px 5px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 18px; cursor: pointer;
+    font-size: 13.5px; font-weight: 600;
+    color: rgba(255,255,255,0.55);
+    text-decoration: none; user-select: none;
+    border-left: 3px solid transparent;
+    transition: background 150ms, color 150ms;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.85); }
+  .nav-item.active {
+    background: rgba(0,200,250,0.09); color: var(--brand-cyan);
+    border-left-color: var(--brand-cyan);
+  }
+  .nav-item.sub { padding-left: 44px; font-size: 12.5px; font-weight: 500; }
+  .section-card {
+    background: white; border-radius: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.07);
+    overflow: hidden;
+  }
+  @keyframes tbxFade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes tbxPop { from { opacity: 0; transform: translateY(12px) scale(0.97); } to { opacity: 1; transform: none; } }
+  @keyframes tbxSlideIn { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+  .hide-scroll::-webkit-scrollbar { display: none; }
+  .hide-scroll { -ms-overflow-style: none; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="_ds/tibox-design-system-6dc0b329-c94d-4910-ab21-cacb54c8cc56/_ds_bundle.js"></script>
+<script>
+  /* Resource resolver — fallback to original path when not bundled */
+  window.__res = function(id, fallback) {
+    return (window.__resources && window.__resources[id]) || fallback;
+  };
+</script>
+<script type="text/babel" data-presets="react">
+  const DS = window.TIBOXDesignSystem_6dc0b3 || {};
+  Object.assign(window, { TBX_Button: DS.Button, TBX_Badge: DS.Badge, TBX_Card: DS.Card });
+</script>
+<script type="text/babel" src="connect-v2-sidebar.jsx" data-presets="react"></script>
+<script type="text/babel" src="connect-v2-header.jsx" data-presets="react"></script>
+<script type="text/babel" src="connect-v2-top.jsx" data-presets="react"></script>
+<script type="text/babel" src="connect-v2-media.jsx" data-presets="react"></script>
+<script type="text/babel" src="connect-v2-events.jsx" data-presets="react"></script>
+<script type="text/babel" src="connect-v2-bottom.jsx" data-presets="react"></script>
+<script type="text/babel" data-presets="react">
+  function SoporteModal({ onClose }) {
+    const Shell = window.ModalShell;
+    React.useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
+    if (!Shell) return null;
+    return (
+      <Shell onClose={onClose} maxWidth={460}>
+        <div style={{padding:'22px 26px',background:'var(--grad-corporate)',position:'relative',overflow:'hidden'}}>
+          {window.CosmicBg2 && React.createElement(window.CosmicBg2, {variant:1})}
+          <div style={{position:'absolute',inset:0,background:'rgba(3,18,55,0.55)'}}></div>
+          <div style={{position:'relative',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <div>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:4}}>Soporte TIBOX</div>
+              <div style={{fontSize:18,fontWeight:700,color:'white'}}>Contacta con nosotros</div>
+            </div>
+            <button onClick={onClose} style={{background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:8,cursor:'pointer',color:'white',padding:6,display:'flex'}}>
+              <i data-lucide="x" style={{width:16,height:16}}></i>
+            </button>
+          </div>
+        </div>
+        <div style={{padding:'24px 26px',display:'flex',flexDirection:'column',gap:18}}>
+          <div style={{display:'flex',alignItems:'center',gap:14}}>
+            <div style={{width:40,height:40,borderRadius:10,background:'rgba(0,80,200,0.1)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <i data-lucide="phone" style={{width:18,height:18,color:'#0050C8'}}></i>
+            </div>
+            <div>
+              <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'var(--gray-400)',marginBottom:2}}>Chile</div>
+              <div style={{fontSize:14,fontWeight:700,color:'var(--navy-900)'}}>+56 2 2938 9000</div>
+            </div>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:14}}>
+            <div style={{width:40,height:40,borderRadius:10,background:'rgba(0,80,200,0.1)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <i data-lucide="mail" style={{width:18,height:18,color:'#0050C8'}}></i>
+            </div>
+            <div>
+              <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'var(--gray-400)',marginBottom:2}}>Email soporte</div>
+              <div style={{fontSize:14,fontWeight:700,color:'var(--navy-900)'}}>soporte@tibox.cl</div>
+            </div>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:14}}>
+            <div style={{width:40,height:40,borderRadius:10,background:'rgba(0,80,200,0.1)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <i data-lucide="ticket" style={{width:18,height:18,color:'#0050C8'}}></i>
+            </div>
+            <div>
+              <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'var(--gray-400)',marginBottom:2}}>Portal de tickets</div>
+              <a href="https://soporte.tibox.cl/Login/LoginCliente" target="_blank" rel="noopener noreferrer" style={{fontSize:14,fontWeight:700,color:'#0050C8',textDecoration:'none'}}>soporte.tibox.cl</a>
+            </div>
+          </div>
+          <div style={{padding:'14px 16px',background:'var(--gray-50)',borderRadius:10,border:'1px solid var(--gray-200)'}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
+              <i data-lucide="clock" style={{width:14,height:14,color:'var(--gray-500)'}}></i>
+              <span style={{fontSize:12,fontWeight:700,color:'var(--navy-900)'}}>Horario de atención</span>
+            </div>
+            <div style={{fontSize:13,color:'var(--gray-600)',lineHeight:1.5}}>
+              Lunes a viernes, 09:00 – 18:30 hrs<br/>
+              Soporte crítico 24/7 para clientes NOC/SOC
+            </div>
+          </div>
+          <a href="https://soporte.tibox.cl/Login/LoginCliente" target="_blank" rel="noopener noreferrer" style={{
+            display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'12px',borderRadius:10,
+            background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',color:'white',
+            fontSize:14,fontWeight:700,textDecoration:'none',
+            boxShadow:'0 2px 14px rgba(255,103,7,0.35)',
+          }}>
+            <i data-lucide="external-link" style={{width:15,height:15}}></i>
+            Ir al portal de soporte
+          </a>
+        </div>
+      </Shell>
+    );
+  }
+
+  function AppV2() {
+    const [active, setActive] = React.useState('home');
+    const [showSoporte, setShowSoporte] = React.useState(false);
+    const [collapsed, setCollapsed] = React.useState(false);
+
+    const scrollToSection = React.useCallback((id) => {
+      const content = document.querySelector('.portal-content');
+      if (!content) return;
+      if (id === 'hero') { content.scrollTop = 0; return; }
+      const el = document.getElementById('section-' + id);
+      if (!el) return;
+      const contentTop = content.getBoundingClientRect().top;
+      const elTop = el.getBoundingClientRect().top;
+      content.scrollTop += (elTop - contentTop) - 16;
+    }, []);
+
+    React.useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
+    React.useEffect(() => { window.scrollToSection = scrollToSection; }, [scrollToSection]);
+
+    return (
+      <React.Fragment>
+        <V2Sidebar active={active} onNav={setActive} onScroll={scrollToSection} onSoporte={() => setShowSoporte(true)} collapsed={collapsed} onToggle={() => setCollapsed(c => !c)} />
+        <div className="portal-main">
+          <V2Header onScrollContact={() => scrollToSection('contact')} />
+          <div className="portal-content">
+            <div className="content-wrap">
+              <div id="section-hero"><HeroSlider /></div>
+              <CategoryBlocks />
+              <ContentGrid />
+              <div id="section-services"><ServicesV2 /></div>
+              <div id="section-contact"><ContactFormSection /></div>
+              <div id="section-opinion"><OpinionPanel /></div>
+              <div style={{ textAlign: 'center', padding: '4px 0 14px', fontSize: 12.5, fontWeight: 600, color: 'var(--gray-400)', letterSpacing: '0.02em' }}>
+                Desarrollado por TIBOX 2026
+              </div>
+            </div>
+          </div>
+        </div>
+        {showSoporte && <SoporteModal onClose={() => setShowSoporte(false)} />}
+      </React.Fragment>
+    );
+  }
+  function mount() {
+    const needed = ['V2Sidebar','V2Header','HeroSlider','CategoryBlocks','ContentGrid','ExploraPanel','InfographicsPanel','NoticiasPanel','EventosPanel','OpinionPanel','ServicesV2','ContactFormSection'];
+    if (needed.some(n => !window[n])) { setTimeout(mount, 40); return; }
+    ReactDOM.createRoot(document.getElementById('root')).render(<AppV2 />);
+  }
+  mount();
+</script>
+</body>
+</html>

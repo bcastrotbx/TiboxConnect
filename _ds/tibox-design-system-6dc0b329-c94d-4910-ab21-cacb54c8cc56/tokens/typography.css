@@ -1,0 +1,50 @@
+/* ============================================================
+   TIBOX · Typography Tokens
+   Single family (Titillium Web) used across the brand.
+   Display + headings: 700 (bold) weight, tight tracking. Body: 400, relaxed.
+   ============================================================ */
+:root {
+  /* ---- Families ------------------------------------------- */
+  --font-sans: 'Titillium Web', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Titillium Web', system-ui, sans-serif;
+  --font-mono: 'SFMono-Regular', ui-monospace, 'Consolas', 'Liberation Mono', monospace;
+
+  /* ---- Weights -------------------------------------------- */
+  --fw-light: 300;    /* @kind font */
+  --fw-regular: 400;  /* @kind font */
+  --fw-semibold: 600; /* @kind font */
+  --fw-bold: 700;     /* @kind font */
+  --fw-black: 900;    /* @kind font */
+
+  /* ---- Type scale (px / rem) ------------------------------
+     Modular, ~1.25 ratio, tuned for B2B clarity.             */
+  --fs-display: 4.5rem;   /* 72px  hero                       */
+  --fs-h1: 3rem;          /* 48px                             */
+  --fs-h2: 2.25rem;       /* 36px                             */
+  --fs-h3: 1.75rem;       /* 28px                             */
+  --fs-h4: 1.375rem;      /* 22px                             */
+  --fs-lg: 1.25rem;       /* 20px  lead paragraph             */
+  --fs-body: 1.0625rem;   /* 17px  base body                  */
+  --fs-sm: 0.9375rem;     /* 15px                             */
+  --fs-xs: 0.8125rem;     /* 13px  labels / captions          */
+  --fs-overline: 0.75rem; /* 12px  eyebrow / overline         */
+
+  /* ---- Line heights --------------------------------------- */
+  --lh-tight: 1.05;    /* @kind other */
+  --lh-heading: 1.15;  /* @kind other */
+  --lh-snug: 1.35;     /* @kind other */
+  --lh-body: 1.6;      /* @kind other */
+  --lh-relaxed: 1.75;  /* @kind other */
+
+  /* ---- Letter spacing ------------------------------------- */
+  --ls-tighter: -0.03em;
+  --ls-tight: -0.015em;
+  --ls-normal: 0; /* @kind other */
+  --ls-wide: 0.04em;
+  --ls-overline: 0.16em;  /* uppercase eyebrows               */
+
+  /* ---- Semantic aliases ----------------------------------- */
+  --text-display-weight: var(--fw-bold);   /* @kind font */
+  --text-heading-weight: var(--fw-bold);   /* @kind font */
+  --text-body-weight: var(--fw-regular);   /* @kind font */
+}
