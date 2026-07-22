@@ -5,6 +5,7 @@ Documentación del proceso de migración y estabilización del prototipo TIBOX C
 ## Fases
 
 - [Fase 00 — Preparación y diagnóstico](phases/FASE-00-PREPARACION.md) — inventario del estado actual, riesgos y prerequisitos antes de tocar código.
+- [Fase 01 — Migración a React + Vite](phases/FASE-01-MIGRACION-VITE.md) — conversión del prototipo CDN/Babel a una app Vite real, sin cambiar diseño ni comportamiento visual.
 
 ## Otros documentos
 
