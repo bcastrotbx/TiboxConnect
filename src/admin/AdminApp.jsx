@@ -635,7 +635,7 @@ function Placeholder({ label }) {
   return (
     <div className="adm-card" style={{ padding:'60px 20px', textAlign:'center', color:'var(--gray-400)' }}>
       <Icon name="construction" style={{ width:28, height:28, marginBottom:10 }} />
-      <div style={{ fontSize:14 }}>Sección "{label}" en construcción.</div>
+      <div style={{ fontSize:14 }}>Sección {'"'}{label}{'"'} en construcción.</div>
     </div>
   );
 }
