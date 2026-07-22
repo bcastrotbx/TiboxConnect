@@ -1,8 +1,11 @@
-// Tibox Connect v2 — Bottom sections: ServicesV2, ContactFormSection
+import React from 'react';
+import { Icon } from './shared/Icon.jsx';
+import { ModalShell } from './shared/ModalShell.jsx';
+import { CosmicBg } from './shared/CosmicBg.jsx';
 
 /* ── Services V2 (full-gradient tiles) ─────────── */
 const servicesV2 = [
-  { id:'infra', label:'Infraestructura TI', desc:'Redes, servidores y conectividad que sostienen tu operación.', gradient:'var(--u-infra-g)', logo:window.__res('logoInfra','assets/logo-infraestructura.png'), icon:'network',
+  { id:'infra', label:'Infraestructura TI', desc:'Redes, servidores y conectividad que sostienen tu operación.', gradient:'var(--u-infra-g)', logo:'/assets/logo-infraestructura.png', icon:'network',
     detail:{
       fullName:'Infraestructura TI & NOC',
       intro:'Soporte TI integral y un Centro de Operaciones de Red (NOC) que monitorea y administra tu infraestructura para garantizar continuidad operacional.',
@@ -11,7 +14,7 @@ const servicesV2 = [
         {name:'NOC — Centro de Operaciones de Red',items:['Monitoreo y administración de infraestructura TI','Administración y optimización de plataformas cloud','Administración de servidores en HA','Administración de redes y comunicaciones','Gestión de backups y Recuperación ante Desastres (DRP)','Administración y monitoreo de firewall']},
       ],
     }},
-  { id:'ciber', label:'Ciberseguridad', desc:'Protección activa, auditorías y cumplimiento normativo 24/7.', gradient:'var(--u-ciber-g)', logo:window.__res('logoCiber','assets/logo-ciberseguridad.png'), icon:'lock',
+  { id:'ciber', label:'Ciberseguridad', desc:'Protección activa, auditorías y cumplimiento normativo 24/7.', gradient:'var(--u-ciber-g)', logo:'/assets/logo-ciberseguridad.png', icon:'lock',
     detail:{
       fullName:'Ciberseguridad & SOC',
       intro:'Protección activa de tu organización con un SOC que vigila, detecta y responde ante amenazas las 24 horas.',
@@ -19,7 +22,7 @@ const servicesV2 = [
         {name:'Servicios',items:['Seguridad perimetral: firewall y antivirus empresarial','Gestión y monitoreo de seguridad (SOC)','Ethical hacking y penetration testing','Inteligencia de amenazas y detección de incidentes con IA','Implementación de seguridad Zero Trust','Automatización de respuesta a incidentes (SOAR)','Seguridad en la nube (SASE)']},
       ],
     }},
-  { id:'cloud', label:'Soluciones Cloud', desc:'Migraciones, arquitectura multi-cloud y soporte local cercano.', gradient:'var(--u-cloud-g)', logo:window.__res('logoCloud','assets/logo-soluciones-cloud.png'), icon:'cloud',
+  { id:'cloud', label:'Soluciones Cloud', desc:'Migraciones, arquitectura multi-cloud y soporte local cercano.', gradient:'var(--u-cloud-g)', logo:'/assets/logo-soluciones-cloud.png', icon:'cloud',
     detail:{
       fullName:'Soluciones Cloud',
       intro:'Administración, migración y optimización de tus entornos en la nube, con foco en continuidad, costos y cumplimiento.',
@@ -27,7 +30,7 @@ const servicesV2 = [
         {name:'Servicios',items:['Administración y monitoreo de máquinas virtuales','Administración de respaldos en la nube','Administración de escritorios virtuales','Disaster recovery y continuidad operativa','Migración e implementación de correos M365 & Google Workspace','Licenciamiento Microsoft 365 y Google Workspace','Gestión y soporte para entornos IaaS, PaaS y SaaS','Optimización de costos cloud (FinOps)','Cloud Security Posture Management (CSPM)']},
       ],
     }},
-  { id:'analitica', label:'Analítica TI', desc:'BI, dashboards en tiempo real e inteligencia operacional.', gradient:'var(--u-analitica-g)', logo:window.__res('logoAnalitica','assets/logo-analitica.png'), icon:'trending-up',
+  { id:'analitica', label:'Analítica TI', desc:'BI, dashboards en tiempo real e inteligencia operacional.', gradient:'var(--u-analitica-g)', logo:'/assets/logo-analitica.png', icon:'trending-up',
     detail:{
       fullName:'Analítica de Datos & Inteligencia Artificial',
       intro:'Convierte tus datos en decisiones: plataformas de BI, modelos predictivos e inteligencia artificial aplicada a tu negocio.',
@@ -35,7 +38,7 @@ const servicesV2 = [
         {name:'Servicios',items:['Gestión de plataformas de BI empresarial','Consultoría en Business Intelligence (BI)','Arquitectura cloud para datos','Gobierno y gestión de datos','Analítica predictiva y modelos de machine learning','MLOps para empresas: escalabilidad de IA','Chatbot de inteligencia artificial (IA)','IA como servicio para empresas']},
       ],
     }},
-  { id:'consultoria', label:'Consultoría TI', desc:'Roadmaps tecnológicos, gestión de proveedores y estrategia.', gradient:'var(--u-consultoria-g)', logo:window.__res('logoConsultoria','assets/logo-consultoria-ti.png'), icon:'layers',
+  { id:'consultoria', label:'Consultoría TI', desc:'Roadmaps tecnológicos, gestión de proveedores y estrategia.', gradient:'var(--u-consultoria-g)', logo:'/assets/logo-consultoria-ti.png', icon:'layers',
     detail:{
       fullName:'Consultoría TI & Transformación Digital',
       intro:'Acompañamiento estratégico para alinear la tecnología con los objetivos de tu organización y acelerar su transformación digital.',
@@ -43,7 +46,7 @@ const servicesV2 = [
         {name:'Servicios',items:['Assessment y diagnóstico TI','Consultoría estratégica en TI y transformación digital','Optimización y mejora continua de procesos TI','Elaboración de políticas y procedimientos TI','Gestión de riesgos y cumplimiento normativo en TI','Análisis e informes de ciberataques y seguridad','Adopción de IA y automatización empresarial','Matriz de riesgos sobre activos TI']},
       ],
     }},
-  { id:'smart', label:'Soluciones Inteligentes', desc:'Automatización, IA aplicada y soluciones a medida.', gradient:'var(--u-smart-g)', logo:window.__res('logoSmart','assets/logo-soluciones-inteligentes.png'), icon:'cpu',
+  { id:'smart', label:'Soluciones Inteligentes', desc:'Automatización, IA aplicada y soluciones a medida.', gradient:'var(--u-smart-g)', logo:'/assets/logo-soluciones-inteligentes.png', icon:'cpu',
     detail:{
       fullName:'Soluciones Inteligentes & Automatización',
       intro:'Desarrollo y automatización a medida: desde sitios y aplicaciones web hasta IoT, RPA y gemelos digitales.',
@@ -55,14 +58,13 @@ const servicesV2 = [
 
 /* ── Service detail modal ───────────────────────── */
 function ServiceModal({ service, onClose }) {
-  const Shell = window.ModalShell;
   return (
-    <Shell onClose={onClose} maxWidth={560}>
+    <ModalShell onClose={onClose} maxWidth={560}>
       <div style={{padding:'22px 26px',background:service.gradient,position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',right:-26,top:-26,width:110,height:110,borderRadius:'50%',background:'rgba(255,255,255,0.1)'}}></div>
         <div style={{position:'absolute',right:50,bottom:-40,width:90,height:90,borderRadius:'50%',background:'rgba(255,255,255,0.07)'}}></div>
         <button onClick={onClose} style={{position:'absolute',top:14,right:14,background:'rgba(0,0,0,0.18)',border:'none',borderRadius:8,cursor:'pointer',color:'white',padding:6,display:'flex'}}>
-          <i data-lucide="x" style={{width:16,height:16}}></i>
+          <Icon name="x" style={{width:16,height:16}} />
         </button>
         <div style={{position:'relative',display:'flex',alignItems:'center',gap:16}}>
           <img src={service.logo} alt={service.label} style={{width:56,height:56,objectFit:'contain',filter:'drop-shadow(0 4px 8px rgba(0,0,0,0.2))',flexShrink:0}}
@@ -82,7 +84,7 @@ function ServiceModal({ service, onClose }) {
               {g.items.map((it,i)=>(
                 <div key={i} style={{display:'flex',gap:10,alignItems:'flex-start'}}>
                   <div style={{width:18,height:18,borderRadius:5,background:'rgba(0,80,200,0.1)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:1}}>
-                    <i data-lucide="check" style={{width:11,height:11,color:'#0050C8'}}></i>
+                    <Icon name="check" style={{width:11,height:11,color:'#0050C8'}} />
                   </div>
                   <span style={{fontSize:13,color:'var(--gray-700)',lineHeight:1.45}}>{it}</span>
                 </div>
@@ -99,10 +101,10 @@ function ServiceModal({ service, onClose }) {
           onMouseEnter={e=>e.currentTarget.style.transform='translateY(-1px)'}
           onMouseLeave={e=>e.currentTarget.style.transform='none'}
         >
-          Solicita una cotización <i data-lucide="arrow-right" style={{width:15,height:15}}></i>
+          Solicita una cotización <Icon name="arrow-right" style={{width:15,height:15}} />
         </button>
       </div>
-    </Shell>
+    </ModalShell>
   );
 }
 
@@ -125,7 +127,7 @@ function ServiceRow({ s, index, onOpen }) {
       }}
     >
       {/* Distinct cosmos per service */}
-      {window.CosmicBg2 && React.createElement(window.CosmicBg2, { variant: index % 3 })}
+      <CosmicBg variant={index % 3} />
       <div style={{position:'absolute',inset:0,pointerEvents:'none',background:'linear-gradient(100deg, rgba(2,16,46,0.86) 0%, rgba(4,22,68,0.66) 60%, rgba(6,28,80,0.5) 100%)'}}></div>
 
       <div style={{position:'relative',display:'flex',alignItems:'center',gap:16,padding:'16px 20px'}}>
@@ -147,16 +149,15 @@ function ServiceRow({ s, index, onOpen }) {
           onMouseEnter={e=>e.currentTarget.style.transform='translateY(-1px)'}
           onMouseLeave={e=>e.currentTarget.style.transform='none'}
         >
-          Conoce más <i data-lucide="arrow-right" style={{width:13,height:13}}></i>
+          Conoce más <Icon name="arrow-right" style={{width:13,height:13}} />
         </button>
       </div>
     </div>
   );
 }
 
-function ServicesV2() {
+export function ServicesV2() {
   const [openService, setOpenService] = React.useState(null);
-  React.useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
 
   return (
     <div className="section-card">
@@ -167,7 +168,7 @@ function ServicesV2() {
           <div style={{ fontSize:'clamp(1.3rem,2vw,1.7rem)', fontWeight:700, color:'var(--navy-900)' }}>Servicios <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>TIBOX</span></div>
         </div>
         <button style={{ fontSize:12.5, fontWeight:600, color:'var(--gray-500)', background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
-          Ver todos <i data-lucide="arrow-right" style={{ width:14, height:14 }}></i>
+          Ver todos <Icon name="arrow-right" style={{ width:14, height:14 }} />
         </button>
       </div>
 
@@ -207,26 +208,24 @@ const OFFICES_MAP = {
 };
 
 function MapModal({ office, onClose }) {
-  const Shell = window.ModalShell;
   const o = OFFICES_MAP[office];
-  React.useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
-  if (!Shell || !o) return null;
+  if (!o) return null;
   return (
-    <Shell onClose={onClose} maxWidth={540}>
+    <ModalShell onClose={onClose} maxWidth={540}>
       <div style={{padding:'18px 22px',background:'var(--grad-corporate)',position:'relative',overflow:'hidden'}}>
-        {window.CosmicBg2 && React.createElement(window.CosmicBg2, {variant:0})}
+        <CosmicBg variant={0} />
         <div style={{position:'absolute',inset:0,background:'rgba(3,18,55,0.55)'}}></div>
         <div style={{position:'relative',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12}}>
           <div>
             <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:3}}>Oficina TIBOX</div>
             <div style={{fontSize:17,fontWeight:700,color:'white',lineHeight:1.2}}>{o.label}</div>
             <div style={{fontSize:12.5,color:'rgba(255,255,255,0.65)',marginTop:5,display:'flex',alignItems:'flex-start',gap:5}}>
-              <i data-lucide="map-pin" style={{width:13,height:13,flexShrink:0,marginTop:1}}></i>
+              <Icon name="map-pin" style={{width:13,height:13,flexShrink:0,marginTop:1}} />
               <span>{o.address}</span>
             </div>
           </div>
           <button onClick={onClose} style={{background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:8,cursor:'pointer',color:'white',padding:6,display:'flex',flexShrink:0}}>
-            <i data-lucide="x" style={{width:16,height:16}}></i>
+            <Icon name="x" style={{width:16,height:16}} />
           </button>
         </div>
       </div>
@@ -236,19 +235,19 @@ function MapModal({ office, onClose }) {
       </div>
       <div style={{padding:'11px 20px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'var(--gray-50)',borderTop:'1px solid var(--gray-200)'}}>
         <div style={{display:'flex',alignItems:'center',gap:6,fontSize:11.5,color:'var(--gray-500)'}}>
-          <i data-lucide="info" style={{width:13,height:13}}></i> Mapa de referencia
+          <Icon name="info" style={{width:13,height:13}} /> Mapa de referencia
         </div>
         <a href={`https://www.openstreetmap.org/?mlat=${o.lat}&mlon=${o.lng}#map=16/${o.lat}/${o.lng}`}
           target="_blank" rel="noopener noreferrer"
           style={{fontSize:12.5,fontWeight:700,color:'#0050C8',textDecoration:'none',display:'inline-flex',alignItems:'center',gap:5}}>
-          Abrir en mapa <i data-lucide="external-link" style={{width:13,height:13}}></i>
+          Abrir en mapa <Icon name="external-link" style={{width:13,height:13}} />
         </a>
       </div>
-    </Shell>
+    </ModalShell>
   );
 }
 
-function ContactFormSection() {
+export function ContactFormSection() {
   const [form, setForm] = React.useState({ name:'', email:'', empresa:'', phone:'', servicio:'', msg:'' });
   const [sent, setSent] = React.useState(false);
   const [sending, setSending] = React.useState(false);
@@ -277,7 +276,7 @@ function ContactFormSection() {
           <div style={{ position:'absolute', bottom:-40, left:20, width:160, height:160, borderRadius:'50%', background:'radial-gradient(circle, rgba(100,20,200,0.2) 0%, transparent 70%)', pointerEvents:'none' }}></div>
 
           <div style={{ position:'relative' }}>
-            <img src={window.__res("logoTibox","assets/logo-tibox.png")} alt="TIBOX" style={{ height:22, marginBottom:28 }} />
+            <img src="/assets/logo-tibox.png" alt="TIBOX" style={{ height:22, marginBottom:28 }} />
             <div style={{ fontSize:11, fontWeight:700, letterSpacing:'0.16em', textTransform:'uppercase', color:'var(--brand-cyan)', marginBottom:12 }}>Cuéntanos tu idea</div>
             <h2 style={{ fontSize:'clamp(1.4rem,2.2vw,2rem)', fontWeight:700, color:'white', lineHeight:1.2, margin:'0 0 14px', letterSpacing:'-0.01em' }}>
               ¿Tienes algún proyecto en mente?
@@ -333,7 +332,7 @@ function ContactFormSection() {
           {sent ? (
             <div style={{ textAlign:'center', padding:'40px 0' }}>
               <div style={{ width:64, height:64, borderRadius:'50%', background:'rgba(22,179,100,0.1)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 18px' }}>
-                <i data-lucide="check-circle-2" style={{ width:32, height:32, color:'#0d8a4e' }}></i>
+                <Icon name="check-circle-2" style={{ width:32, height:32, color:'#0d8a4e' }} />
               </div>
               <div style={{ fontSize:20, fontWeight:700, color:'var(--navy-900)', marginBottom:8 }}>¡Mensaje enviado!</div>
               <div style={{ fontSize:14, color:'var(--gray-500)', lineHeight:1.6 }}>Un consultor TIBOX te contactará en las próximas 24 horas hábiles.</div>
@@ -414,8 +413,8 @@ function ContactFormSection() {
                 onMouseLeave={e=>{ e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow=sending?'none':'0 4px 16px rgba(255,103,7,0.28)'; }}
               >
                 {sending
-                  ? <React.Fragment><i data-lucide="loader-2" style={{width:16,height:16}}></i> Enviando…</React.Fragment>
-                  : <React.Fragment><i data-lucide="send" style={{width:16,height:16}}></i> Enviar mensaje</React.Fragment>
+                  ? <React.Fragment><Icon name="loader-2" style={{width:16,height:16}} /> Enviando…</React.Fragment>
+                  : <React.Fragment><Icon name="send" style={{width:16,height:16}} /> Enviar mensaje</React.Fragment>
                 }
               </button>
             </form>
@@ -426,5 +425,3 @@ function ContactFormSection() {
     </div>
   );
 }
-
-Object.assign(window, { ServicesV2, ContactFormSection });
