@@ -6,6 +6,11 @@ Documentación del proceso de migración y estabilización del prototipo TIBOX C
 
 - [Fase 00 — Preparación y diagnóstico](phases/FASE-00-PREPARACION.md) — inventario del estado actual, riesgos y prerequisitos antes de tocar código.
 - [Fase 01 — Migración a React + Vite](phases/FASE-01-MIGRACION-VITE.md) — conversión del prototipo CDN/Babel a una app Vite real, sin cambiar diseño ni comportamiento visual.
+- [Fase 01B — Ajustes visuales y de texto (Paula)](phases/FASE-01B-AJUSTES-VISUALES-PAULA.md) — 8 ajustes de texto/UX pedidos por negocio sobre eventos, servicios, videoteca, infografías, noticias y contacto, sin tocar el modelo de datos ni conectar backend.
+
+## Decisiones de arquitectura (ADR)
+
+- [ADR-004 — Sin registro/login público de usuarios finales](decisions/ADR-004-SIN-REGISTRO-PUBLICO.md) — el portal será público sin cuenta; la autenticación se reserva solo para administradores, con invitación de administradores adicionales en una fase futura. Reemplaza la sección 4.2 del plan maestro para la Fase 5.
 
 ## Otros documentos
 
