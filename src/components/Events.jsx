@@ -16,29 +16,40 @@ const PARTNERS = {
   hpe:       { logo:'/assets/partner-hpe.svg',       name:'HPE' },
 };
 
+// `registrationUrl`: URL externa de inscripción al evento. Dato de ejemplo
+// por ahora — en una fase futura este campo será editable desde el panel
+// admin por evento (ver docs/phases/FASE-01B-AJUSTES-VISUALES-PAULA.md).
 const eventItems = [
   {id:1, day:'19', month:'Jun', title:'Webinar: Ciberseguridad para PYMES Chile 2026', modalidad:'Online', time:'10:00 – 11:30', place:'Microsoft Teams', partner:'microsoft', img:'/assets/video-ciber.jpg',
+    registrationUrl:'https://teams.microsoft.com/registration/tibox-ciberseguridad-pymes-2026',
     desc:'Aprende a proteger tu empresa con controles esenciales y un SOC gestionado, sin sobredimensionar tu presupuesto.',
     resena:'En este webinar revisaremos las amenazas más frecuentes que enfrentan las pymes chilenas y cómo construir una defensa por capas realista. El objetivo es que salgas con un checklist de controles esenciales —respaldo, MFA, endpoint y monitoreo— priorizados por impacto y costo. Ideal para gerentes y encargados de TI que buscan elevar su postura de seguridad sin sobredimensionar la inversión.'},
   {id:2, day:'24', month:'Jun', title:'Taller: Implementación SD-WAN en tu empresa', modalidad:'Presencial', time:'09:30 – 13:00', place:'Oficina TIBOX, Vitacura', city:'Santiago', partner:'hpe', img:'/assets/hero-slider-1.jpg',
+    registrationUrl:'https://teams.microsoft.com/registration/tibox-taller-sdwan',
     desc:'Sesión práctica para diseñar una red SD-WAN resiliente y optimizar la conectividad entre tus sucursales.',
     resena:'Taller práctico, con casos reales, donde diseñarás una topología SD-WAN resiliente para conectar tus sucursales con mayor disponibilidad y menor costo de enlaces. Abordaremos políticas de tráfico, failover automático y visibilidad de la red. Te llevarás un blueprint aplicable a tu propia operación y las mejores prácticas de despliegue.'},
   {id:3, day:'02', month:'Jul', title:'Demo en vivo: TIBOX NOC, monitoreo 24/7', modalidad:'Online', time:'16:00 – 17:00', place:'Zoom', partner:'azure', img:'/assets/video-cloud.jpg',
+    registrationUrl:'https://teams.microsoft.com/registration/tibox-demo-noc',
     desc:'Recorrido por nuestro Centro de Operaciones de Red y cómo anticipamos fallas antes de que te afecten.',
     resena:'Recorreremos en vivo nuestro Centro de Operaciones de Red (NOC) y mostraremos cómo la observabilidad y la automatización nos permiten anticipar incidentes antes de que afecten tu negocio. Verás dashboards reales, flujos de alertamiento y tiempos de respuesta. Pensado para quienes evalúan externalizar o reforzar su monitoreo.'},
   {id:4, day:'10', month:'Jul', title:'Conferencia: Transformación Digital en Retail', modalidad:'Híbrida', time:'08:30 – 13:30', place:'Hotel W, Santiago', city:'Santiago', partner:'microsoft', img:'/assets/video-evento.jpg',
+    registrationUrl:'https://teams.microsoft.com/registration/tibox-transformacion-retail',
     desc:'Casos reales de retailers que modernizaron su operación con cloud, datos e inteligencia artificial.',
     resena:'Una mañana de casos reales: retailers que modernizaron su operación con cloud, datos e inteligencia artificial, y los aprendizajes detrás de cada proyecto. Conversaremos sobre experiencia de cliente, eficiencia operativa y cómo construir un roadmap digital sostenible. Incluye espacio de networking con pares de la industria.'},
   {id:5, day:'16', month:'Jul', title:'Webinar: FinOps — optimiza tus costos cloud', modalidad:'Online', time:'11:00 – 12:00', place:'Microsoft Teams', partner:'azure', img:'/assets/video-m365.jpg',
+    registrationUrl:'https://teams.microsoft.com/registration/tibox-finops',
     desc:'Estrategias para reducir tu factura cloud sin frenar el crecimiento, con gobernanza y visibilidad de costos.',
     resena:'Aprenderás el marco FinOps para alinear finanzas, tecnología y negocio en torno al gasto cloud. Veremos cómo ganar visibilidad de costos, identificar desperdicio y establecer gobernanza sin frenar el crecimiento. Útil para CFOs, líderes TI y equipos de plataforma que quieren maximizar el retorno de su nube.'},
   {id:6, day:'23', month:'Jul', title:'Taller: Respaldo y recuperación con Veeam', modalidad:'Presencial', time:'09:00 – 12:30', place:'Oficina TIBOX, Curicó', city:'Curicó', partner:'veeam', img:'/assets/info-2.jpg',
+    registrationUrl:'https://teams.microsoft.com/registration/tibox-veeam-respaldo',
     desc:'Diseña una estrategia de respaldos 3-2-1 y prueba tu plan de recuperación ante desastres paso a paso.',
     resena:'Taller hands-on para diseñar una estrategia de respaldos 3-2-1 robusta y probar tu plan de recuperación ante desastres paso a paso. Cubriremos políticas de retención, inmutabilidad ante ransomware y pruebas de restauración. Te irás con un plan de continuidad concreto para tu organización.'},
   {id:7, day:'30', month:'Jul', title:'Demo: Chatbots con IA para tu empresa', modalidad:'Online', time:'15:00 – 16:00', place:'Zoom', partner:'azure', img:'/assets/video-ia.jpg',
+    registrationUrl:'https://teams.microsoft.com/registration/tibox-chatbots-ia',
     desc:'Cómo desplegar asistentes virtuales con IA generativa integrados a tus sistemas y canales de atención.',
     resena:'Demostración práctica de cómo desplegar asistentes virtuales con IA generativa integrados a tus sistemas y canales de atención. Veremos casos de uso en soporte, ventas y operaciones, y cómo medir su impacto. Pensado para equipos que buscan automatizar la atención sin perder cercanía con el cliente.'},
   {id:8, day:'06', month:'Ago', title:'Mesa redonda: Zero Trust en la práctica', modalidad:'Híbrida', time:'09:00 – 11:30', place:'Oficina TIBOX, Miraflores', city:'Lima', partner:'microsoft', img:'/assets/video-copilot.jpg',
+    registrationUrl:'https://teams.microsoft.com/registration/tibox-zero-trust',
     desc:'Expertos comparten cómo adoptar un modelo Zero Trust de forma gradual y medible en tu organización.',
     resena:'Expertos de TIBOX y partners comparten cómo adoptar un modelo Zero Trust de forma gradual y medible, sin paralizar la operación. Discutiremos identidad, segmentación, dispositivos y datos, con métricas para demostrar avance. Incluye preguntas abiertas y casos de la audiencia.'},
 ];
@@ -67,118 +78,70 @@ const pastEventItems = [
     gallery:['/assets/video-cloud.jpg','/assets/info-1.jpg','/assets/video-ia.jpg','/assets/hero-universe.jpg']},
 ];
 
-/* ── Inscripción modal (event sign-up) ──────────── */
-function InscripcionModal({ event, onClose }) {
+/* ── Detalle del evento (sin formulario propio: la inscripción ocurre
+   en la URL externa de registrationUrl, abierta en una pestaña nueva) ── */
+function EventDetailModal({ event, onClose }) {
   const mod = MODALIDAD[event.modalidad] || { color:'#0050C8', icon:'wifi' };
-  const [form, setForm] = React.useState({ name:'', rut:'', empresa:'', phone:'' });
-  const [accept, setAccept] = React.useState(false);
-  const [done, setDone] = React.useState(false);
-  const up = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
-  const inputS = { width:'100%',padding:'9px 12px',border:'1.5px solid var(--gray-200)',borderRadius:8,fontSize:13,outline:'none',fontFamily:'inherit',transition:'border-color 150ms' };
-  const submit = (e) => { e.preventDefault(); setDone(true); setTimeout(onClose, 1900); };
   return (
     <ModalShell onClose={onClose} maxWidth={460}>
-      {done ? (
-        <div style={{textAlign:'center',padding:'40px 32px'}}>
-          <div style={{width:60,height:60,borderRadius:'50%',background:'rgba(22,179,100,0.12)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px'}}>
-            <Icon name="check" style={{width:30,height:30,color:'#0d8a4e'}} />
-          </div>
-          <div style={{fontSize:18,fontWeight:700,color:'var(--navy-900)'}}>¡Inscripción registrada!</div>
-          <div style={{fontSize:13.5,color:'var(--gray-500)',marginTop:8,lineHeight:1.5}}>Te enviaremos los detalles de acceso a tu correo. ¡Nos vemos en el evento!</div>
+      {/* Imagen destacada con nombre del evento */}
+      <div style={{position:'relative',height:170,overflow:'hidden',background:'#0b1a3a'}}>
+        <img src={event.img} alt={event.title} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}} />
+        <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, rgba(2,12,36,0.35) 0%, rgba(2,12,36,0.55) 55%, rgba(2,12,36,0.9) 100%)'}}></div>
+        <button onClick={onClose} style={{position:'absolute',top:14,right:14,background:'rgba(2,12,36,0.5)',border:'1px solid rgba(255,255,255,0.25)',borderRadius:8,cursor:'pointer',color:'white',padding:6,display:'flex',backdropFilter:'blur(4px)'}}>
+          <Icon name="x" style={{width:16,height:16}} />
+        </button>
+        <div style={{position:'absolute',left:0,right:0,bottom:0,padding:'16px 24px'}}>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:6}}>Detalles del evento</div>
+          <div style={{fontSize:17,fontWeight:700,color:'white',lineHeight:1.25}}>{event.title}</div>
         </div>
-      ) : (
-        <React.Fragment>
-          {/* Imagen destacada con nombre del evento */}
-          <div style={{position:'relative',height:170,overflow:'hidden',background:'#0b1a3a'}}>
-            <img src={event.img} alt={event.title} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}} />
-            <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, rgba(2,12,36,0.35) 0%, rgba(2,12,36,0.55) 55%, rgba(2,12,36,0.9) 100%)'}}></div>
-            <button onClick={onClose} style={{position:'absolute',top:14,right:14,background:'rgba(2,12,36,0.5)',border:'1px solid rgba(255,255,255,0.25)',borderRadius:8,cursor:'pointer',color:'white',padding:6,display:'flex',backdropFilter:'blur(4px)'}}>
-              <Icon name="x" style={{width:16,height:16}} />
-            </button>
-            <div style={{position:'absolute',left:0,right:0,bottom:0,padding:'16px 24px'}}>
-              <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:6}}>Inscripción al evento</div>
-              <div style={{fontSize:17,fontWeight:700,color:'white',lineHeight:1.25}}>{event.title}</div>
-            </div>
-          </div>
+      </div>
 
-          {/* Información principal destacada */}
-          <div style={{padding:'18px 24px 4px'}}>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-              {[
-                {ic:'calendar',  lb:'Fecha',     vl:`${event.day} ${event.month} 2026`},
-                {ic:'clock',     lb:'Hora',      vl:`${event.time} hrs`},
-                {ic:mod.icon,    lb:'Modalidad', vl:event.modalidad, color:mod.color},
-                {ic:'map-pin',   lb:'Lugar',     vl:event.place},
-              ].map((it,i)=>(
-                <div key={i} style={{display:'flex',alignItems:'center',gap:11,padding:'11px 13px',background:'var(--gray-50)',borderRadius:11,border:'1px solid var(--gray-200)'}}>
-                  <div style={{width:34,height:34,borderRadius:9,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',background:(it.color||'#0050C8')+'15'}}>
-                    <Icon name={it.ic} style={{width:16,height:16,color:it.color||'#0050C8'}} />
-                  </div>
-                  <div style={{minWidth:0}}>
-                    <div style={{fontSize:9.5,fontWeight:700,letterSpacing:'0.07em',textTransform:'uppercase',color:'var(--gray-400)'}}>{it.lb}</div>
-                    <div style={{fontSize:13,fontWeight:700,color:'var(--navy-900)',lineHeight:1.25}}>{it.vl}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Reseña / descripción */}
-          <div style={{padding:'16px 24px 4px'}}>
-            <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--brand-cyan-700,#0079a8)',marginBottom:8,display:'flex',alignItems:'center',gap:6}}>
-              <Icon name="info" style={{width:13,height:13}} />Sobre el evento
-            </div>
-            <p style={{fontSize:13.5,color:'var(--gray-600)',lineHeight:1.6,margin:0}}>{event.resena || event.desc}</p>
-          </div>
-
-          {/* Formulario de inscripción (después de la información) */}
-          <div style={{padding:'18px 24px 6px'}}>
-            <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.08em',textTransform:'uppercase',color:'#FF6707',display:'flex',alignItems:'center',gap:6}}>
-              <Icon name="user-plus" style={{width:13,height:13}} />Completa tu inscripción
-            </div>
-          </div>
-          <form onSubmit={submit} style={{padding:'10px 24px 24px',display:'flex',flexDirection:'column',gap:13}}>
-            <div>
-              <label style={{fontSize:12,fontWeight:600,color:'var(--gray-600)',display:'block',marginBottom:5}}>Nombre</label>
-              <input value={form.name} onChange={up('name')} required placeholder="Tu nombre completo" style={inputS}
-                onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'} />
-            </div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-              <div>
-                <label style={{fontSize:12,fontWeight:600,color:'var(--gray-600)',display:'block',marginBottom:5}}>RUT</label>
-                <input value={form.rut} onChange={up('rut')} required placeholder="12.345.678-9" style={inputS}
-                  onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'} />
+      {/* Información principal destacada */}
+      <div style={{padding:'18px 24px 4px'}}>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+          {[
+            {ic:'calendar',  lb:'Fecha',     vl:`${event.day} ${event.month} 2026`},
+            {ic:'clock',     lb:'Hora',      vl:`${event.time} hrs`},
+            {ic:mod.icon,    lb:'Modalidad', vl:event.modalidad, color:mod.color},
+            {ic:'map-pin',   lb:'Lugar',     vl:event.place},
+          ].map((it,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'center',gap:11,padding:'11px 13px',background:'var(--gray-50)',borderRadius:11,border:'1px solid var(--gray-200)'}}>
+              <div style={{width:34,height:34,borderRadius:9,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',background:(it.color||'#0050C8')+'15'}}>
+                <Icon name={it.ic} style={{width:16,height:16,color:it.color||'#0050C8'}} />
               </div>
-              <div>
-                <label style={{fontSize:12,fontWeight:600,color:'var(--gray-600)',display:'block',marginBottom:5}}>Teléfono</label>
-                <input value={form.phone} onChange={up('phone')} required placeholder="+56 9 XXXX XXXX" style={inputS}
-                  onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'} />
+              <div style={{minWidth:0}}>
+                <div style={{fontSize:9.5,fontWeight:700,letterSpacing:'0.07em',textTransform:'uppercase',color:'var(--gray-400)'}}>{it.lb}</div>
+                <div style={{fontSize:13,fontWeight:700,color:'var(--navy-900)',lineHeight:1.25}}>{it.vl}</div>
               </div>
             </div>
-            <div>
-              <label style={{fontSize:12,fontWeight:600,color:'var(--gray-600)',display:'block',marginBottom:5}}>Empresa</label>
-              <input value={form.empresa} onChange={up('empresa')} required placeholder="Empresa S.A." style={inputS}
-                onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'} />
-            </div>
-            <label style={{display:'flex',gap:9,alignItems:'flex-start',cursor:'pointer',fontSize:12.5,color:'var(--gray-600)',lineHeight:1.45,marginTop:2}}>
-              <input type="checkbox" checked={accept} onChange={e=>setAccept(e.target.checked)} required
-                style={{width:16,height:16,marginTop:1,accentColor:'#FF6707',cursor:'pointer',flexShrink:0}} />
-              <span>He leído y acepto el aviso de privacidad e información de titular.</span>
-            </label>
-            <button type="submit" style={{
-              marginTop:4,padding:'12px',borderRadius:10,border:'none',cursor:'pointer',
-              background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',color:'white',
-              fontSize:14,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:8,
-              boxShadow:'0 2px 14px rgba(255,103,7,0.4)',transition:'transform 150ms',
-            }}
-              onMouseEnter={e=>e.currentTarget.style.transform='translateY(-1px)'}
-              onMouseLeave={e=>e.currentTarget.style.transform='none'}
-            >
-              <Icon name="check-circle-2" style={{width:16,height:16}} />Confirmar inscripción
-            </button>
-          </form>
-        </React.Fragment>
-      )}
+          ))}
+        </div>
+      </div>
+
+      {/* Reseña / descripción */}
+      <div style={{padding:'16px 24px 4px'}}>
+        <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--brand-cyan-700,#0079a8)',marginBottom:8,display:'flex',alignItems:'center',gap:6}}>
+          <Icon name="info" style={{width:13,height:13}} />Sobre el evento
+        </div>
+        <p style={{fontSize:13.5,color:'var(--gray-600)',lineHeight:1.6,margin:0}}>{event.resena || event.desc}</p>
+      </div>
+
+      {/* Inscripción: enlace externo (registrationUrl), editable desde el
+          admin en una fase futura */}
+      <div style={{padding:'18px 24px 24px'}}>
+        <a href={event.registrationUrl} target="_blank" rel="noopener noreferrer" style={{
+          width:'100%',padding:'12px',borderRadius:10,border:'none',cursor:'pointer',
+          background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',color:'white',textDecoration:'none',
+          fontSize:14,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:8,
+          boxShadow:'0 2px 14px rgba(255,103,7,0.4)',transition:'transform 150ms',
+        }}
+          onMouseEnter={e=>e.currentTarget.style.transform='translateY(-1px)'}
+          onMouseLeave={e=>e.currentTarget.style.transform='none'}
+        >
+          <Icon name="external-link" style={{width:16,height:16}} />Inscríbete aquí
+        </a>
+      </div>
     </ModalShell>
   );
 }
@@ -229,7 +192,7 @@ function CalendarModal({ onClose }) {
   );
 }
 
-function EventCard({ ev, onInscribir }) {
+function EventCard({ ev, onVerDetalle }) {
   const m = MODALIDAD[ev.modalidad];
   const partner = PARTNERS[ev.partner];
   const [hov, setHov] = React.useState(false);
@@ -267,10 +230,10 @@ function EventCard({ ev, onInscribir }) {
 
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,paddingTop:2}}>
         <div style={{display:'flex',alignItems:'center',gap:8,minWidth:0}}>
-          <span style={{fontSize:9.5,fontWeight:700,letterSpacing:'0.06em',textTransform:'uppercase',color:'var(--gray-400)'}}>Partner</span>
+          <span style={{fontSize:9.5,fontWeight:700,letterSpacing:'0.06em',textTransform:'uppercase',color:'var(--gray-400)'}}>Colaborador</span>
           <img src={partner.logo} alt={partner.name} title={partner.name} style={{height:17,maxWidth:96,objectFit:'contain'}} />
         </div>
-        <button onClick={()=>onInscribir(ev)} style={{
+        <button onClick={()=>onVerDetalle(ev)} style={{
           fontSize:12,fontWeight:700,color:'white',
           background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',border:'none',borderRadius:9,
           padding:'8px 16px',cursor:'pointer',flexShrink:0,whiteSpace:'nowrap',
@@ -278,7 +241,7 @@ function EventCard({ ev, onInscribir }) {
         }}
           onMouseEnter={e=>e.currentTarget.style.transform='translateY(-1px)'}
           onMouseLeave={e=>e.currentTarget.style.transform='none'}
-        >Inscribirme</button>
+        >Ver detalles</button>
       </div>
     </div>
   );
@@ -330,7 +293,7 @@ export function EventosPanel() {
         </button>
         <div style={{flex:1,padding:'14px 0 4px',display:'flex',flexDirection:'column'}}>
           <div key={page} style={{flex:1,display:'flex',flexDirection:'column',gap:12,animation:'tbxSlideIn 320ms cubic-bezier(0.25,0.8,0.3,1)'}}>
-            {pages[page].map(ev => <EventCard key={ev.id} ev={ev} onInscribir={setOpenEvent} />)}
+            {pages[page].map(ev => <EventCard key={ev.id} ev={ev} onVerDetalle={setOpenEvent} />)}
           </div>
         </div>
         <button onClick={()=>setPage((page+1)%pages.length)}
@@ -357,7 +320,7 @@ export function EventosPanel() {
         ))}
       </div>
 
-      {openEvent && <InscripcionModal event={openEvent} onClose={()=>setOpenEvent(null)} />}
+      {openEvent && <EventDetailModal event={openEvent} onClose={()=>setOpenEvent(null)} />}
       {showCal && <CalendarModal onClose={()=>setShowCal(false)} />}
       </div>
     </div>
@@ -476,10 +439,7 @@ function PastEventCard({ ev, onVer }) {
 
       <p style={{fontSize:12,color:'var(--gray-600)',lineHeight:1.5,margin:0,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{ev.resumen}</p>
 
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,paddingTop:2}}>
-        <span style={{fontSize:10.5,color:'var(--gray-400)',display:'inline-flex',alignItems:'center',gap:5}}>
-          <Icon name="users" style={{width:12,height:12}} />{ev.attendees}
-        </span>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,paddingTop:2}}>
         <button onClick={()=>onVer(ev)} style={{
           fontSize:12,fontWeight:700,color:'white',
           background:'linear-gradient(135deg, #0050C8 0%, #2a8fe0 100%)',border:'none',borderRadius:9,
@@ -489,7 +449,7 @@ function PastEventCard({ ev, onVer }) {
         }}
           onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-1px)';e.currentTarget.style.boxShadow='0 4px 16px rgba(0,80,200,0.45)';}}
           onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.boxShadow='0 2px 10px rgba(0,80,200,0.32)';}}
-        >Ver más <Icon name="arrow-right" style={{width:13,height:13}} /></button>
+        >Ver detalles del evento <Icon name="arrow-right" style={{width:13,height:13}} /></button>
       </div>
     </div>
   );
@@ -593,7 +553,7 @@ export function NoticiasPanel() {
     <div className="section-card">
       <div style={{padding:'20px 24px 0'}}>
         <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:4}}>Al día</div>
-        <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'var(--navy-900)'}}>Noticias <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>de la industria</span></div>
+        <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'var(--navy-900)'}}>Tendencias <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>de la industria</span></div>
       </div>
 
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:0,marginTop:16,borderTop:'1px solid var(--gray-100)'}}>

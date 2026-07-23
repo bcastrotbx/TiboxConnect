@@ -28,11 +28,12 @@ const videoItems = [
 ];
 
 const LIB_CATS = [
-  { id:'all',   label:'Todos' },
-  { id:'ia',    label:'IA' },
-  { id:'ciber', label:'Ciberseguridad' },
-  { id:'cloud', label:'Cloud' },
-  { id:'infra', label:'Infraestructura' },
+  { id:'all',      label:'Todos' },
+  { id:'ia',       label:'IA' },
+  { id:'ciber',    label:'Ciberseguridad' },
+  { id:'cloud',    label:'Cloud' },
+  { id:'infra',    label:'Infraestructura' },
+  { id:'webinars', label:'Webinars' },
 ];
 
 /* ── Video player modal (simulated) ─────────────── */
@@ -222,8 +223,7 @@ function VideoLibraryModal({ onClose }) {
       </div>
 
       <div style={{padding:'22px 26px 28px',display:'flex',justifyContent:'center'}}>
-        {/* href pendiente: reemplazar por la URL del sitio institucional TIBOX cuando esté definida */}
-        <a href="#" onClick={e=>e.preventDefault()} style={{
+        <a href="https://www.tibox.cl/eventos/" target="_blank" rel="noopener noreferrer" style={{
           display:'inline-flex',alignItems:'center',gap:9,
           background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',color:'white',
           border:'none',borderRadius:12,padding:'13px 26px',fontWeight:700,fontSize:14,cursor:'pointer',
@@ -344,8 +344,94 @@ const infogs = [
     summary:'Copilot y la automatización liberan horas de trabajo repetitivo para que tu equipo se enfoque en lo que aporta valor.' },
 ];
 
+// Recordatorio de "lead ya capturado" durante la visita actual, para no
+// pedir el formulario en cada descarga. Se limpia solo al cerrar la pestaña
+// (sessionStorage), no persiste entre visitas.
+const INFOGRAFIA_LEAD_KEY = 'tibox_infografia_lead_ok';
+
+// TODO(fase posterior): guardar el lead en un backend real y mostrarlo en el
+// panel admin (sección de leads de infografías). Por ahora el envío solo se
+// simula (setTimeout) y no persiste fuera de sessionStorage.
+function InfografiaLeadModal({ onSuccess, onClose }) {
+  const [form, setForm] = React.useState({ name:'', empresa:'', cargo:'', email:'' });
+  const [sending, setSending] = React.useState(false);
+  const up = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+  const inputS = { width:'100%',padding:'9px 12px',border:'1.5px solid var(--gray-200)',borderRadius:8,fontSize:13,outline:'none',fontFamily:'inherit',transition:'border-color 150ms' };
+
+  const submit = (e) => {
+    e.preventDefault();
+    setSending(true);
+    setTimeout(() => {
+      sessionStorage.setItem(INFOGRAFIA_LEAD_KEY, 'true');
+      onSuccess();
+    }, 900);
+  };
+
+  return (
+    <ModalShell onClose={onClose} maxWidth={440}>
+      <div style={{padding:'24px 26px 4px'}}>
+        <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'#0050C8',marginBottom:6}}>Antes de descargar</div>
+        <div style={{fontSize:18,fontWeight:700,color:'var(--navy-900)'}}>Cuéntanos un poco de ti</div>
+        <div style={{fontSize:13,color:'var(--gray-500)',marginTop:6,lineHeight:1.5}}>Completa estos datos una vez por visita para descargar el material de TIBOX Connect.</div>
+      </div>
+      <form onSubmit={submit} style={{padding:'18px 26px 26px',display:'flex',flexDirection:'column',gap:14}}>
+        <div>
+          <label style={{fontSize:12,fontWeight:600,color:'var(--gray-600)',display:'block',marginBottom:5}}>Nombre</label>
+          <input value={form.name} onChange={up('name')} required placeholder="Tu nombre completo" style={inputS}
+            onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'} />
+        </div>
+        <div>
+          <label style={{fontSize:12,fontWeight:600,color:'var(--gray-600)',display:'block',marginBottom:5}}>Empresa</label>
+          <input value={form.empresa} onChange={up('empresa')} required placeholder="Empresa S.A." style={inputS}
+            onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'} />
+        </div>
+        <div>
+          <label style={{fontSize:12,fontWeight:600,color:'var(--gray-600)',display:'block',marginBottom:5}}>Cargo</label>
+          <input value={form.cargo} onChange={up('cargo')} required placeholder="Tu cargo en la empresa" style={inputS}
+            onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'} />
+        </div>
+        <div>
+          <label style={{fontSize:12,fontWeight:600,color:'var(--gray-600)',display:'block',marginBottom:5}}>Correo corporativo</label>
+          <input type="email" value={form.email} onChange={up('email')} required placeholder="tu@empresa.cl" style={inputS}
+            onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'} />
+        </div>
+        <button type="submit" disabled={sending} style={{
+          marginTop:4,padding:'12px',borderRadius:10,border:'none',cursor:sending?'default':'pointer',
+          background: sending ? 'var(--gray-300)' : 'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',color:'white',
+          fontSize:14,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:8,
+          boxShadow: sending ? 'none' : '0 2px 14px rgba(255,103,7,0.4)',transition:'transform 150ms',
+        }}
+          onMouseEnter={e=>{ if(!sending) e.currentTarget.style.transform='translateY(-1px)'; }}
+          onMouseLeave={e=>e.currentTarget.style.transform='none'}
+        >
+          {sending
+            ? <React.Fragment><Icon name="loader-2" style={{width:16,height:16}} />Enviando…</React.Fragment>
+            : <React.Fragment><Icon name="download" style={{width:16,height:16}} />Continuar a la descarga</React.Fragment>
+          }
+        </button>
+      </form>
+    </ModalShell>
+  );
+}
+
 function InfografiaModal({ info, onClose }) {
   const ch = CHANNELS[info.channel];
+  const [showLead, setShowLead] = React.useState(false);
+  const [justDownloaded, setJustDownloaded] = React.useState(false);
+
+  const startDownload = () => {
+    // TODO(fase posterior): disparar la descarga real del asset de la
+    // infografía. Por ahora solo se simula el estado visual.
+    setJustDownloaded(true);
+    setTimeout(() => setJustDownloaded(false), 2200);
+  };
+
+  const handleDownloadClick = () => {
+    const leadOk = sessionStorage.getItem(INFOGRAFIA_LEAD_KEY) === 'true';
+    if (leadOk) startDownload();
+    else setShowLead(true);
+  };
+
   return (
     <ModalShell onClose={onClose} maxWidth={560}>
       <div style={{position:'relative',background:'#0b1a3a'}}>
@@ -360,15 +446,16 @@ function InfografiaModal({ info, onClose }) {
       <div style={{padding:'20px 24px 24px'}}>
         <div style={{fontSize:16.5,fontWeight:700,color:'var(--navy-900)',lineHeight:1.32,marginBottom:9}}>{info.title}</div>
         <p style={{fontSize:13.5,color:'var(--gray-600)',lineHeight:1.65,margin:'0 0 18px'}}>{info.summary}</p>
-        <div style={{display:'flex',gap:10}}>
-          <button style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'11px',borderRadius:10,border:'none',cursor:'pointer',background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',color:'white',fontSize:13.5,fontWeight:700,boxShadow:'0 2px 12px rgba(255,103,7,0.35)'}}>
-            <Icon name="download" style={{width:15,height:15}} />Descargar
-          </button>
-          <button style={{display:'flex',alignItems:'center',justifyContent:'center',gap:7,padding:'11px 18px',borderRadius:10,border:'1px solid var(--gray-200)',cursor:'pointer',background:'white',color:'var(--gray-600)',fontSize:13.5,fontWeight:700}}>
-            <Icon name="share-2" style={{width:15,height:15}} />Compartir
-          </button>
-        </div>
+        <button onClick={handleDownloadClick} style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'11px',borderRadius:10,border:'none',cursor:'pointer',background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',color:'white',fontSize:13.5,fontWeight:700,boxShadow:'0 2px 12px rgba(255,103,7,0.35)'}}>
+          <Icon name={justDownloaded ? 'check' : 'download'} style={{width:15,height:15}} />{justDownloaded ? 'Descarga iniciada' : 'Descargar'}
+        </button>
       </div>
+      {showLead && (
+        <InfografiaLeadModal
+          onClose={()=>setShowLead(false)}
+          onSuccess={() => { setShowLead(false); startDownload(); }}
+        />
+      )}
     </ModalShell>
   );
 }

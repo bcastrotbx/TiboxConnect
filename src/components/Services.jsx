@@ -167,9 +167,9 @@ export function ServicesV2() {
           <div style={{ fontSize:10, fontWeight:700, letterSpacing:'0.14em', textTransform:'uppercase', color:'var(--gray-400)', marginBottom:4 }}>También en TIBOX</div>
           <div style={{ fontSize:'clamp(1.3rem,2vw,1.7rem)', fontWeight:700, color:'var(--navy-900)' }}>Servicios <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>TIBOX</span></div>
         </div>
-        <button style={{ fontSize:12.5, fontWeight:600, color:'var(--gray-500)', background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
+        <a href="https://www.tibox.cl/servicios-ti-empresas/" target="_blank" rel="noopener noreferrer" style={{ fontSize:12.5, fontWeight:600, color:'var(--gray-500)', textDecoration:'none', display:'flex', alignItems:'center', gap:5 }}>
           Ver todos <Icon name="arrow-right" style={{ width:14, height:14 }} />
-        </button>
+        </a>
       </div>
 
       {/* Grid de servicios — 2 columnas */}
@@ -252,6 +252,7 @@ export function ContactFormSection() {
   const [sent, setSent] = React.useState(false);
   const [sending, setSending] = React.useState(false);
   const [mapOffice, setMapOffice] = React.useState(null);
+  const [privacyAccepted, setPrivacyAccepted] = React.useState(false);
 
   const update = (k) => (e) => setForm(f => ({...f, [k]: e.target.value}));
   const inputStyle = { width:'100%', padding:'10px 13px', border:'1.5px solid var(--gray-200)', borderRadius:9, fontSize:13, fontFamily:'inherit', outline:'none', background:'white', color:'var(--gray-800)', transition:'border-color 150ms' };
@@ -341,7 +342,7 @@ export function ContactFormSection() {
           ) : (
             <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:16 }}>
               <div style={{ marginBottom:4 }}>
-                <div style={{ fontSize:'clamp(1.3rem,2vw,1.7rem)', fontWeight:700, color:'var(--navy-900)' }}>Cuéntanos sobre <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>tu proyecto</span></div>
+                <div style={{ fontSize:'clamp(1.3rem,2vw,1.7rem)', fontWeight:700, color:'var(--navy-900)' }}>Contáctanos</div>
                 <div style={{ fontSize:13, color:'var(--gray-500)', marginTop:3 }}>Todos los campos son requeridos</div>
               </div>
 
@@ -401,16 +402,22 @@ export function ContactFormSection() {
                 />
               </div>
 
-              <button type="submit" disabled={sending} style={{
-                padding:'13px', borderRadius:10, border:'none', cursor: sending?'default':'pointer',
-                background: sending ? 'var(--gray-300)' : 'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',
+              <label style={{display:'flex',gap:9,alignItems:'flex-start',cursor:'pointer',fontSize:12.5,color:'var(--gray-600)',lineHeight:1.45}}>
+                <input type="checkbox" checked={privacyAccepted} onChange={e=>setPrivacyAccepted(e.target.checked)} required
+                  style={{width:16,height:16,marginTop:1,accentColor:'#FF6707',cursor:'pointer',flexShrink:0}} />
+                <span>He leído y acepto el <a href="https://www.tibox.cl/aviso-de-privacidad/" target="_blank" rel="noopener noreferrer" style={{color:'#0050C8',fontWeight:600}}>Aviso de Privacidad / Información del titular</a>.</span>
+              </label>
+
+              <button type="submit" disabled={sending || !privacyAccepted} style={{
+                padding:'13px', borderRadius:10, border:'none', cursor: (sending || !privacyAccepted)?'default':'pointer',
+                background: (sending || !privacyAccepted) ? 'var(--gray-300)' : 'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',
                 color:'white', fontSize:14, fontWeight:700,
                 display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-                boxShadow: sending ? 'none' : '0 4px 16px rgba(255,103,7,0.28)',
+                boxShadow: (sending || !privacyAccepted) ? 'none' : '0 4px 16px rgba(255,103,7,0.28)',
                 transition:'transform 150ms, box-shadow 150ms',
               }}
-                onMouseEnter={e=>{ if(!sending){ e.currentTarget.style.transform='translateY(-1px)'; e.currentTarget.style.boxShadow='0 6px 22px rgba(255,103,7,0.38)'; }}}
-                onMouseLeave={e=>{ e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow=sending?'none':'0 4px 16px rgba(255,103,7,0.28)'; }}
+                onMouseEnter={e=>{ if(!sending && privacyAccepted){ e.currentTarget.style.transform='translateY(-1px)'; e.currentTarget.style.boxShadow='0 6px 22px rgba(255,103,7,0.38)'; }}}
+                onMouseLeave={e=>{ e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow=(sending || !privacyAccepted)?'none':'0 4px 16px rgba(255,103,7,0.28)'; }}
               >
                 {sending
                   ? <React.Fragment><Icon name="loader-2" style={{width:16,height:16}} /> Enviando…</React.Fragment>
