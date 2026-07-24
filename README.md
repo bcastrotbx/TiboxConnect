@@ -4,19 +4,19 @@ Portal de conocimiento y panel de administración para TIBOX (compañía B2B de 
 
 ## Estado actual
 
-**Esto sigue siendo un prototipo visual de alta fidelidad, sin backend real y sin persistencia de datos.** Lo que cambió en la Fase 1 es *cómo* se construye y sirve el código (ahora con Vite + npm); lo que hace la aplicación no cambió. Antes de asumir que algo "funciona", léase lo siguiente:
+**Esto sigue siendo un prototipo visual de alta fidelidad, sin backend real y sin persistencia de datos.** Lo que cambió en la Fase 2 es que el portal y el admin ahora son **una sola aplicación con rutas reales** (antes eran dos páginas HTML separadas) y que los datos de ejemplo pasan por una capa de servicios en vez de estar sueltos en los componentes. Lo que la aplicación *hace* no cambió. Antes de asumir que algo "funciona", léase lo siguiente:
 
-- **Build real con Vite:** ya no se carga React/Babel desde CDN ni se transpila `.jsx` en el navegador. El proyecto usa `npm` + `vite` (`npm install`, `npm run dev`, `npm run build`). Ver [Instalación](#instalación) más abajo.
-- **Sigue sin backend:** no existe ningún servidor, API ni base de datos conectada. Todo el contenido (videos, infografías, noticias, eventos, servicios, mensajes, opiniones) vive en arrays de JavaScript dentro de los componentes de `src/`. `@supabase/supabase-js` está **instalado pero no conectado** — es preparación para una fase futura, no una integración funcional.
-- **Sigue sin persistencia:** el panel de administración (`/admin/`) permite "crear", "editar", "duplicar" y "eliminar" contenido, pero todo ocurre en memoria (`React.useState`). Al recargar la página, todo vuelve al estado inicial.
-- **Formularios simulados:** el formulario de contacto, el panel de opinión de clientes y la inscripción a eventos muestran una animación de "enviado con éxito", pero ningún dato sale del navegador — no hay `fetch`, no hay envío de correo, no hay guardado en ningún lado.
-- **Usuarios de ejemplo:** el portal muestra una sesión ficticia ("Carlos Mora — Empresa Modelo S.A.") y el panel admin otra ("Alejandro Díaz"). No hay autenticación real.
-- **Sin rutas todavía:** `react-router-dom` está instalado pero no en uso. El portal (`/`) y el panel admin (`/admin/`) siguen siendo dos páginas HTML estáticas separadas (build multi-entrada de Vite), igual que antes — no una SPA con rutas de cliente.
-- **Enlaces corregidos:** los botones del panel admin ("Volver al portal", "Ir al Portal") ahora apuntan correctamente a `/` (antes apuntaban a un archivo inexistente).
+- **Build real con Vite, una sola entrada:** ya no hay dos páginas HTML (`index.html` + `admin/index.html`); todo se sirve desde `index.html` y `react-router-dom` decide qué se renderiza según la URL.
+- **El admin vive en `/admin/...`, no en un archivo separado:** ver el mapa completo de rutas en [Rutas disponibles](#rutas-disponibles) más abajo.
+- **`/admin/*` no pide inicio de sesión todavía.** Cualquiera que conozca la URL puede acceder — no hay guardrail de sesión en esta fase. El login de administradores llega en la Fase 5 (ver [ADR-004](docs/decisions/ADR-004-SIN-REGISTRO-PUBLICO.md)): el portal público **no tendrá registro de usuarios finales**, solo los administradores inician sesión.
+- **Sigue sin backend:** no existe ningún servidor, API ni base de datos conectada. Todo el contenido (videos, infografías, noticias, eventos, servicios, mensajes, opiniones) vive en `src/data/seed/` y se sirve a través de `src/services/*`, que hoy solo simulan un delay de red — `@supabase/supabase-js` sigue **instalado pero no conectado**.
+- **Sigue sin persistencia:** el panel de administración permite "crear", "editar", "duplicar" y "eliminar" contenido, pero todo ocurre en memoria (`React.useState`). Al recargar la página, todo vuelve al estado inicial.
+- **Formularios simulados:** contacto, opinión de cliente y el formulario de lead de infografías muestran un estado de "enviado con éxito", pero ningún dato sale del navegador — no hay `fetch` a un backend real.
+- **Usuarios de ejemplo:** el portal muestra una sesión ficticia ("Carlos Mora — Empresa Modelo S.A.") y el admin otra ("Alejandro Díaz"). El botón "ADM"/"Cerrar sesión" del header público siempre es visible — pendiente de condicionarlo a sesión real en la Fase 5.
 
 En resumen: es útil para validar diseño, contenido y flujo de UX con stakeholders, pero **no debe presentarse como una aplicación funcional** — sigue faltando backend, autenticación real y persistencia de datos.
 
-Ver el detalle completo en [docs/phases/FASE-00-PREPARACION.md](docs/phases/FASE-00-PREPARACION.md) (diagnóstico) y [docs/phases/FASE-01-MIGRACION-VITE.md](docs/phases/FASE-01-MIGRACION-VITE.md) (migración a Vite).
+Ver el detalle completo en [docs/INDEX.md](docs/INDEX.md) (índice de todas las fases).
 
 ## Requisitos
 
@@ -34,23 +34,47 @@ npm install
 | Comando | Qué hace |
 |---|---|
 | `npm run dev` | Levanta el servidor de desarrollo de Vite con recarga en caliente |
-| `npm run build` | Genera el build de producción en `dist/` (portal + admin) |
+| `npm run build` | Genera el build de producción en `dist/` (una sola entrada) |
 | `npm run lint` | Corre ESLint sobre todo el proyecto |
 | `npm run preview` | Sirve el build de `dist/` localmente, para verificar antes de desplegar |
+
+## Rutas disponibles
+
+| Ruta | Qué es |
+|---|---|
+| `/` | Portal público |
+| `/admin` | Dashboard del admin |
+| `/admin/contenidos` | Videos y webinars |
+| `/admin/contenidos/infografias` | Infografías |
+| `/admin/contenidos/noticias` | Noticias |
+| `/admin/contenidos/servicios` | Catálogo de servicios TIBOX |
+| `/admin/eventos` | Eventos |
+| `/admin/portada` | Configuración de la portada del portal (sliders, categorías, contacto) |
+| `/admin/mensajes` | Mensajes de contacto |
+| `/admin/mensajes/opiniones` | Opiniones de clientes |
+| `/admin/perfil` | Mi perfil (admin) |
+| cualquier otra | Página 404 |
 
 ## Estructura
 
 ```
-index.html                 # Entry HTML del portal (Vite)
-admin/index.html           # Entry HTML del panel admin (Vite, segunda entrada del build)
+index.html                 # Única entrada HTML (Vite)
 src/
-  main.jsx, App.jsx        # Entry y componente raíz del portal
-  index.css                # Estilos globales del portal
+  main.jsx                 # Monta AppRouter
+  index.css                # Estilos globales
+  routes/AppRouter.jsx      # Definición de todas las rutas
+  layouts/                  # PortalLayout y AdminLayout (sidebar+header, <Outlet/>)
+  pages/                    # HomePage (portal) y NotFound (404)
   components/               # Sidebar, Header, Hero, OpinionPanel, Media, Events, Services
-    shared/                # Icon (wrapper sobre lucide-react), CosmicBg, ModalShell
+    shared/                # Icon, CosmicBg, ModalShell, AsyncState (loading/empty/error)
   admin/
-    main.jsx, AdminApp.jsx # Entry y componente raíz del panel admin
-    admin.css
+    AdminSidebar.jsx, AdminHeader.jsx
+    AdminWidgets.jsx, PortadaWidgets.jsx   # UI compartida del admin
+    pages/                 # Una página por ruta de /admin/*
+  data/seed/                 # Datos de ejemplo (eventos, contenido, noticias, portada, servicios, admin)
+  services/                  # Una función por caso de uso, sobre los datos de seed
+  hooks/useAsyncData.js       # Patrón loading/success/error para los servicios
+  context/DesignSystemContext.jsx  # Carga perezosa del bundle del design system (solo en /admin/*)
 public/
   assets/                  # Imágenes y logos en uso (servidos tal cual por Vite)
   _ds/tibox-design-system-.../  # Design system: tokens CSS y bundle compilado (fuera de alcance)
@@ -61,4 +85,4 @@ legacy/
 
 ## Documentación
 
-Ver [docs/INDEX.md](docs/INDEX.md) para el índice completo de fases de trabajo.
+Ver [docs/INDEX.md](docs/INDEX.md) para el índice completo de fases de trabajo y decisiones de arquitectura.
