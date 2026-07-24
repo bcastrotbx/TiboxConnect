@@ -1,67 +1,33 @@
 import React from 'react';
 import { Icon } from './shared/Icon.jsx';
+import { LoadingState } from './shared/AsyncState.jsx';
+import { useAsyncData } from '../hooks/useAsyncData.js';
+import * as homeService from '../services/homeService.js';
 import { ExploraPanel, InfographicsPanel } from './Media.jsx';
 import { NoticiasPanel, EventosPanel, EventosRealizadosPanel } from './Events.jsx';
 
 /* ── Hero Slider ────────────────────────────────── */
-const SLIDES = [
-  {
-    id: 1,
-    eyebrow: 'INFOGRAFÍAS',
-    title: 'Información que se',
-    titleAccent: 'entiende al instante',
-    desc: 'Piezas visuales, simples y fáciles de compartir sobre ciberseguridad, cloud y productividad — seleccionadas por nuestros expertos.',
-    cta: 'Ver infografías',
-    ctaIcon: 'layout-grid',
-    tag: 'Contenido visual',
-    bg: '/assets/hero-slider-1.jpg',
-  },
-  {
-    id: 2,
-    eyebrow: 'NOTICIAS DE LA INDUSTRIA',
-    title: 'Mantente al día con',
-    titleAccent: 'el sector tecnológico',
-    desc: 'Las novedades de Microsoft, Google, cloud, IA, ciberseguridad y normativas TI que impactan a tu organización, en un solo lugar.',
-    cta: 'Leer noticias',
-    ctaIcon: 'rss',
-    tag: 'Actualidad TI',
-    bg: '/assets/hero-slider-2.jpg',
-  },
-  {
-    id: 3,
-    eyebrow: 'PRÓXIMOS EVENTOS',
-    title: 'Conecta con',
-    titleAccent: 'expertos TI',
-    desc: 'Webinars, talleres presenciales y demos en vivo con especialistas en infraestructura, cloud, ciberseguridad y automatización.',
-    cta: 'Ver agenda completa',
-    ctaIcon: 'calendar',
-    tag: 'Eventos & Webinars',
-    bg: '/assets/hero-slider-3.jpg',
-  },
-  {
-    id: 4,
-    eyebrow: 'TU OPINIÓN CUENTA',
-    title: 'Queremos saber',
-    titleAccent: 'tu opinión',
-    desc: 'Tu experiencia guía la evolución de TIBOX Connect. Cuéntanos qué contenido te sirve y qué te gustaría ver en el portal.',
-    cta: 'Compartir mi opinión',
-    ctaIcon: 'message-circle',
-    tag: 'Feedback',
-    bg: '/assets/hero-universe.jpg',
-  },
-];
-
 export function HeroSlider() {
+  const { status, data: slides } = useAsyncData(() => homeService.getHeroSlides(), []);
   const [cur, setCur] = React.useState(0);
-  const total = SLIDES.length;
+  const total = (slides || []).length;
 
   const go = React.useCallback((dir) => { setCur(c => (c + dir + total) % total); }, [total]);
   React.useEffect(() => {
+    if (!total) return;
     const id = setInterval(() => go(1), 5500);
     return () => clearInterval(id);
-  }, [go]);
+  }, [go, total]);
 
-  const slide = SLIDES[cur];
+  if (status !== 'success' || total === 0) {
+    return (
+      <div style={{ borderRadius:18, overflow:'hidden', background:'var(--grad-corporate)', height:360, display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <LoadingState label="Cargando…" tone="dark" minHeight={0} />
+      </div>
+    );
+  }
+
+  const slide = slides[cur];
 
   return (
     <div style={{
@@ -141,7 +107,7 @@ export function HeroSlider() {
               ><Icon name="chevron-right" style={{width:16,height:16}} /></button>
             </div>
             <div style={{display:'flex',gap:7,alignItems:'center'}}>
-              {SLIDES.map((_,i)=>(
+              {slides.map((_,i)=>(
                 <button key={i} onClick={()=>setCur(i)} style={{
                   width: i===cur ? 20 : 7, height:7,
                   borderRadius:999, border:'none', cursor:'pointer', padding:0,
@@ -165,18 +131,14 @@ const heroArrow = {
 
 /* ── Category Blocks (unchanged) ────────────────── */
 const CAT_BLUE = 'linear-gradient(135deg, #06246a 0%, #0a63d6 58%, #00c8fa 100%)';
-const CATS = [
-  { id:'explora',   icon:'film',           label:'Explora',       sub:'Videos y Webinars',  count:'240+ recursos',   scrollTarget:'videos'  },
-  { id:'noticias',  icon:'rss',            label:'Noticias',      sub:'Sector Tecnológico', count:'Actualizado hoy', scrollTarget:'news'    },
-  { id:'eventos',   icon:'calendar-check', label:'Eventos',       sub:'Agenda y Webinars',  count:'8 próximos',      scrollTarget:'events'  },
-  { id:'opinion',   icon:'message-circle', label:'Tu Opinión',    sub:'Comparte tu voz',    count:'Nuevo: encuesta', scrollTarget:'opinion' },
-];
 
 export function CategoryBlocks() {
+  const { status, data: cats } = useAsyncData(() => homeService.getCategoryBlocks(), []);
   const [hov, setHov] = React.useState(null);
+  if (status !== 'success') return null;
   return (
     <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16}}>
-      {CATS.map(c=>(
+      {cats.map(c=>(
         <div key={c.id}
           onMouseEnter={()=>setHov(c.id)} onMouseLeave={()=>setHov(null)}
           onClick={()=>window.scrollToSection&&window.scrollToSection(c.scrollTarget)}

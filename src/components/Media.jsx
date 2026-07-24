@@ -2,43 +2,14 @@ import React from 'react';
 import { Icon } from './shared/Icon.jsx';
 import { ModalShell } from './shared/ModalShell.jsx';
 import { CosmicBg } from './shared/CosmicBg.jsx';
-
-/* ── Video category palette ─────────────────────── */
-const VIDEO_CATS = [
-  { id:'all',     label:'Todos',                   color:'var(--navy-900)' },
-  { id:'copilot', label:'Microsoft Copilot',       color:'#6a3ed0' },
-  { id:'ciber',   label:'Webinars Ciberseguridad', color:'#c0221a' },
-  { id:'m365',    label:'Microsoft 365',           color:'#0050C8' },
-  { id:'cloudia', label:'Cloud e IA',              color:'#0891b2' },
-  { id:'eventos', label:'Eventos TIBOX',           color:'#FF6707' },
-];
-const VCAT = Object.fromEntries(VIDEO_CATS.map(c => [c.id, c]));
-
-const videoItems = [
-  {id:1, cat:'copilot', libCat:'ia',    thumb:'/assets/video-copilot.jpg', title:'Microsoft Copilot: productividad con IA en tu día a día', dur:'24 min', date:'28 May 2026'},
-  {id:2, cat:'ciber',   libCat:'ciber', thumb:'/assets/video-ciber.jpg',   title:'Webinar: cómo blindar tu empresa ante ransomware',        dur:'52 min', date:'15 May 2026'},
-  {id:3, cat:'m365',    libCat:'cloud', thumb:'/assets/video-m365.jpg',    title:'Microsoft 365: colaboración segura en Teams y SharePoint',dur:'31 min', date:'09 May 2026'},
-  {id:4, cat:'cloudia', libCat:'cloud', thumb:'/assets/video-cloud.jpg',   title:'Cloud e IA: arquitecturas inteligentes en Azure',         dur:'41 min', date:'02 May 2026'},
-  {id:5, cat:'eventos', libCat:'infra', thumb:'/assets/video-evento.jpg',  title:'TIBOX Summit 2026: los highlights del evento',            dur:'18 min', date:'24 Abr 2026'},
-  {id:6, cat:'cloudia', libCat:'ia',    thumb:'/assets/video-ia.jpg',      title:'IA generativa aplicada a procesos de negocio',            dur:'36 min', date:'18 Abr 2026'},
-  {id:7, cat:'ciber',   libCat:'ciber', thumb:'/assets/video-webinar.jpg', title:'Webinar: Zero Trust en la práctica',                      dur:'47 min', date:'11 Abr 2026'},
-  {id:8, cat:'copilot', libCat:'ia',    thumb:'/assets/video-copilot.jpg', title:'Copilot Studio: crea tu propio agente de IA',             dur:'22 min', date:'04 Abr 2026'},
-  {id:9, cat:'m365',    libCat:'cloud', thumb:'/assets/video-m365.jpg',    title:'Automatiza tareas con Power Automate y Microsoft 365',    dur:'29 min', date:'28 Mar 2026'},
-  {id:10,cat:'eventos', libCat:'infra', thumb:'/assets/video-evento.jpg',  title:'TIBOX Talks: tendencias tecnológicas 2026',               dur:'33 min', date:'21 Mar 2026'},
-];
-
-const LIB_CATS = [
-  { id:'all',      label:'Todos' },
-  { id:'ia',       label:'IA' },
-  { id:'ciber',    label:'Ciberseguridad' },
-  { id:'cloud',    label:'Cloud' },
-  { id:'infra',    label:'Infraestructura' },
-  { id:'webinars', label:'Webinars' },
-];
+import { LoadingState, EmptyState, ErrorState } from './shared/AsyncState.jsx';
+import { useAsyncData } from '../hooks/useAsyncData.js';
+import * as contentService from '../services/contentService.js';
+import * as formService from '../services/formService.js';
 
 /* ── Video player modal (simulated) ─────────────── */
-function VideoModal({ video, onClose }) {
-  const cat = VCAT[video.cat] || VIDEO_CATS[0];
+function VideoModal({ video, catsById, onClose }) {
+  const cat = catsById[video.cat] || { color:'var(--navy-900)', label:'' };
   return (
     <ModalShell onClose={onClose} maxWidth={680}>
       <div style={{position:'relative',aspectRatio:'16/9',background:'#040b22',overflow:'hidden'}}>
@@ -83,8 +54,8 @@ function VideoModal({ video, onClose }) {
 }
 
 /* ── Poster video card (formato "imagen + título + etiqueta + meta") ── */
-function VideoCard({ v, onOpen }) {
-  const cat = VCAT[v.cat] || VIDEO_CATS[0];
+function VideoCard({ v, catsById, onOpen }) {
+  const cat = catsById[v.cat] || { color:'var(--navy-900)', label:'' };
   const [hov, setHov] = React.useState(false);
   return (
     <div
@@ -135,8 +106,8 @@ function VideoCard({ v, onOpen }) {
   );
 }
 
-function VideoLibraryCard({ v, onOpen }) {
-  const cat = VCAT[v.cat] || VIDEO_CATS[0];
+function VideoLibraryCard({ v, catsById, onOpen }) {
+  const cat = catsById[v.cat] || { color:'var(--navy-900)', label:'' };
   const [hov, setHov] = React.useState(false);
   return (
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{
@@ -169,12 +140,16 @@ function VideoLibraryCard({ v, onOpen }) {
   );
 }
 
-function VideoLibraryModal({ onClose }) {
+// El buscador de texto filtra en el cliente sobre el set completo ya
+// cargado (en vez de re-consultar el servicio en cada tecla) para no
+// introducir el delay simulado del servicio en cada pulsación.
+function VideoLibraryModal({ allVideos, catsById, onClose }) {
+  const { status, data: libCats, error } = useAsyncData(() => contentService.getVideoLibraryCategories(), []);
   const [q, setQ] = React.useState('');
   const [filter, setFilter] = React.useState('all');
   const [openVideo, setOpenVideo] = React.useState(null);
 
-  const items = videoItems.filter(v =>
+  const items = allVideos.filter(v =>
     (filter === 'all' || v.libCat === filter) &&
     v.title.toLowerCase().includes(q.toLowerCase())
   );
@@ -197,7 +172,7 @@ function VideoLibraryModal({ onClose }) {
             <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Buscar por título…" style={{width:'100%',fontFamily:'inherit',fontSize:13.5,padding:'10px 14px 10px 36px',borderRadius:10,border:'1px solid var(--gray-200)'}} />
           </div>
           <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-            {LIB_CATS.map(c => {
+            {(libCats || []).map(c => {
               const on = filter === c.id;
               return (
                 <button key={c.id} onClick={()=>setFilter(c.id)} style={{
@@ -213,12 +188,16 @@ function VideoLibraryModal({ onClose }) {
       </div>
 
       <div style={{padding:'22px 26px 8px'}}>
-        {items.length === 0 ? (
-          <div style={{textAlign:'center',color:'var(--gray-400)',padding:'40px 0',fontSize:13.5}}>No encontramos videos que coincidan con tu búsqueda.</div>
-        ) : (
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(230px, 1fr))',gap:16}}>
-            {items.map(v => <VideoLibraryCard key={v.id} v={v} onOpen={setOpenVideo} />)}
-          </div>
+        {status === 'loading' && <LoadingState label="Cargando categorías…" />}
+        {status === 'error' && <ErrorState label="No pudimos cargar los filtros de la videoteca." error={error} />}
+        {status === 'success' && (
+          items.length === 0 ? (
+            <div style={{textAlign:'center',color:'var(--gray-400)',padding:'40px 0',fontSize:13.5}}>No encontramos videos que coincidan con tu búsqueda.</div>
+          ) : (
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(230px, 1fr))',gap:16}}>
+              {items.map(v => <VideoLibraryCard key={v.id} v={v} catsById={catsById} onOpen={setOpenVideo} />)}
+            </div>
+          )
         )}
       </div>
 
@@ -233,18 +212,21 @@ function VideoLibraryModal({ onClose }) {
         </a>
       </div>
 
-      {openVideo && <VideoModal video={openVideo} onClose={()=>setOpenVideo(null)} />}
+      {openVideo && <VideoModal video={openVideo} catsById={catsById} onClose={()=>setOpenVideo(null)} />}
     </ModalShell>
   );
 }
 
 export function ExploraPanel() {
-  const [openVideo, setOpenVideo] = React.useState(null);
+  const { data: categories } = useAsyncData(() => contentService.getVideoCategories(), []);
   const [filter, setFilter] = React.useState('all');
+  const { status, data: items, error } = useAsyncData(() => contentService.getVideos({ category: filter }), [filter]);
+  const [openVideo, setOpenVideo] = React.useState(null);
   const [showLibrary, setShowLibrary] = React.useState(false);
   const trackRef = React.useRef(null);
 
-  const items = filter === 'all' ? videoItems : videoItems.filter(v => v.cat === filter);
+  const cats = categories || [];
+  const catsById = React.useMemo(() => Object.fromEntries((categories || []).map(c => [c.id, c])), [categories]);
   const scroll = (dir) => {
     const el = trackRef.current; if (!el) return;
     el.scrollBy({ left: dir * (el.clientWidth * 0.8), behavior:'smooth' });
@@ -274,7 +256,7 @@ export function ExploraPanel() {
 
       {/* Filter chips */}
       <div style={{padding:'16px 24px 4px',display:'flex',gap:8,flexWrap:'wrap'}}>
-        {VIDEO_CATS.map(c => {
+        {cats.map(c => {
           const on = filter === c.id;
           return (
             <button key={c.id} onClick={()=>setFilter(c.id)} style={{
@@ -290,16 +272,24 @@ export function ExploraPanel() {
       </div>
 
       {/* Carousel track — 5 visible, horizontal scroll */}
-      <div ref={trackRef} style={{
-        display:'flex', gap:16, padding:'16px 24px 24px',
-        overflowX:'auto', scrollSnapType:'x mandatory',
-        scrollbarWidth:'none',
-      }} className="hide-scroll">
-        {items.map(v => <VideoCard key={v.id} v={v} onOpen={setOpenVideo} />)}
-      </div>
+      {status === 'loading' && <LoadingState label="Cargando videos…" />}
+      {status === 'error' && <ErrorState label="No pudimos cargar la videoteca." onRetry={() => setFilter(f => f)} error={error} />}
+      {status === 'success' && (
+        (items || []).length === 0 ? (
+          <EmptyState label="No hay videos en esta categoría todavía." icon="film" />
+        ) : (
+          <div ref={trackRef} style={{
+            display:'flex', gap:16, padding:'16px 24px 24px',
+            overflowX:'auto', scrollSnapType:'x mandatory',
+            scrollbarWidth:'none',
+          }} className="hide-scroll">
+            {items.map(v => <VideoCard key={v.id} v={v} catsById={catsById} onOpen={setOpenVideo} />)}
+          </div>
+        )
+      )}
 
-      {openVideo && <VideoModal video={openVideo} onClose={()=>setOpenVideo(null)} />}
-      {showLibrary && <VideoLibraryModal onClose={()=>setShowLibrary(false)} />}
+      {openVideo && <VideoModal video={openVideo} catsById={catsById} onClose={()=>setOpenVideo(null)} />}
+      {showLibrary && <VideoLibraryModal allVideos={items || []} catsById={catsById} onClose={()=>setShowLibrary(false)} />}
     </div>
   );
 }
@@ -312,37 +302,6 @@ const navBtnStyle = {
 };
 
 /* ── Infografías ─────────────────────────────────── */
-const INFO_CATS = [
-  { id:'all',          label:'Todas' },
-  { id:'seguridad',    label:'Seguridad' },
-  { id:'phishing',     label:'Phishing' },
-  { id:'respaldos',    label:'Respaldos' },
-  { id:'productividad',label:'Productividad' },
-];
-const CHANNELS = {
-  linkedin:  { label:'LinkedIn',  icon:'briefcase', color:'#0A66C2' },
-  instagram: { label:'Instagram', icon:'camera',    color:'#C13584' },
-  mailing:   { label:'Mailing',   icon:'mail',      color:'#0050C8' },
-};
-
-const infogs = [
-  { id:1, img:'/assets/info-2.jpg', cat:'seguridad',     channel:'instagram', title:'¿Tu plan de ciberseguridad se enfoca en prevención o en respuesta?',
-    summary:'Hoy la pregunta no es si te atacarán, sino cuán rápido podrás responder. Un SOC reduce drásticamente el tiempo de detección y contención.' },
-  { id:2, img:'/assets/info-3.jpg', cat:'seguridad',     channel:'linkedin',  title:'Los ciberataques no se toman feriados',
-    summary:'Los fines de semana largos concentran el mayor riesgo: si nadie está monitoreando, una brecha puede pasar inadvertida durante días.' },
-  { id:3, img:'/assets/info-4.jpg', cat:'phishing',      channel:'mailing',   title:'Reconoce un correo de phishing antes de hacer clic',
-    summary:'Remitentes que imitan dominios, urgencia artificial y enlaces acortados. Cuatro señales para detectar el fraude a tiempo.' },
-  { id:4, img:'/assets/info-2.jpg', cat:'phishing',      channel:'linkedin',  title:'Phishing dirigido: la amenaza silenciosa al directorio',
-    summary:'El spear phishing apunta a ejecutivos con mensajes hechos a medida. La capacitación y el MFA son tu mejor defensa.' },
-  { id:5, img:'/assets/info-4.jpg', cat:'respaldos',     channel:'mailing',   title:'Respaldos 3-2-1: tu última línea de defensa',
-    summary:'Tres copias, en dos medios distintos, una fuera de sitio. La regla que mantiene tu negocio operativo tras un incidente.' },
-  { id:6, img:'/assets/info-3.jpg', cat:'respaldos',     channel:'linkedin',  title:'Recuperación ante desastres: ¿tu empresa está lista?',
-    summary:'Un plan de DRP probado convierte una caída crítica en una interrupción controlada y medida en minutos, no en días.' },
-  { id:7, img:'/assets/info-1.jpg', cat:'productividad', channel:'linkedin',  title:'La transformación digital fracasa por falta de estrategia',
-    summary:'En 2026 el éxito no dependerá de qué nube elijas, sino del partner que la implemente y la gestione contigo.' },
-  { id:8, img:'/assets/info-1.jpg', cat:'productividad', channel:'instagram', title:'Más productividad con IA, sin más complejidad',
-    summary:'Copilot y la automatización liberan horas de trabajo repetitivo para que tu equipo se enfoque en lo que aporta valor.' },
-];
 
 // Recordatorio de "lead ya capturado" durante la visita actual, para no
 // pedir el formulario en cada descarga. Se limpia solo al cerrar la pestaña
@@ -351,7 +310,8 @@ const INFOGRAFIA_LEAD_KEY = 'tibox_infografia_lead_ok';
 
 // TODO(fase posterior): guardar el lead en un backend real y mostrarlo en el
 // panel admin (sección de leads de infografías). Por ahora el envío solo se
-// simula (setTimeout) y no persiste fuera de sessionStorage.
+// simula (formService.submitInfografiaLead) y no persiste fuera de
+// sessionStorage.
 function InfografiaLeadModal({ onSuccess, onClose }) {
   const [form, setForm] = React.useState({ name:'', empresa:'', cargo:'', email:'' });
   const [sending, setSending] = React.useState(false);
@@ -361,10 +321,10 @@ function InfografiaLeadModal({ onSuccess, onClose }) {
   const submit = (e) => {
     e.preventDefault();
     setSending(true);
-    setTimeout(() => {
+    formService.submitInfografiaLead(form).then(() => {
       sessionStorage.setItem(INFOGRAFIA_LEAD_KEY, 'true');
       onSuccess();
-    }, 900);
+    });
   };
 
   return (
@@ -414,8 +374,8 @@ function InfografiaLeadModal({ onSuccess, onClose }) {
   );
 }
 
-function InfografiaModal({ info, onClose }) {
-  const ch = CHANNELS[info.channel];
+function InfografiaModal({ info, channelsById, onClose }) {
+  const ch = channelsById[info.channel] || { color:'var(--navy-900)', label:'', icon:'link' };
   const [showLead, setShowLead] = React.useState(false);
   const [justDownloaded, setJustDownloaded] = React.useState(false);
 
@@ -460,8 +420,8 @@ function InfografiaModal({ info, onClose }) {
   );
 }
 
-function InfoCard({ inf, onOpen }) {
-  const ch = CHANNELS[inf.channel];
+function InfoCard({ inf, channelsById, onOpen }) {
+  const ch = channelsById[inf.channel] || { color:'var(--navy-900)', label:'', icon:'link' };
   const [hov, setHov] = React.useState(false);
   return (
     <div
@@ -495,11 +455,15 @@ function InfoCard({ inf, onOpen }) {
 }
 
 export function InfographicsPanel() {
-  const [openInfo, setOpenInfo] = React.useState(null);
+  const { data: channels } = useAsyncData(() => contentService.getChannels(), []);
+  const { data: allCats } = useAsyncData(() => contentService.getInfographicCategories(), []);
   const [filter, setFilter] = React.useState('all');
+  const { status, data: items, error } = useAsyncData(() => contentService.getInfographics({ category: filter }), [filter]);
+  const [openInfo, setOpenInfo] = React.useState(null);
   const trackRef = React.useRef(null);
 
-  const items = filter === 'all' ? infogs : infogs.filter(i => i.cat === filter);
+  const channelsById = channels || {};
+  const cats = allCats || [];
   const scroll = (dir) => {
     const el = trackRef.current; if (!el) return;
     el.scrollBy({ left: dir * el.clientWidth, behavior:'smooth' });
@@ -532,7 +496,7 @@ export function InfographicsPanel() {
 
       {/* Filter chips */}
       <div style={{position:'relative',padding:'18px 28px 2px',display:'flex',gap:8,flexWrap:'wrap'}}>
-        {INFO_CATS.map(c => {
+        {cats.map(c => {
           const on = filter === c.id;
           return (
             <button key={c.id} onClick={()=>setFilter(c.id)} style={{
@@ -548,22 +512,30 @@ export function InfographicsPanel() {
       </div>
 
       {/* Carousel con flechas laterales */}
-      <div style={{display:'flex',alignItems:'center',padding:'18px 20px 28px',gap:10,position:'relative'}}>
-        <button onClick={()=>scroll(-1)} aria-label="Anterior" style={navBtnGlassStyle}>
-          <Icon name="chevron-left" style={{width:18,height:18}} />
-        </button>
-        <div ref={trackRef} style={{
-          flex:1, display:'flex', gap:18,
-          overflowX:'auto', scrollSnapType:'x mandatory', scrollbarWidth:'none',
-        }} className="hide-scroll">
-          {items.map(inf => <InfoCard key={inf.id} inf={inf} onOpen={setOpenInfo} />)}
-        </div>
-        <button onClick={()=>scroll(1)} aria-label="Siguiente" style={navBtnGlassStyle}>
-          <Icon name="chevron-right" style={{width:18,height:18}} />
-        </button>
-      </div>
+      {status === 'loading' && <div style={{position:'relative'}}><LoadingState label="Cargando infografías…" tone="dark" /></div>}
+      {status === 'error' && <div style={{position:'relative'}}><ErrorState label="No pudimos cargar las infografías." tone="dark" error={error} /></div>}
+      {status === 'success' && (
+        (items || []).length === 0 ? (
+          <div style={{position:'relative'}}><EmptyState label="No hay infografías en esta categoría todavía." icon="pie-chart" tone="dark" /></div>
+        ) : (
+          <div style={{display:'flex',alignItems:'center',padding:'18px 20px 28px',gap:10,position:'relative'}}>
+            <button onClick={()=>scroll(-1)} aria-label="Anterior" style={navBtnGlassStyle}>
+              <Icon name="chevron-left" style={{width:18,height:18}} />
+            </button>
+            <div ref={trackRef} style={{
+              flex:1, display:'flex', gap:18,
+              overflowX:'auto', scrollSnapType:'x mandatory', scrollbarWidth:'none',
+            }} className="hide-scroll">
+              {items.map(inf => <InfoCard key={inf.id} inf={inf} channelsById={channelsById} onOpen={setOpenInfo} />)}
+            </div>
+            <button onClick={()=>scroll(1)} aria-label="Siguiente" style={navBtnGlassStyle}>
+              <Icon name="chevron-right" style={{width:18,height:18}} />
+            </button>
+          </div>
+        )
+      )}
 
-      {openInfo && <InfografiaModal info={openInfo} onClose={()=>setOpenInfo(null)} />}
+      {openInfo && <InfografiaModal info={openInfo} channelsById={channelsById} onClose={()=>setOpenInfo(null)} />}
     </div>
   );
 }

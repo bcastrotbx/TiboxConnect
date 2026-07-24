@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Icon } from './shared/Icon.jsx';
 
 // Tibox Connect v2 — Header (Mis Tickets = naranja, KAM = azul)
@@ -25,7 +26,7 @@ export function Header({ onScrollContact }) {
       {/* Buttons */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         {/* ADM — acceso al panel de administración */}
-        <a href="/admin/index.html" title="Panel de administración" style={{
+        <Link to="/admin" title="Panel de administración" style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
           fontSize: 12, fontWeight: 700, letterSpacing: '0.03em', color: 'var(--gray-600)',
           background: 'white', border: '1px solid var(--gray-200)', borderRadius: 10,
@@ -37,7 +38,7 @@ export function Header({ onScrollContact }) {
         >
           <Icon name="shield" style={{ width: 14, height: 14 }} />
           ADM
-        </a>
+        </Link>
 
         {/* Mis Tickets — NARANJA */}
         <a href="https://soporte.tibox.cl/Login/LoginCliente" target="_blank" rel="noopener noreferrer" style={{

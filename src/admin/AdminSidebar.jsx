@@ -1,0 +1,65 @@
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Icon } from '../components/shared/Icon.jsx';
+
+// Misma estructura visual y agrupación que en la Fase 1 (General/Contenidos/
+// Negocio/Cuenta) — solo cambia que cada ítem ahora es una ruta real en vez
+// de un setState local. Ver la tabla de mapeo completa en
+// docs/phases/FASE-02-RUTAS-Y-DATOS.md.
+const NAV = [
+  { label:'General', items:[
+    { path:'/admin', icon:'layout-dashboard', label:'Dashboard' },
+  ]},
+  { label:'Contenidos', items:[
+    { path:'/admin/contenidos', icon:'film', label:'Videos y Webinars' },
+    { path:'/admin/contenidos/infografias', icon:'pie-chart', label:'Infografías' },
+    { path:'/admin/contenidos/noticias', icon:'rss', label:'Noticias' },
+    { path:'/admin/eventos', icon:'calendar-check', label:'Eventos' },
+  ]},
+  { label:'Negocio', items:[
+    { path:'/admin/contenidos/servicios', icon:'briefcase', label:'Servicios TIBOX' },
+    { path:'/admin/mensajes', icon:'mail', label:'Mensajes de contacto' },
+    { path:'/admin/mensajes/opiniones', icon:'star', label:'Opiniones de clientes' },
+  ]},
+  { label:'Cuenta', items:[
+    { path:'/admin/portada', icon:'settings', label:'Configuración' },
+  ]},
+];
+
+export function AdminSidebar() {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  return (
+    <aside className="adm-sidebar">
+      <div style={{ padding:'20px 20px 16px', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
+        <img src="/assets/logo-tibox.png" alt="TIBOX" style={{ height:24 }} />
+        <div style={{ marginTop:10, display:'inline-flex', alignItems:'center', gap:7, background:'rgba(0,200,250,0.08)', borderRadius:7, padding:'5px 10px', border:'1px solid rgba(0,200,250,0.18)' }}>
+          <div style={{ width:5, height:5, borderRadius:'50%', background:'var(--brand-cyan)', boxShadow:'0 0 5px var(--brand-cyan)' }}></div>
+          <span style={{ fontSize:11, fontWeight:700, color:'var(--brand-cyan)', letterSpacing:'0.1em' }}>ADMIN</span>
+        </div>
+      </div>
+      <div style={{ flex:1, paddingBottom:12 }}>
+        {NAV.map(g => (
+          <div key={g.label}>
+            <div className="adm-nav-label">{g.label}</div>
+            {g.items.map(item => (
+              <div key={item.path} className={`adm-nav-item${pathname === item.path ? ' active' : ''}`} onClick={() => navigate(item.path)}>
+                <Icon name={item.icon} style={{ width:16, height:16, flexShrink:0 }} />
+                <span>{item.label}</span>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+      <div style={{ padding:'12px 16px', borderTop:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:9 }}>
+        <div style={{ width:32, height:32, borderRadius:'50%', flexShrink:0, background:'var(--grad-title)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:700, color:'white' }}>AD</div>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontSize:13, fontWeight:600, color:'white', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Bienvenido (a) ADMIN</div>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)' }}>TIBOX Connect</div>
+        </div>
+        <a href="/" title="Volver al portal" style={{ color:'rgba(255,255,255,0.35)', display:'flex' }}>
+          <Icon name="external-link" style={{ width:14, height:14 }} />
+        </a>
+      </div>
+    </aside>
+  );
+}

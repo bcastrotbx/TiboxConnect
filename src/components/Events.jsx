@@ -2,86 +2,15 @@ import React from 'react';
 import { Icon } from './shared/Icon.jsx';
 import { ModalShell } from './shared/ModalShell.jsx';
 import { CosmicBg } from './shared/CosmicBg.jsx';
-
-/* ── Events data ─────────────────────────────────── */
-const MODALIDAD = {
-  'Online':     { color:'#0891b2', icon:'wifi' },
-  'Presencial': { color:'#0056b3', icon:'map-pin' },
-  'Híbrida':    { color:'#6a3ed0', icon:'git-merge' },
-};
-const PARTNERS = {
-  microsoft: { logo:'/assets/partner-microsoft.svg', name:'Microsoft' },
-  azure:     { logo:'/assets/partner-azure.svg',     name:'Microsoft Azure' },
-  veeam:     { logo:'/assets/partner-veeam.svg',     name:'Veeam' },
-  hpe:       { logo:'/assets/partner-hpe.svg',       name:'HPE' },
-};
-
-// `registrationUrl`: URL externa de inscripción al evento. Dato de ejemplo
-// por ahora — en una fase futura este campo será editable desde el panel
-// admin por evento (ver docs/phases/FASE-01B-AJUSTES-VISUALES-PAULA.md).
-const eventItems = [
-  {id:1, day:'19', month:'Jun', title:'Webinar: Ciberseguridad para PYMES Chile 2026', modalidad:'Online', time:'10:00 – 11:30', place:'Microsoft Teams', partner:'microsoft', img:'/assets/video-ciber.jpg',
-    registrationUrl:'https://teams.microsoft.com/registration/tibox-ciberseguridad-pymes-2026',
-    desc:'Aprende a proteger tu empresa con controles esenciales y un SOC gestionado, sin sobredimensionar tu presupuesto.',
-    resena:'En este webinar revisaremos las amenazas más frecuentes que enfrentan las pymes chilenas y cómo construir una defensa por capas realista. El objetivo es que salgas con un checklist de controles esenciales —respaldo, MFA, endpoint y monitoreo— priorizados por impacto y costo. Ideal para gerentes y encargados de TI que buscan elevar su postura de seguridad sin sobredimensionar la inversión.'},
-  {id:2, day:'24', month:'Jun', title:'Taller: Implementación SD-WAN en tu empresa', modalidad:'Presencial', time:'09:30 – 13:00', place:'Oficina TIBOX, Vitacura', city:'Santiago', partner:'hpe', img:'/assets/hero-slider-1.jpg',
-    registrationUrl:'https://teams.microsoft.com/registration/tibox-taller-sdwan',
-    desc:'Sesión práctica para diseñar una red SD-WAN resiliente y optimizar la conectividad entre tus sucursales.',
-    resena:'Taller práctico, con casos reales, donde diseñarás una topología SD-WAN resiliente para conectar tus sucursales con mayor disponibilidad y menor costo de enlaces. Abordaremos políticas de tráfico, failover automático y visibilidad de la red. Te llevarás un blueprint aplicable a tu propia operación y las mejores prácticas de despliegue.'},
-  {id:3, day:'02', month:'Jul', title:'Demo en vivo: TIBOX NOC, monitoreo 24/7', modalidad:'Online', time:'16:00 – 17:00', place:'Zoom', partner:'azure', img:'/assets/video-cloud.jpg',
-    registrationUrl:'https://teams.microsoft.com/registration/tibox-demo-noc',
-    desc:'Recorrido por nuestro Centro de Operaciones de Red y cómo anticipamos fallas antes de que te afecten.',
-    resena:'Recorreremos en vivo nuestro Centro de Operaciones de Red (NOC) y mostraremos cómo la observabilidad y la automatización nos permiten anticipar incidentes antes de que afecten tu negocio. Verás dashboards reales, flujos de alertamiento y tiempos de respuesta. Pensado para quienes evalúan externalizar o reforzar su monitoreo.'},
-  {id:4, day:'10', month:'Jul', title:'Conferencia: Transformación Digital en Retail', modalidad:'Híbrida', time:'08:30 – 13:30', place:'Hotel W, Santiago', city:'Santiago', partner:'microsoft', img:'/assets/video-evento.jpg',
-    registrationUrl:'https://teams.microsoft.com/registration/tibox-transformacion-retail',
-    desc:'Casos reales de retailers que modernizaron su operación con cloud, datos e inteligencia artificial.',
-    resena:'Una mañana de casos reales: retailers que modernizaron su operación con cloud, datos e inteligencia artificial, y los aprendizajes detrás de cada proyecto. Conversaremos sobre experiencia de cliente, eficiencia operativa y cómo construir un roadmap digital sostenible. Incluye espacio de networking con pares de la industria.'},
-  {id:5, day:'16', month:'Jul', title:'Webinar: FinOps — optimiza tus costos cloud', modalidad:'Online', time:'11:00 – 12:00', place:'Microsoft Teams', partner:'azure', img:'/assets/video-m365.jpg',
-    registrationUrl:'https://teams.microsoft.com/registration/tibox-finops',
-    desc:'Estrategias para reducir tu factura cloud sin frenar el crecimiento, con gobernanza y visibilidad de costos.',
-    resena:'Aprenderás el marco FinOps para alinear finanzas, tecnología y negocio en torno al gasto cloud. Veremos cómo ganar visibilidad de costos, identificar desperdicio y establecer gobernanza sin frenar el crecimiento. Útil para CFOs, líderes TI y equipos de plataforma que quieren maximizar el retorno de su nube.'},
-  {id:6, day:'23', month:'Jul', title:'Taller: Respaldo y recuperación con Veeam', modalidad:'Presencial', time:'09:00 – 12:30', place:'Oficina TIBOX, Curicó', city:'Curicó', partner:'veeam', img:'/assets/info-2.jpg',
-    registrationUrl:'https://teams.microsoft.com/registration/tibox-veeam-respaldo',
-    desc:'Diseña una estrategia de respaldos 3-2-1 y prueba tu plan de recuperación ante desastres paso a paso.',
-    resena:'Taller hands-on para diseñar una estrategia de respaldos 3-2-1 robusta y probar tu plan de recuperación ante desastres paso a paso. Cubriremos políticas de retención, inmutabilidad ante ransomware y pruebas de restauración. Te irás con un plan de continuidad concreto para tu organización.'},
-  {id:7, day:'30', month:'Jul', title:'Demo: Chatbots con IA para tu empresa', modalidad:'Online', time:'15:00 – 16:00', place:'Zoom', partner:'azure', img:'/assets/video-ia.jpg',
-    registrationUrl:'https://teams.microsoft.com/registration/tibox-chatbots-ia',
-    desc:'Cómo desplegar asistentes virtuales con IA generativa integrados a tus sistemas y canales de atención.',
-    resena:'Demostración práctica de cómo desplegar asistentes virtuales con IA generativa integrados a tus sistemas y canales de atención. Veremos casos de uso en soporte, ventas y operaciones, y cómo medir su impacto. Pensado para equipos que buscan automatizar la atención sin perder cercanía con el cliente.'},
-  {id:8, day:'06', month:'Ago', title:'Mesa redonda: Zero Trust en la práctica', modalidad:'Híbrida', time:'09:00 – 11:30', place:'Oficina TIBOX, Miraflores', city:'Lima', partner:'microsoft', img:'/assets/video-copilot.jpg',
-    registrationUrl:'https://teams.microsoft.com/registration/tibox-zero-trust',
-    desc:'Expertos comparten cómo adoptar un modelo Zero Trust de forma gradual y medible en tu organización.',
-    resena:'Expertos de TIBOX y partners comparten cómo adoptar un modelo Zero Trust de forma gradual y medible, sin paralizar la operación. Discutiremos identidad, segmentación, dispositivos y datos, con métricas para demostrar avance. Incluye preguntas abiertas y casos de la audiencia.'},
-];
-
-/* ── Eventos realizados (past events) ────────────── */
-const pastEventItems = [
-  {id:101, day:'28', month:'May', title:'Cumbre TIBOX Cloud & IA 2026', modalidad:'Presencial', time:'09:00 – 14:00', place:'Hotel W, Santiago', attendees:'180 asistentes', partner:'microsoft',
-    img:'/assets/hero-universe.jpg',
-    resumen:'Una jornada dedicada a cómo la nube y la inteligencia artificial están redefiniendo la operación de las empresas chilenas.',
-    resena:'La Cumbre reunió a líderes de TI de distintos sectores para explorar casos reales de adopción de cloud e IA generativa. Se presentaron arquitecturas de referencia, resultados de proyectos de modernización y un panel sobre gobernanza de datos. Las principales conclusiones apuntaron a que la madurez en datos y la gestión del cambio son los mayores diferenciadores de éxito, por sobre la tecnología misma.',
-    gallery:['/assets/info-1.jpg','/assets/video-evento.jpg','/assets/video-cloud.jpg','/assets/hero-slider-2.jpg']},
-  {id:102, day:'15', month:'May', title:'Workshop: Ciberseguridad Empresarial', modalidad:'Presencial', time:'09:30 – 13:00', place:'Oficina TIBOX, Vitacura', attendees:'45 asistentes', partner:'microsoft',
-    img:'/assets/video-ciber.jpg',
-    resumen:'Sesión práctica sobre cómo construir una postura de seguridad por capas y responder ante incidentes reales.',
-    resena:'Durante el workshop, los participantes realizaron un ejercicio de simulación de incidente (tabletop) y revisaron controles esenciales de protección. Se abordaron MFA, segmentación, respaldo inmune a ransomware y monitoreo continuo. La conclusión más valorada fue la importancia de practicar el plan de respuesta antes de necesitarlo, y contar con un SOC que reduzca los tiempos de detección.',
-    gallery:['/assets/video-copilot.jpg','/assets/info-3.jpg','/assets/video-m365.jpg','/assets/info-4.jpg']},
-  {id:103, day:'30', month:'Abr', title:'TIBOX Connect Day Santiago', modalidad:'Híbrida', time:'08:30 – 13:30', place:'Espacio Riesco, Santiago', attendees:'320 asistentes', partner:'azure',
-    img:'/assets/video-evento.jpg',
-    resumen:'Nuestro encuentro anual de clientes y partners, con charlas, demos y espacios de networking.',
-    resena:'Connect Day reunió a clientes y partners en torno a las tendencias que están marcando la transformación digital en Chile. Hubo demostraciones en vivo de monitoreo NOC, automatización e IA, además de un keynote sobre continuidad operacional. Los asistentes destacaron el valor de las conversaciones uno a uno con especialistas y la cercanía del equipo TIBOX.',
-    gallery:['/assets/hero-slider-1.jpg','/assets/hero-slider-3.jpg','/assets/info-2.jpg','/assets/video-webinar.jpg']},
-  {id:104, day:'18', month:'Abr', title:'Webinar: Continuidad Operacional 24/7', modalidad:'Online', time:'11:00 – 12:00', place:'Microsoft Teams', attendees:'210 asistentes', partner:'veeam',
-    img:'/assets/video-webinar.jpg',
-    resumen:'Cómo diseñar infraestructura y procesos que mantengan tu negocio operativo ante cualquier imprevisto.',
-    resena:'En este webinar revisamos los pilares de la continuidad operacional: redundancia de infraestructura, respaldos probados, monitoreo proactivo y planes de recuperación. Se compartieron métricas de disponibilidad reales y cómo TIBOX las sostiene con su NOC. La conclusión: la continuidad no es un producto, sino una disciplina que combina tecnología, procesos y práctica constante.',
-    gallery:['/assets/video-cloud.jpg','/assets/info-1.jpg','/assets/video-ia.jpg','/assets/hero-universe.jpg']},
-];
+import { LoadingState, EmptyState, ErrorState } from './shared/AsyncState.jsx';
+import { useAsyncData } from '../hooks/useAsyncData.js';
+import * as eventService from '../services/eventService.js';
+import * as newsService from '../services/newsService.js';
 
 /* ── Detalle del evento (sin formulario propio: la inscripción ocurre
    en la URL externa de registrationUrl, abierta en una pestaña nueva) ── */
-function EventDetailModal({ event, onClose }) {
-  const mod = MODALIDAD[event.modalidad] || { color:'#0050C8', icon:'wifi' };
+function EventDetailModal({ event, modalidadById, onClose }) {
+  const mod = modalidadById[event.modalidad] || { color:'#0050C8', icon:'wifi' };
   return (
     <ModalShell onClose={onClose} maxWidth={460}>
       {/* Imagen destacada con nombre del evento */}
@@ -146,7 +75,7 @@ function EventDetailModal({ event, onClose }) {
   );
 }
 
-function CalendarModal({ onClose }) {
+function CalendarModal({ events, modalidadById, onClose }) {
   return (
     <ModalShell onClose={onClose} maxWidth={540}>
       <div style={{padding:'20px 24px',background:'var(--grad-corporate)',position:'relative',overflow:'hidden'}}>
@@ -164,8 +93,8 @@ function CalendarModal({ onClose }) {
         </div>
       </div>
       <div style={{maxHeight:'56vh',overflowY:'auto',padding:'14px 18px 18px',display:'flex',flexDirection:'column',gap:8}}>
-        {eventItems.map(ev=>{
-          const m = MODALIDAD[ev.modalidad];
+        {events.map(ev=>{
+          const m = modalidadById[ev.modalidad] || { color:'#0050C8' };
           return (
             <div key={ev.id} style={{display:'flex',gap:12,alignItems:'center',padding:'10px 12px',borderRadius:10,border:'1px solid var(--gray-200)'}}>
               <div style={{minWidth:46,textAlign:'center',background:'var(--navy-900)',borderRadius:8,padding:'6px 6px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flexShrink:0}}>
@@ -192,9 +121,9 @@ function CalendarModal({ onClose }) {
   );
 }
 
-function EventCard({ ev, onVerDetalle }) {
-  const m = MODALIDAD[ev.modalidad];
-  const partner = PARTNERS[ev.partner];
+function EventCard({ ev, modalidadById, partnersById, onVerDetalle }) {
+  const m = modalidadById[ev.modalidad] || { color:'#0050C8', icon:'wifi' };
+  const partner = partnersById[ev.partner] || { logo:'', name:'' };
   const [hov, setHov] = React.useState(false);
   return (
     <div
@@ -248,13 +177,22 @@ function EventCard({ ev, onVerDetalle }) {
 }
 
 export function EventosPanel() {
+  const { status, data, error } = useAsyncData(() => Promise.all([
+    eventService.getUpcomingEvents(),
+    eventService.getModalidadConfig(),
+    eventService.getPartners(),
+  ]).then(([events, modalidad, partners]) => ({ events, modalidad, partners })), []);
+
   const [openEvent, setOpenEvent] = React.useState(null);
   const [showCal, setShowCal] = React.useState(false);
   const [page, setPage] = React.useState(0);
 
+  const events = data?.events || [];
+  const modalidadById = data?.modalidad || {};
+  const partnersById = data?.partners || {};
   const perPage = 2;
   const pages = [];
-  for (let i = 0; i < eventItems.length; i += perPage) pages.push(eventItems.slice(i, i + perPage));
+  for (let i = 0; i < events.length; i += perPage) pages.push(events.slice(i, i + perPage));
 
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100%',borderRadius:16,overflow:'hidden',position:'relative',background:'var(--grad-corporate)',boxShadow:'0 4px 18px rgba(2,18,55,0.2)'}}>
@@ -266,62 +204,71 @@ export function EventosPanel() {
           <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:3}}>Agenda</div>
           <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'white'}}>Próximos <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>Eventos</span></div>
         </div>
-        <button onClick={()=>setShowCal(true)} style={{
-          fontSize:12,fontWeight:700,color:'white',
-          background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.22)',borderRadius:9,
-          padding:'9px 15px',cursor:'pointer',display:'inline-flex',alignItems:'center',gap:7,whiteSpace:'nowrap',
-          transition:'transform 150ms,background 150ms',
-        }}
-          onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-1px)';e.currentTarget.style.background='rgba(255,255,255,0.22)';}}
-          onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.background='rgba(255,255,255,0.12)';}}
-        >
-          <Icon name="calendar-days" style={{width:14,height:14}} />Ver calendario
-        </button>
+        {status === 'success' && events.length > 0 && (
+          <button onClick={()=>setShowCal(true)} style={{
+            fontSize:12,fontWeight:700,color:'white',
+            background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.22)',borderRadius:9,
+            padding:'9px 15px',cursor:'pointer',display:'inline-flex',alignItems:'center',gap:7,whiteSpace:'nowrap',
+            transition:'transform 150ms,background 150ms',
+          }}
+            onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-1px)';e.currentTarget.style.background='rgba(255,255,255,0.22)';}}
+            onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.background='rgba(255,255,255,0.12)';}}
+          >
+            <Icon name="calendar-days" style={{width:14,height:14}} />Ver calendario
+          </button>
+        )}
       </div>
 
-      <div style={{flex:1, display:'flex', alignItems:'stretch'}}>
-        <button onClick={()=>setPage((page-1+pages.length)%pages.length)}
-          aria-label="Anterior"
-          style={{flexShrink:0,width:32,background:'none',border:'none',cursor:'pointer',
-            color:'rgba(255,255,255,0.4)',display:'flex',alignItems:'center',justifyContent:'center',
-            transition:'color 150ms',
-          }}
-          onMouseEnter={e=>e.currentTarget.style.color='white'}
-          onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.4)'}
-        >
-          <Icon name="chevron-left" style={{width:18,height:18}} />
-        </button>
-        <div style={{flex:1,padding:'14px 0 4px',display:'flex',flexDirection:'column'}}>
-          <div key={page} style={{flex:1,display:'flex',flexDirection:'column',gap:12,animation:'tbxSlideIn 320ms cubic-bezier(0.25,0.8,0.3,1)'}}>
-            {pages[page].map(ev => <EventCard key={ev.id} ev={ev} onVerDetalle={setOpenEvent} />)}
+      {status === 'loading' && <LoadingState label="Cargando eventos…" tone="dark" />}
+      {status === 'error' && <ErrorState label="No pudimos cargar los próximos eventos." tone="dark" error={error} />}
+      {status === 'success' && events.length === 0 && <EmptyState label="No hay eventos próximos por ahora." icon="calendar-check" tone="dark" />}
+      {status === 'success' && events.length > 0 && (
+        <React.Fragment>
+          <div style={{flex:1, display:'flex', alignItems:'stretch'}}>
+            <button onClick={()=>setPage((page-1+pages.length)%pages.length)}
+              aria-label="Anterior"
+              style={{flexShrink:0,width:32,background:'none',border:'none',cursor:'pointer',
+                color:'rgba(255,255,255,0.4)',display:'flex',alignItems:'center',justifyContent:'center',
+                transition:'color 150ms',
+              }}
+              onMouseEnter={e=>e.currentTarget.style.color='white'}
+              onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.4)'}
+            >
+              <Icon name="chevron-left" style={{width:18,height:18}} />
+            </button>
+            <div style={{flex:1,padding:'14px 0 4px',display:'flex',flexDirection:'column'}}>
+              <div key={page} style={{flex:1,display:'flex',flexDirection:'column',gap:12,animation:'tbxSlideIn 320ms cubic-bezier(0.25,0.8,0.3,1)'}}>
+                {pages[page].map(ev => <EventCard key={ev.id} ev={ev} modalidadById={modalidadById} partnersById={partnersById} onVerDetalle={setOpenEvent} />)}
+              </div>
+            </div>
+            <button onClick={()=>setPage((page+1)%pages.length)}
+              aria-label="Siguiente"
+              style={{flexShrink:0,width:32,background:'none',border:'none',cursor:'pointer',
+                color:'rgba(255,255,255,0.4)',display:'flex',alignItems:'center',justifyContent:'center',
+                transition:'color 150ms',
+              }}
+              onMouseEnter={e=>e.currentTarget.style.color='white'}
+              onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.4)'}
+            >
+              <Icon name="chevron-right" style={{width:18,height:18}} />
+            </button>
           </div>
-        </div>
-        <button onClick={()=>setPage((page+1)%pages.length)}
-          aria-label="Siguiente"
-          style={{flexShrink:0,width:32,background:'none',border:'none',cursor:'pointer',
-            color:'rgba(255,255,255,0.4)',display:'flex',alignItems:'center',justifyContent:'center',
-            transition:'color 150ms',
-          }}
-          onMouseEnter={e=>e.currentTarget.style.color='white'}
-          onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.4)'}
-        >
-          <Icon name="chevron-right" style={{width:18,height:18}} />
-        </button>
-      </div>
 
-      <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:7,padding:'10px 0 16px'}}>
-        {pages.map((_,i)=>(
-          <button key={i} onClick={()=>setPage(i)} aria-label={`Página ${i+1}`} style={{
-            width: i===page ? 20 : 7, height:7,
-            borderRadius:999,border:'none',cursor:'pointer',padding:0,
-            background: i===page ? 'var(--brand-cyan)' : 'rgba(255,255,255,0.3)',
-            transition:'all 300ms',
-          }}/>
-        ))}
-      </div>
+          <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:7,padding:'10px 0 16px'}}>
+            {pages.map((_,i)=>(
+              <button key={i} onClick={()=>setPage(i)} aria-label={`Página ${i+1}`} style={{
+                width: i===page ? 20 : 7, height:7,
+                borderRadius:999,border:'none',cursor:'pointer',padding:0,
+                background: i===page ? 'var(--brand-cyan)' : 'rgba(255,255,255,0.3)',
+                transition:'all 300ms',
+              }}/>
+            ))}
+          </div>
+        </React.Fragment>
+      )}
 
-      {openEvent && <EventDetailModal event={openEvent} onClose={()=>setOpenEvent(null)} />}
-      {showCal && <CalendarModal onClose={()=>setShowCal(false)} />}
+      {openEvent && <EventDetailModal event={openEvent} modalidadById={modalidadById} onClose={()=>setOpenEvent(null)} />}
+      {showCal && <CalendarModal events={events} modalidadById={modalidadById} onClose={()=>setShowCal(false)} />}
       </div>
     </div>
   );
@@ -405,7 +352,6 @@ function VistaModal({ event, onClose }) {
 }
 
 function PastEventCard({ ev, onVer }) {
-  const partner = PARTNERS[ev.partner];
   const [hov, setHov] = React.useState(false);
   return (
     <div
@@ -456,9 +402,11 @@ function PastEventCard({ ev, onVer }) {
 }
 
 export function EventosRealizadosPanel() {
+  const { status, data, error } = useAsyncData(() => eventService.getPastEvents(), []);
   const [openEvent, setOpenEvent] = React.useState(null);
   const [page, setPage] = React.useState(0);
 
+  const pastEventItems = data || [];
   const perPage = 2;
   const pages = [];
   for (let i = 0; i < pastEventItems.length; i += perPage) pages.push(pastEventItems.slice(i, i + perPage));
@@ -473,35 +421,44 @@ export function EventosRealizadosPanel() {
             <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:3}}>Historial</div>
             <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'white'}}>Eventos <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>Realizados</span></div>
           </div>
-          <span style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.7)',background:'rgba(255,255,255,0.1)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:999,padding:'6px 13px',whiteSpace:'nowrap'}}>{pastEventItems.length} eventos</span>
+          {status === 'success' && pastEventItems.length > 0 && (
+            <span style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.7)',background:'rgba(255,255,255,0.1)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:999,padding:'6px 13px',whiteSpace:'nowrap'}}>{pastEventItems.length} eventos</span>
+          )}
         </div>
 
-        <div style={{flex:1, display:'flex', alignItems:'stretch'}}>
-          <button onClick={()=>setPage((page-1+pages.length)%pages.length)} aria-label="Anterior"
-            style={{flexShrink:0,width:32,background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',display:'flex',alignItems:'center',justifyContent:'center',transition:'color 150ms'}}
-            onMouseEnter={e=>e.currentTarget.style.color='white'} onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.4)'}>
-            <Icon name="chevron-left" style={{width:18,height:18}} />
-          </button>
-          <div style={{flex:1,padding:'14px 0 4px',display:'flex',flexDirection:'column'}}>
-            <div key={page} style={{flex:1,display:'flex',flexDirection:'column',gap:12,animation:'tbxSlideIn 320ms cubic-bezier(0.25,0.8,0.3,1)'}}>
-              {pages[page].map(ev => <PastEventCard key={ev.id} ev={ev} onVer={setOpenEvent} />)}
+        {status === 'loading' && <LoadingState label="Cargando eventos realizados…" tone="dark" />}
+        {status === 'error' && <ErrorState label="No pudimos cargar los eventos realizados." tone="dark" error={error} />}
+        {status === 'success' && pastEventItems.length === 0 && <EmptyState label="Todavía no hay eventos realizados." icon="calendar-check" tone="dark" />}
+        {status === 'success' && pastEventItems.length > 0 && (
+          <React.Fragment>
+            <div style={{flex:1, display:'flex', alignItems:'stretch'}}>
+              <button onClick={()=>setPage((page-1+pages.length)%pages.length)} aria-label="Anterior"
+                style={{flexShrink:0,width:32,background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',display:'flex',alignItems:'center',justifyContent:'center',transition:'color 150ms'}}
+                onMouseEnter={e=>e.currentTarget.style.color='white'} onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.4)'}>
+                <Icon name="chevron-left" style={{width:18,height:18}} />
+              </button>
+              <div style={{flex:1,padding:'14px 0 4px',display:'flex',flexDirection:'column'}}>
+                <div key={page} style={{flex:1,display:'flex',flexDirection:'column',gap:12,animation:'tbxSlideIn 320ms cubic-bezier(0.25,0.8,0.3,1)'}}>
+                  {pages[page].map(ev => <PastEventCard key={ev.id} ev={ev} onVer={setOpenEvent} />)}
+                </div>
+              </div>
+              <button onClick={()=>setPage((page+1)%pages.length)} aria-label="Siguiente"
+                style={{flexShrink:0,width:32,background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',display:'flex',alignItems:'center',justifyContent:'center',transition:'color 150ms'}}
+                onMouseEnter={e=>e.currentTarget.style.color='white'} onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.4)'}>
+                <Icon name="chevron-right" style={{width:18,height:18}} />
+              </button>
             </div>
-          </div>
-          <button onClick={()=>setPage((page+1)%pages.length)} aria-label="Siguiente"
-            style={{flexShrink:0,width:32,background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',display:'flex',alignItems:'center',justifyContent:'center',transition:'color 150ms'}}
-            onMouseEnter={e=>e.currentTarget.style.color='white'} onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.4)'}>
-            <Icon name="chevron-right" style={{width:18,height:18}} />
-          </button>
-        </div>
 
-        <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:7,padding:'10px 0 16px'}}>
-          {pages.map((_,i)=>(
-            <button key={i} onClick={()=>setPage(i)} aria-label={`Página ${i+1}`} style={{
-              width: i===page ? 20 : 7, height:7, borderRadius:999,border:'none',cursor:'pointer',padding:0,
-              background: i===page ? 'var(--brand-cyan)' : 'rgba(255,255,255,0.3)', transition:'all 300ms',
-            }}/>
-          ))}
-        </div>
+            <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:7,padding:'10px 0 16px'}}>
+              {pages.map((_,i)=>(
+                <button key={i} onClick={()=>setPage(i)} aria-label={`Página ${i+1}`} style={{
+                  width: i===page ? 20 : 7, height:7, borderRadius:999,border:'none',cursor:'pointer',padding:0,
+                  background: i===page ? 'var(--brand-cyan)' : 'rgba(255,255,255,0.3)', transition:'all 300ms',
+                }}/>
+              ))}
+            </div>
+          </React.Fragment>
+        )}
 
         {openEvent && <VistaModal event={openEvent} onClose={()=>setOpenEvent(null)} />}
       </div>
@@ -509,45 +466,15 @@ export function EventosRealizadosPanel() {
   );
 }
 
-/* ── Noticias de la industria (full-width, 50/50) ── */
-const NEWS_CATS = [
-  { id:'all',           label:'Todas',          color:'var(--navy-900)' },
-  { id:'microsoft',     label:'Microsoft',      color:'#0050C8' },
-  { id:'google',        label:'Google',         color:'#EA4335' },
-  { id:'ia',            label:'IA',             color:'#6a3ed0' },
-  { id:'ciberseguridad',label:'Ciberseguridad', color:'#c0221a' },
-  { id:'cloud',         label:'Cloud',          color:'#0891b2' },
-  { id:'productividad', label:'Productividad',  color:'#0d8a4e' },
-  { id:'automatizacion',label:'Automatización', color:'#FF6707' },
-  { id:'normativas',    label:'Normativas TI',  color:'#5b6470' },
-];
-const NCAT = Object.fromEntries(NEWS_CATS.map(c => [c.id, c]));
-
-const newsItems = [
-  {id:1, cat:'ia',            source:'Microsoft', date:'10 Jun 2026', title:'Copilot suma agentes autónomos para automatizar flujos de trabajo en empresas'},
-  {id:2, cat:'ciberseguridad',source:'ENISA',     date:'08 Jun 2026', title:'El ransomware como servicio crece un 40% y apunta a la cadena de suministro'},
-  {id:3, cat:'cloud',         source:'AWS',        date:'05 Jun 2026', title:'Nuevas regiones cloud en Latinoamérica reducen la latencia para Chile'},
-  {id:4, cat:'google',        source:'Google',     date:'03 Jun 2026', title:'Gemini se integra de forma nativa en Workspace para todas las cuentas business'},
-  {id:5, cat:'normativas',    source:'BCN Chile',  date:'01 Jun 2026', title:'Entra en vigencia la Ley Marco de Ciberseguridad: qué deben cumplir las empresas'},
-  {id:6, cat:'automatizacion',source:'Gartner',    date:'28 May 2026', title:'La hiperautomatización será prioridad de inversión TI para el 65% de las organizaciones'},
-  {id:7, cat:'microsoft',     source:'Microsoft', date:'26 May 2026', title:'Windows Server 2025 refuerza la seguridad con aislamiento basado en hardware'},
-  {id:8, cat:'productividad', source:'Forrester',  date:'22 May 2026', title:'Equipos que adoptan IA generativa recuperan hasta 11 horas semanales por persona'},
-];
-
-const featuredNews = {
-  cat:'ciberseguridad',
-  img:'/assets/news-featured.jpg',
-  date:'11 Jun 2026',
-  readtime:'6 min de lectura',
-  title:'Ley Marco de Ciberseguridad en Chile: la guía práctica para preparar a tu empresa',
-  excerpt:'Analizamos los plazos, las obligaciones por sector y los controles mínimos que tu organización debe implementar para cumplir con la nueva normativa, sin frenar la operación.',
-  url:'https://www.tibox.cl/eventos',
-};
-
 export function NoticiasPanel() {
+  const { data: allCats } = useAsyncData(() => newsService.getNewsCategories(), []);
+  const { data: featuredNews } = useAsyncData(() => newsService.getFeaturedNews(), []);
   const [filter, setFilter] = React.useState('all');
-  const items = filter === 'all' ? newsItems : newsItems.filter(n => n.cat === filter);
-  const fc = NCAT[featuredNews.cat];
+  const { status, data: items, error } = useAsyncData(() => newsService.getNews({ category: filter }), [filter]);
+
+  const cats = allCats || [];
+  const catsById = React.useMemo(() => Object.fromEntries((allCats || []).map(c => [c.id, c])), [allCats]);
+  const fc = featuredNews ? catsById[featuredNews.cat] : null;
 
   return (
     <div className="section-card">
@@ -561,7 +488,7 @@ export function NoticiasPanel() {
         <div style={{padding:'18px 22px',borderRight:'1px solid var(--gray-100)'}}>
           {/* Category filter */}
           <div style={{display:'flex',gap:7,flexWrap:'wrap',marginBottom:16}}>
-            {NEWS_CATS.map(c => {
+            {cats.map(c => {
               const on = filter === c.id;
               return (
                 <button key={c.id} onClick={()=>setFilter(c.id)} style={{
@@ -576,64 +503,71 @@ export function NoticiasPanel() {
             })}
           </div>
           {/* News list */}
-          <div style={{position:'relative'}}>
-          <div style={{display:'flex',flexDirection:'column',maxHeight:450,overflowY:'auto',scrollbarWidth:'thin',scrollbarColor:'var(--gray-300) transparent',paddingRight:4}}>
-            {items.map((n,idx) => {
-              const c = NCAT[n.cat];
-              return (
-                <a key={n.id} href={featuredNews.url} target="_blank" rel="noopener noreferrer"
-                  style={{display:'flex',gap:13,padding:'13px 0',textDecoration:'none',borderTop: idx===0?'none':'1px solid var(--gray-100)',cursor:'pointer'}}
-                  onMouseEnter={e=>e.currentTarget.style.opacity='0.72'}
-                  onMouseLeave={e=>e.currentTarget.style.opacity='1'}
-                >
-                  <div style={{width:4,borderRadius:999,background:c.color,flexShrink:0,alignSelf:'stretch'}}></div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:5}}>
-                      <span style={{fontSize:10,fontWeight:700,color:c.color,textTransform:'uppercase',letterSpacing:'0.04em'}}>{c.label}</span>
-                      <span style={{fontSize:10.5,color:'var(--gray-400)'}}>·</span>
-                      <span style={{fontSize:10.5,color:'var(--gray-400)'}}>{n.source}</span>
-                    </div>
-                    <div style={{fontSize:13,fontWeight:600,color:'var(--navy-900)',lineHeight:1.4}}>{n.title}</div>
-                    <div style={{fontSize:10.5,color:'var(--gray-400)',marginTop:5,display:'flex',alignItems:'center',gap:4}}>
-                      <Icon name="clock" style={{width:11,height:11}} />{n.date}
-                    </div>
-                  </div>
-                </a>
-              );
-            })}
-          </div>
-          <div style={{position:'absolute',bottom:0,left:0,right:4,height:60,background:'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.97) 100%)',pointerEvents:'none'}}></div>
-          </div>
+          {status === 'loading' && <LoadingState label="Cargando noticias…" />}
+          {status === 'error' && <ErrorState label="No pudimos cargar las noticias." error={error} />}
+          {status === 'success' && (items || []).length === 0 && <EmptyState label="No hay noticias en esta categoría todavía." icon="rss" />}
+          {status === 'success' && (items || []).length > 0 && (
+            <div style={{position:'relative'}}>
+              <div style={{display:'flex',flexDirection:'column',maxHeight:450,overflowY:'auto',scrollbarWidth:'thin',scrollbarColor:'var(--gray-300) transparent',paddingRight:4}}>
+                {items.map((n,idx) => {
+                  const c = catsById[n.cat] || {};
+                  return (
+                    <a key={n.id} href={featuredNews ? featuredNews.url : '#'} target="_blank" rel="noopener noreferrer"
+                      style={{display:'flex',gap:13,padding:'13px 0',textDecoration:'none',borderTop: idx===0?'none':'1px solid var(--gray-100)',cursor:'pointer'}}
+                      onMouseEnter={e=>e.currentTarget.style.opacity='0.72'}
+                      onMouseLeave={e=>e.currentTarget.style.opacity='1'}
+                    >
+                      <div style={{width:4,borderRadius:999,background:c.color,flexShrink:0,alignSelf:'stretch'}}></div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:5}}>
+                          <span style={{fontSize:10,fontWeight:700,color:c.color,textTransform:'uppercase',letterSpacing:'0.04em'}}>{c.label}</span>
+                          <span style={{fontSize:10.5,color:'var(--gray-400)'}}>·</span>
+                          <span style={{fontSize:10.5,color:'var(--gray-400)'}}>{n.source}</span>
+                        </div>
+                        <div style={{fontSize:13,fontWeight:600,color:'var(--navy-900)',lineHeight:1.4}}>{n.title}</div>
+                        <div style={{fontSize:10.5,color:'var(--gray-400)',marginTop:5,display:'flex',alignItems:'center',gap:4}}>
+                          <Icon name="clock" style={{width:11,height:11}} />{n.date}
+                        </div>
+                      </div>
+                    </a>
+                  );
+                })}
+              </div>
+              <div style={{position:'absolute',bottom:0,left:0,right:4,height:60,background:'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.97) 100%)',pointerEvents:'none'}}></div>
+            </div>
+          )}
         </div>
 
         {/* Right: featured publication */}
-        <div style={{padding:'18px 22px',display:'flex',flexDirection:'column'}}>
-          <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.12em',textTransform:'uppercase',color:'#FF6707',marginBottom:12,display:'flex',alignItems:'center',gap:6}}>
-            <Icon name="star" style={{width:13,height:13}} />Publicación destacada
+        {featuredNews && (
+          <div style={{padding:'18px 22px',display:'flex',flexDirection:'column'}}>
+            <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.12em',textTransform:'uppercase',color:'#FF6707',marginBottom:12,display:'flex',alignItems:'center',gap:6}}>
+              <Icon name="star" style={{width:13,height:13}} />Publicación destacada
+            </div>
+            <div style={{borderRadius:14,overflow:'hidden',position:'relative',aspectRatio:'16/9',background:'#0b1a3a',marginBottom:14}}>
+              <img src={featuredNews.img} alt={featuredNews.title} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}} />
+              <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(2,12,36,0.1),rgba(2,12,36,0.5))'}}></div>
+              {fc && <span style={{position:'absolute',top:12,left:12,fontSize:10.5,fontWeight:700,color:'white',background:fc.color,borderRadius:999,padding:'4px 11px'}}>{fc.label}</span>}
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:12,fontSize:11,color:'var(--gray-400)',marginBottom:9}}>
+              <span style={{display:'inline-flex',alignItems:'center',gap:4}}><Icon name="calendar" style={{width:12,height:12}} />{featuredNews.date}</span>
+              <span style={{display:'inline-flex',alignItems:'center',gap:4}}><Icon name="book-open" style={{width:12,height:12}} />{featuredNews.readtime}</span>
+            </div>
+            <h3 style={{fontSize:17,fontWeight:700,color:'var(--navy-900)',lineHeight:1.3,margin:'0 0 9px'}}>{featuredNews.title}</h3>
+            <p style={{fontSize:13,color:'var(--gray-600)',lineHeight:1.6,margin:'0 0 18px'}}>{featuredNews.excerpt}</p>
+            <a href={featuredNews.url} target="_blank" rel="noopener noreferrer" style={{
+              alignSelf:'flex-start',display:'inline-flex',alignItems:'center',gap:8,textDecoration:'none',
+              fontSize:13.5,fontWeight:700,color:'white',
+              background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',borderRadius:10,
+              padding:'12px 22px',boxShadow:'0 2px 14px rgba(255,103,7,0.35)',transition:'transform 150ms',
+            }}
+              onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'}
+              onMouseLeave={e=>e.currentTarget.style.transform='none'}
+            >
+              Ver publicación <Icon name="external-link" style={{width:15,height:15}} />
+            </a>
           </div>
-          <div style={{borderRadius:14,overflow:'hidden',position:'relative',aspectRatio:'16/9',background:'#0b1a3a',marginBottom:14}}>
-            <img src={featuredNews.img} alt={featuredNews.title} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}} />
-            <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(2,12,36,0.1),rgba(2,12,36,0.5))'}}></div>
-            <span style={{position:'absolute',top:12,left:12,fontSize:10.5,fontWeight:700,color:'white',background:fc.color,borderRadius:999,padding:'4px 11px'}}>{fc.label}</span>
-          </div>
-          <div style={{display:'flex',alignItems:'center',gap:12,fontSize:11,color:'var(--gray-400)',marginBottom:9}}>
-            <span style={{display:'inline-flex',alignItems:'center',gap:4}}><Icon name="calendar" style={{width:12,height:12}} />{featuredNews.date}</span>
-            <span style={{display:'inline-flex',alignItems:'center',gap:4}}><Icon name="book-open" style={{width:12,height:12}} />{featuredNews.readtime}</span>
-          </div>
-          <h3 style={{fontSize:17,fontWeight:700,color:'var(--navy-900)',lineHeight:1.3,margin:'0 0 9px'}}>{featuredNews.title}</h3>
-          <p style={{fontSize:13,color:'var(--gray-600)',lineHeight:1.6,margin:'0 0 18px'}}>{featuredNews.excerpt}</p>
-          <a href={featuredNews.url} target="_blank" rel="noopener noreferrer" style={{
-            alignSelf:'flex-start',display:'inline-flex',alignItems:'center',gap:8,textDecoration:'none',
-            fontSize:13.5,fontWeight:700,color:'white',
-            background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',borderRadius:10,
-            padding:'12px 22px',boxShadow:'0 2px 14px rgba(255,103,7,0.35)',transition:'transform 150ms',
-          }}
-            onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'}
-            onMouseLeave={e=>e.currentTarget.style.transform='none'}
-          >
-            Ver publicación <Icon name="external-link" style={{width:15,height:15}} />
-          </a>
-        </div>
+        )}
       </div>
     </div>
   );

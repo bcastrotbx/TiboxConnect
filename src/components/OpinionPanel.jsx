@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icon } from './shared/Icon.jsx';
 import { CosmicBg } from './shared/CosmicBg.jsx';
+import * as formService from '../services/formService.js';
 
 /* ── Opinión panel (unchanged) ──────────────────── */
 export function OpinionPanel() {
@@ -12,8 +13,10 @@ export function OpinionPanel() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setSent(true);
-    setTimeout(()=>{setShowModal(false);setSent(false);setForm({name:'',email:'',msg:''});setRating(0);},1800);
+    formService.submitOpinionForm({ ...form, rating }).then(() => {
+      setSent(true);
+      setTimeout(()=>{setShowModal(false);setSent(false);setForm({name:'',email:'',msg:''});setRating(0);},1800);
+    });
   };
 
   return (

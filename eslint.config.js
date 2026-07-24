@@ -28,7 +28,9 @@ export default [
       'react/react-in-jsx-scope': 'off',
       // The original prototype ships some unused helper components
       // (e.g. admin's Placeholder); flagged, not silently deleted.
-      'no-unused-vars': 'warn',
+      // `_`-prefixed args are allowed unused: services in src/services/
+      // reserve parameters (e.g. `_data`) for the Fase 6 real implementation.
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     },
   },
 ];

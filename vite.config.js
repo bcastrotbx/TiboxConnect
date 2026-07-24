@@ -1,19 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { resolve } from 'node:path';
 
-const root = import.meta.dirname;
-
-// Two entry points, no router yet (Fase 2): the portal at "/" and the
-// admin panel at "/admin/", exactly mirroring today's two static pages.
+// Entrada única (Fase 2): portal y admin ahora comparten la misma app React
+// montada en index.html, con react-router-dom decidiendo qué se renderiza
+// según la ruta (ver src/routes/AppRouter.jsx). Antes había una segunda
+// entrada admin/index.html (Fase 1); se eliminó junto con
+// src/admin/main.jsx y src/admin/AdminApp.jsx.
 export default defineConfig({
   plugins: [react()],
-  build: {
-    rollupOptions: {
-      input: {
-        main: resolve(root, 'index.html'),
-        admin: resolve(root, 'admin/index.html'),
-      },
-    },
-  },
 });
