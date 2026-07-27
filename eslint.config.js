@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 
 export default [
-  { ignores: ['dist/**', 'public/_ds/**', 'legacy/**'] },
+  { ignores: ['dist/**', 'public/_ds/**', 'legacy/**', '.vite/**', 'node_modules/**'] },
   js.configs.recommended,
   {
     files: ['**/*.{js,jsx}'],

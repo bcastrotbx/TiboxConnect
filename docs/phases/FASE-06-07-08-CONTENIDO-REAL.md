@@ -153,8 +153,29 @@ Ajuste acotado pedido por Braulio, dentro del mismo alcance de esta fase (no req
 
 **Verificado en el navegador**, directamente en el portal público (`/`, sin necesitar sesión — esta parte no vive detrás de `/admin/*`): clic en una tarjeta de la lista abre el popup con imagen/categoría/título/texto completo; "Ver publicación" de la noticia destacada abre el mismo popup; la "X" cierra correctamente. 0 errores de consola en los tres casos. De paso se confirmó que el orden de la lista ya reflejaba contenido real recién publicado por Braulio apareciendo primero.
 
+## Ajuste posterior — URL de imagen como alternativa a subir archivo (noticias/infografías)
+
+Ajuste urgente pedido por Braulio para la demo, dentro del mismo alcance de esta fase:
+
+- **Antes:** en "Nueva noticia" y "Nueva infografía", la única forma de poner una imagen era subir un archivo a `content-images` (Supabase Storage).
+- **Ahora:** un selector de pestañas ("Subir archivo" / "o pega una URL") sobre el mismo campo `Imagen` deja elegir entre subir un archivo (como ya funcionaba) o pegar directamente el link de una imagen ya alojada en otro lugar. Implementado en `src/admin/AdminWidgets.jsx`: `ImageUploadInner` (subida, sin cambios de comportamiento) y `ImageUrlInner` (nuevo) son las dos piezas intercambiables dentro de `ImageUploadOrUrlField` (nuevo). `ImageUploadField` (subida-solamente) se mantiene intacta para el banner de eventos, que no pidió esta alternativa.
+- Si se pega una URL, se muestra una vista previa dentro del formulario apenas termina de cargar (`<img onLoad>`); si la imagen no carga (`onError`), se muestra un mensaje de error claro sin bloquear ni romper el formulario — se puede guardar igual, con una advertencia de que probablemente tampoco se vea en el portal.
+- Al guardar, `thumbnail_url` queda exactamente con el link pegado — esa vía **no pasa por Supabase Storage en ningún momento** (no hay llamada a `storageService.uploadContentImage`).
+- Aplica **solo a noticias e infografías**, tal como se pidió. Videos (miniatura automática de YouTube) y eventos (banner solo por subida) no cambian.
+
+**Verificado en el navegador** (mismo método cuidadoso que en el fix anterior del selector de imágenes: sin sesión de admin real disponible en este entorno, se montó el `NewContentModal` real de "noticias" en una ruta temporal fuera de `/admin/*`, se probó, y se revirtió todo — la ruta temporal y el archivo de prueba no quedaron en el repositorio):
+- Pestaña "o pega una URL" cambia correctamente el campo.
+- Una URL de imagen inválida (bloqueada por hotlinking) mostró el mensaje de error esperado, sin romper el formulario.
+- Una URL de imagen pública válida (`https://picsum.photos/400/300`) mostró la vista previa correctamente.
+- Al enviar el formulario con la URL puesta, se confirmó vía `performance.getEntriesByType('resource')` que la única llamada de red a Supabase fue un `POST` directo a `rest/v1/content_items` — **cero llamadas a `storage/v1/object/...`** — confirmando que `thumbnail_url` viajó tal cual, sin pasar por Storage. La operación fue rechazada por RLS (`permission denied for table content_items`, esperado sin sesión de admin real) y el error se mostró correctamente en el formulario, sin crashear.
+
+## Ajuste posterior — más contenido de ejemplo para la demo
+
+Migración `supabase/migrations/20260730100000_demo_content_agosto.sql` (mismo patrón idempotente que `seed.sql` y las migraciones anteriores — `ON CONFLICT` sobre `slug`): agrega 2 videos, 2 infografías, 2 noticias (con `body` completo, no solo `summary`) y 3 eventos (2 próximos con `registration_url` de ejemplo + 1 realizado), todos `status='published'`/`visibility='public'`, usando las categorías ya existentes. No reemplaza `supabase/seed.sql` — es contenido adicional para que el portal no se vea vacío en la demo. Ver el contenido completo del archivo en el mensaje de cierre de esta fase, entregado a Braulio para ejecutar en el SQL Editor.
+
 ## Pendiente
 
+- **Braulio debe ejecutar la migración `20260730100000_demo_content_agosto.sql`** (contenido de ejemplo adicional para la demo) en el SQL Editor de Supabase.
 - **Braulio debe ejecutar, en este orden, las 3 migraciones nuevas de esta fase** (`20260729100000_webinars_category.sql`, `20260729100100_hero_slides_seed.sql`, `20260729100200_storage_content_images.sql`) en el SQL Editor de Supabase, después de las ya ejecutadas de las Fases 4 y 5.
 - **Si el `INSERT` sobre `storage.buckets` de la migración de Storage falla**, crear el bucket manualmente: Supabase Dashboard → Storage → New bucket → nombre `content-images` → Public bucket activado. Luego ejecutar el resto del archivo (las políticas RLS) igual.
 - **Probar el flujo completo de creación de contenido desde el panel admin** (login real, crear/publicar una noticia con imagen, una infografía con imagen, un video de YouTube, un evento con banner y enlace de inscripción) — ver los pasos exactos en el mensaje de cierre de esta fase.

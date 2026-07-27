@@ -156,7 +156,10 @@ export function ContentViewModal({ item, onClose }) {
 
 const SECTION_TO_TYPE = { videos: 'video', infographics: 'infographic', news: 'news' };
 
-function ImageUploadField({ label, value, onChange }) {
+// Pieza de subida de archivo en sí (sin el <Field> envolvente), reutilizada
+// tanto por ImageUploadField (subida-solamente, para el banner de eventos)
+// como por ImageUploadOrUrlField (subida + URL, para noticias/infografías).
+function ImageUploadInner({ value, onChange }) {
   const [uploading, setUploading] = React.useState(false);
   const [error, setError] = React.useState('');
   const [dragOver, setDragOver] = React.useState(false);
@@ -190,7 +193,7 @@ function ImageUploadField({ label, value, onChange }) {
   };
 
   return (
-    <Field label={label}>
+    <React.Fragment>
       {value && (
         <div style={{ marginBottom:10, borderRadius:10, overflow:'hidden', border:'1px solid var(--gray-200)', maxHeight:140 }}>
           <img src={value} alt="" style={{ width:'100%', maxHeight:140, objectFit:'cover', display:'block' }} />
@@ -219,6 +222,78 @@ function ImageUploadField({ label, value, onChange }) {
         <input type="file" accept="image/jpeg,image/png,image/webp" style={{ display:'none' }} onChange={handleInputChange} disabled={uploading} />
       </label>
       {error && <div style={{ fontSize:12, color:'#c0392b', marginTop:6 }}>{error}</div>}
+    </React.Fragment>
+  );
+}
+
+// Alternativa a subir un archivo: pegar la URL de una imagen ya alojada en
+// otro lugar. thumbnail_url queda con ese link tal cual, sin pasar por
+// Supabase Storage. `key={value}` en el <img> fuerza a React a remontarlo
+// cada vez que cambia la URL, para que onLoad/onError se disparen de nuevo
+// en cada intento (en vez de quedar pegados al resultado del link anterior).
+function ImageUrlInner({ value, onChange }) {
+  const [status, setStatus] = React.useState(value ? 'checking' : 'idle');
+
+  const handleChange = (e) => {
+    const url = e.target.value.trim();
+    onChange(url);
+    setStatus(url ? 'checking' : 'idle');
+  };
+
+  return (
+    <React.Fragment>
+      <input type="url" placeholder="https://ejemplo.com/imagen.jpg" value={value} onChange={handleChange} />
+      {value && (
+        <div style={{ marginTop:10 }}>
+          <div style={{ borderRadius:10, overflow:'hidden', border:'1px solid var(--gray-200)', maxHeight:140, background:'var(--gray-50)', display: status === 'error' ? 'none' : 'block' }}>
+            <img
+              key={value}
+              src={value}
+              alt=""
+              style={{ width:'100%', maxHeight:140, objectFit:'cover', display:'block' }}
+              onLoad={() => setStatus('valid')}
+              onError={() => setStatus('error')}
+            />
+          </div>
+          {status === 'checking' && <div style={{ fontSize:12, color:'var(--gray-400)', marginTop:6 }}>Comprobando la imagen…</div>}
+          {status === 'error' && <div style={{ fontSize:12, color:'#c0392b', marginTop:6 }}>No pudimos cargar una imagen desde esa URL. Verifica el link (puedes guardar igual, pero probablemente tampoco se vea en el portal).</div>}
+        </div>
+      )}
+    </React.Fragment>
+  );
+}
+
+function ImageUploadField({ label, value, onChange }) {
+  return (
+    <Field label={label}>
+      <ImageUploadInner value={value} onChange={onChange} />
+    </Field>
+  );
+}
+
+// Usado solo en noticias e infografías (ver pedido explícito de Braulio):
+// deja elegir entre subir un archivo o pegar una URL ya alojada en otro
+// lugar. Ambas vías terminan escribiendo el mismo valor (thumbnail_url) vía
+// el mismo onChange — el formulario que las usa no necesita saber cuál se
+// usó.
+function ImageUploadOrUrlField({ label, value, onChange }) {
+  const [mode, setMode] = React.useState('upload');
+
+  const tabStyle = (active) => ({
+    flex: 1, textAlign: 'center', fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
+    padding: '8px 10px', borderRadius: 8, border: '1px solid ' + (active ? '#0050C8' : 'var(--gray-200)'),
+    background: active ? '#0050C8' : 'white', color: active ? 'white' : 'var(--gray-600)',
+  });
+
+  return (
+    <Field label={label}>
+      <div style={{ display:'flex', gap:8, marginBottom:10 }}>
+        <button type="button" onClick={() => setMode('upload')} style={tabStyle(mode === 'upload')}>Subir archivo</button>
+        <button type="button" onClick={() => setMode('url')} style={tabStyle(mode === 'url')}>o pega una URL</button>
+      </div>
+      {mode === 'upload'
+        ? <ImageUploadInner value={value} onChange={onChange} />
+        : <ImageUrlInner value={value} onChange={onChange} />}
     </Field>
   );
 }
@@ -358,7 +433,7 @@ export function NewContentModal({ section, item, onClose }) {
 
             {section === 'infographics' && (
               <React.Fragment>
-                <ImageUploadField label="Imagen" value={thumbnailUrl} onChange={setThumbnailUrl} />
+                <ImageUploadOrUrlField label="Imagen" value={thumbnailUrl} onChange={setThumbnailUrl} />
                 <Field label="Título"><input type="text" placeholder="Título de la infografía" value={title} onChange={e => setTitle(e.target.value)} /></Field>
                 <Field label="Resumen"><textarea placeholder="Breve resumen de la infografía…" value={summary} onChange={e => setSummary(e.target.value)}></textarea></Field>
                 <Field label="Categoría">
@@ -373,7 +448,7 @@ export function NewContentModal({ section, item, onClose }) {
 
             {section === 'news' && (
               <React.Fragment>
-                <ImageUploadField label="Imagen" value={thumbnailUrl} onChange={setThumbnailUrl} />
+                <ImageUploadOrUrlField label="Imagen" value={thumbnailUrl} onChange={setThumbnailUrl} />
                 <Field label="Título de la noticia"><input type="text" placeholder="Título de la noticia" value={title} onChange={e => setTitle(e.target.value)} /></Field>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                   <Field label="Categoría">
