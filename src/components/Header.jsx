@@ -1,6 +1,26 @@
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Icon } from './shared/Icon.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
+
+function initialsFor(profile) {
+  const name = profile?.full_name?.trim();
+  if (!name) return 'AD';
+  const parts = name.split(/\s+/).filter(Boolean);
+  const initials = parts.slice(0, 2).map(p => p[0]).join('');
+  return initials.toUpperCase() || 'AD';
+}
+
 // Tibox Connect v2 — Header (Mis Tickets = naranja, KAM = azul)
-function V2Header({ onScrollContact }) {
+export function Header({ onScrollContact }) {
   const [showNotif, setShowNotif] = React.useState(false);
+  const { isAdmin, profile, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
   const notifs = [
     { id: 1, text: 'Nuevo webinar: Ciberseguridad para PYMES 2025', time: 'hace 1 h', unread: true },
     { id: 2, text: 'Tu ticket #4821 fue actualizado por soporte', time: 'hace 4 h', unread: true },
@@ -13,7 +33,7 @@ function V2Header({ onScrollContact }) {
       {/* Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
         <span style={{ fontSize: 13, color: 'var(--gray-400)', fontWeight: 500 }}>Portal</span>
-        <i data-lucide="chevron-right" style={{ width: 13, height: 13, color: 'var(--gray-400)' }}></i>
+        <Icon name="chevron-right" style={{ width: 13, height: 13, color: 'var(--gray-400)' }} />
         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--navy-900)' }}>Tibox Connect</span>
       </div>
 
@@ -21,20 +41,25 @@ function V2Header({ onScrollContact }) {
 
       {/* Buttons */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        {/* ADM — acceso al panel de administración */}
-        <a href="admin/index.html" title="Panel de administración" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          fontSize: 12, fontWeight: 700, letterSpacing: '0.03em', color: 'var(--gray-600)',
-          background: 'white', border: '1px solid var(--gray-200)', borderRadius: 10,
-          padding: '8px 13px', cursor: 'pointer', whiteSpace: 'nowrap', textDecoration: 'none',
-          transition: 'background 150ms, border-color 150ms, color 150ms',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'var(--gray-50)'; e.currentTarget.style.borderColor = 'var(--gray-300)'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = 'var(--gray-200)'; }}
-        >
-          <i data-lucide="shield" style={{ width: 14, height: 14 }}></i>
-          ADM
-        </a>
+        {/* ADM — acceso al panel de administración. Solo visible con sesión
+            de administrador activa (Fase 5): el portal es 100% público, así
+            que un visitante sin sesión no ve ningún control de cuenta ni
+            atajo al panel (ver ADR-004). */}
+        {isAdmin && (
+          <Link to="/admin" title="Panel de administración" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            fontSize: 12, fontWeight: 700, letterSpacing: '0.03em', color: 'var(--gray-600)',
+            background: 'white', border: '1px solid var(--gray-200)', borderRadius: 10,
+            padding: '8px 13px', cursor: 'pointer', whiteSpace: 'nowrap', textDecoration: 'none',
+            transition: 'background 150ms, border-color 150ms, color 150ms',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--gray-50)'; e.currentTarget.style.borderColor = 'var(--gray-300)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = 'var(--gray-200)'; }}
+          >
+            <Icon name="shield" style={{ width: 14, height: 14 }} />
+            ADM
+          </Link>
+        )}
 
         {/* Mis Tickets — NARANJA */}
         <a href="https://soporte.tibox.cl/Login/LoginCliente" target="_blank" rel="noopener noreferrer" style={{
@@ -49,7 +74,7 @@ function V2Header({ onScrollContact }) {
           onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(255,103,7,0.4)'; }}
           onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(255,103,7,0.28)'; }}
         >
-          <i data-lucide="ticket" style={{ width: 15, height: 15 }}></i>
+          <Icon name="ticket" style={{ width: 15, height: 15 }} />
           Mis Tickets
         </a>
 
@@ -66,7 +91,7 @@ function V2Header({ onScrollContact }) {
           onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,80,200,0.4)'; }}
           onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,80,200,0.28)'; }}
         >
-          <i data-lucide="user-check" style={{ width: 15, height: 15 }}></i>
+          <Icon name="user-check" style={{ width: 15, height: 15 }} />
           Contacta a tu KAM
         </button>
       </div>
@@ -86,7 +111,7 @@ function V2Header({ onScrollContact }) {
             onMouseEnter={e => e.currentTarget.style.background = 'var(--gray-50)'}
             onMouseLeave={e => e.currentTarget.style.background = showNotif ? 'var(--gray-50)' : 'white'}
           >
-            <i data-lucide="bell" style={{ width: 16, height: 16, color: 'var(--gray-600)' }}></i>
+            <Icon name="bell" style={{ width: 16, height: 16, color: 'var(--gray-600)' }} />
             {unread > 0 && <span style={{ position: 'absolute', top: 7, right: 7, width: 8, height: 8, borderRadius: '50%', background: '#FF6707', border: '2px solid white' }}></span>}
           </button>
 
@@ -128,34 +153,40 @@ function V2Header({ onScrollContact }) {
           onMouseEnter={e => e.currentTarget.style.background = 'var(--gray-50)'}
           onMouseLeave={e => e.currentTarget.style.background = 'white'}
         >
-          <i data-lucide="help-circle" style={{ width: 16, height: 16, color: 'var(--gray-600)' }}></i>
+          <Icon name="help-circle" style={{ width: 16, height: 16, color: 'var(--gray-600)' }} />
         </button>
       </div>
 
-      <div style={{ width: 1, height: 24, background: 'var(--gray-200)', margin: '0 4px' }}></div>
-
-      {/* Perfil + Cerrar sesión */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{
-          width: 34, height: 34, borderRadius: '50%', background: 'var(--grad-title)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 12, fontWeight: 700, color: 'white', cursor: 'pointer',
-          border: '2px solid var(--gray-200)', flexShrink: 0,
-        }}>CM</div>
-        <button title="Cerrar sesión" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 5,
-          background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px',
-          fontSize: 12.5, fontWeight: 600, color: 'var(--gray-500)', whiteSpace: 'nowrap',
-          borderRadius: 8, transition: 'color 150ms, background 150ms',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.color = '#FF6707'; e.currentTarget.style.background = 'var(--gray-50)'; }}
-          onMouseLeave={e => { e.currentTarget.style.color = 'var(--gray-500)'; e.currentTarget.style.background = 'none'; }}
-        >
-          <i data-lucide="log-out" style={{ width: 14, height: 14 }}></i>
-          Cerrar sesión
-        </button>
-      </div>
+      {/* Perfil + Cerrar sesión — antes un usuario de ejemplo hardcodeado
+          ("CM" = Carlos Mora, ver ADR-004); ahora refleja la sesión real de
+          administrador y solo se muestra si existe una. Un admin puede
+          navegar el portal público con su sesión activa y necesita una
+          forma de volver a /admin o cerrar sesión sin salir del portal. */}
+      {isAdmin && (
+        <React.Fragment>
+          <div style={{ width: 1, height: 24, background: 'var(--gray-200)', margin: '0 4px' }}></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div title={profile?.full_name || 'Administrador'} style={{
+              width: 34, height: 34, borderRadius: '50%', background: 'var(--grad-title)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 12, fontWeight: 700, color: 'white', cursor: 'default',
+              border: '2px solid var(--gray-200)', flexShrink: 0,
+            }}>{initialsFor(profile)}</div>
+            <button onClick={handleSignOut} title="Cerrar sesión" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px',
+              fontSize: 12.5, fontWeight: 600, color: 'var(--gray-500)', whiteSpace: 'nowrap',
+              borderRadius: 8, transition: 'color 150ms, background 150ms',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#FF6707'; e.currentTarget.style.background = 'var(--gray-50)'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--gray-500)'; e.currentTarget.style.background = 'none'; }}
+            >
+              <Icon name="log-out" style={{ width: 14, height: 14 }} />
+              Cerrar sesión
+            </button>
+          </div>
+        </React.Fragment>
+      )}
     </header>
   );
 }
-window.V2Header = V2Header;

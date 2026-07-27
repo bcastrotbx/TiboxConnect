@@ -1,5 +1,8 @@
+import React from 'react';
+import { Icon } from './shared/Icon.jsx';
+
 // Tibox Connect v2 — Sidebar with updated iconography
-function V2Sidebar({ active, onNav, onScroll, onSoporte, collapsed, onToggle }) {
+export function Sidebar({ active, onNav, onScroll, onSoporte, collapsed, onToggle }) {
   const sz = 16;
   const groups = [
     {
@@ -48,10 +51,10 @@ function V2Sidebar({ active, onNav, onScroll, onSoporte, collapsed, onToggle }) 
       {/* Logo + toggle */}
       <div style={{ padding:'14px', borderBottom:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', justifyContent:collapsed?'center':'space-between', gap:8 }}>
         {collapsed ? (
-          <img src={window.__res("markCube","assets/mark-cube.png")} alt="TIBOX" style={{ width:28, height:28, objectFit:'contain' }} />
+          <img src="/assets/mark-cube.png" alt="TIBOX" style={{ width:28, height:28, objectFit:'contain' }} />
         ) : (
           <div style={{flex:1,display:'flex',alignItems:'center'}}>
-            <img src={window.__res("logoTibox","assets/logo-tibox.png")} alt="TIBOX" style={{ height:22 }} />
+            <img src="/assets/logo-tibox.png" alt="TIBOX" style={{ height:22 }} />
           </div>
         )}
         <button key={String(collapsed)} onClick={onToggle} title={collapsed?'Expandir menú':'Colapsar menú'}
@@ -59,7 +62,7 @@ function V2Sidebar({ active, onNav, onScroll, onSoporte, collapsed, onToggle }) 
           onMouseEnter={e=>{e.currentTarget.style.background='rgba(0,200,250,0.18)';e.currentTarget.style.color='var(--brand-cyan)';e.currentTarget.style.borderColor='rgba(0,200,250,0.35)';}}
           onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.09)';e.currentTarget.style.color='rgba(255,255,255,0.75)';e.currentTarget.style.borderColor='rgba(255,255,255,0.2)';}}
         >
-          <i data-lucide={collapsed?"chevron-right":"chevron-left"} style={{ width:15, height:15 }}></i>
+          <Icon name={collapsed?"chevron-right":"chevron-left"} style={{ width:15, height:15 }} />
         </button>
       </div>
 
@@ -80,7 +83,7 @@ function V2Sidebar({ active, onNav, onScroll, onSoporte, collapsed, onToggle }) 
                 if (item.scrollTarget) { onScroll && onScroll(item.scrollTarget); }
               }}
               >
-                <i data-lucide={item.icon} style={{ width: sz, height: sz, flexShrink: 0 }}></i>
+                <Icon name={item.icon} style={{ width: sz, height: sz, flexShrink: 0 }} />
                 {!collapsed && <span style={{ flex: 1 }}>{item.label}</span>}
               </div>
             ))}
@@ -100,9 +103,8 @@ function V2Sidebar({ active, onNav, onScroll, onSoporte, collapsed, onToggle }) 
           <div style={{ fontSize: 13, fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Carlos Mora</div>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Empresa Modelo S.A.</div>
         </div>
-        <i data-lucide="log-out" style={{ width: 14, height: 14, color: 'rgba(255,255,255,0.25)', cursor: 'pointer', flexShrink: 0, display: collapsed ? 'none' : undefined }}></i>
+        <Icon name="log-out" style={{ width: 14, height: 14, color: 'rgba(255,255,255,0.25)', cursor: 'pointer', flexShrink: 0, display: collapsed ? 'none' : undefined }} />
       </div>
       </aside>
   );
 }
-window.V2Sidebar = V2Sidebar;
