@@ -17,6 +17,7 @@ Documentación del proceso de migración y estabilización del prototipo TIBOX C
 ## Otros documentos
 
 - [README.md](../README.md) — estado actual del proyecto, cómo abrirlo, qué es real y qué es solo visual.
+- [CHANGELOG.md](CHANGELOG.md) — eventos relevantes que no son parte de una fase específica (cambios de infraestructura, propiedad del repositorio, etc.).
 
 ## Convención
 
