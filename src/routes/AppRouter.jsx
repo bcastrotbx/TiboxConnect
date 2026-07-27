@@ -3,6 +3,10 @@ import { PortalLayout } from '../layouts/PortalLayout.jsx';
 import { AdminLayout } from '../layouts/AdminLayout.jsx';
 import { HomePage } from '../pages/HomePage.jsx';
 import { NotFound } from '../pages/NotFound.jsx';
+import { LoginPage } from '../pages/LoginPage.jsx';
+import { UpdatePasswordPage } from '../pages/UpdatePasswordPage.jsx';
+import { Unauthorized } from '../pages/Unauthorized.jsx';
+import { AdminRoute } from './AdminRoute.jsx';
 import { DashboardPage } from '../admin/pages/DashboardPage.jsx';
 import { VideosPage } from '../admin/pages/VideosPage.jsx';
 import { InfografiasPage } from '../admin/pages/InfografiasPage.jsx';
@@ -12,13 +16,15 @@ import { MensajesPage } from '../admin/pages/MensajesPage.jsx';
 import { OpinionesPage } from '../admin/pages/OpinionesPage.jsx';
 import { ServiciosPage } from '../admin/pages/ServiciosPage.jsx';
 import { PerfilPage } from '../admin/pages/PerfilPage.jsx';
+import { UsuariosPage } from '../admin/pages/UsuariosPage.jsx';
 import { PortadaPage } from '../admin/PortadaWidgets.jsx';
 
-// Rutas de la Fase 2. Deliberadamente NO incluye /login, /registro,
-// /recuperar-contrasena, /actualizar-contrasena ni un /perfil público — el
-// sistema de autenticación se rediseñó (ver docs/decisions/ADR-004): sin
-// registro público, solo login de administradores en la Fase 5. Por ahora
-// /admin/* no pide sesión todavía.
+// Rutas de la Fase 2, actualizadas en la Fase 5 con autenticación real (ver
+// docs/decisions/ADR-004): /login, /actualizar-contrasena y
+// /acceso-no-autorizado son públicas, pero no hay ningún flujo de registro
+// público — solo sirven para el login/recuperación de cuentas de
+// administrador ya creadas por invitación. /admin/* ahora exige sesión de
+// administrador activa vía <AdminRoute/>.
 //
 // Mapeo de las 10 secciones del admin de la Fase 1 a las rutas pedidas para
 // esta fase (documentado en detalle en docs/phases/FASE-02-RUTAS-Y-DATOS.md):
@@ -41,9 +47,12 @@ const router = createBrowserRouter([
       { index: true, element: <HomePage /> },
     ],
   },
+  { path: '/login', element: <LoginPage /> },
+  { path: '/actualizar-contrasena', element: <UpdatePasswordPage /> },
+  { path: '/acceso-no-autorizado', element: <Unauthorized /> },
   {
     path: '/admin',
-    element: <AdminLayout />,
+    element: <AdminRoute><AdminLayout /></AdminRoute>,
     children: [
       { index: true, element: <DashboardPage /> },
       {
@@ -65,6 +74,7 @@ const router = createBrowserRouter([
         ],
       },
       { path: 'perfil', element: <PerfilPage /> },
+      { path: 'usuarios', element: <UsuariosPage /> },
     ],
   },
   { path: '*', element: <NotFound /> },
