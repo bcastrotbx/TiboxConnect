@@ -201,6 +201,11 @@ Leads capturados por `InfografiaLeadModal` antes de descargar una infografía.
 - **`public.handle_new_user()`** — trigger `AFTER INSERT` sobre `auth.users` que crea la fila correspondiente en `profiles`. `SECURITY DEFINER`. Deliberadamente **no atrapa excepciones**: si el insert en `profiles` falla, la creación del usuario en `auth.users` también falla y el error queda visible (no hay fallo silencioso).
 - **`public.is_admin()`** — función `SECURITY DEFINER` + `search_path` fijo que verifica si `auth.uid()` corresponde a un `profiles.role='admin'` con `status='active'`. Usada por todas las políticas RLS de todas las tablas — ninguna política duplica esta lógica inline.
 - **`public.prevent_self_role_status_change()`** — trigger `BEFORE UPDATE` sobre `profiles` que impide que un usuario no-admin cambie su propio `role` o `status`, incluso dentro de su propia fila.
+- **`public.promote_to_admin(target_user_id uuid)`** (Fase 5) — función `SECURITY DEFINER` restringida al rol `service_role`, usada por la Edge Function `invite-admin` para promover a un usuario recién invitado a `role='admin'`.
+
+## Storage (Fase 6/7/8)
+
+- **Bucket `content-images`** (público): miniaturas de noticias/infografías y banners de eventos, subidos desde el panel admin (`src/services/storageService.js`). Lectura pública sin restricción; escritura (insert/update/delete) restringida a administradores vía `is_admin()` sobre `storage.objects`. Ver `supabase/migrations/20260729100200_storage_content_images.sql`.
 
 ## Convenciones usadas en todo el esquema
 

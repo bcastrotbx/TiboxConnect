@@ -4,17 +4,17 @@ Portal de conocimiento y panel de administración para TIBOX (compañía B2B de 
 
 ## Estado actual
 
-**Esto sigue siendo un prototipo visual de alta fidelidad, sin persistencia de datos de contenido.** Lo que cambió en la Fase 5 es que **la autenticación de administradores ya es real**: login/logout con Supabase Auth, `/admin/*` protegido por sesión real, invitación de administradores adicionales. Lo que sigue sin cambiar: el contenido del portal (videos, infografías, noticias, eventos) sigue viniendo de datos de ejemplo, no de la base de datos. Antes de asumir que algo "funciona", léase lo siguiente:
+**La autenticación de administradores (Fase 5) y el contenido esencial del portal (Fase 6-7-8) ya son reales.** Noticias, infografías, videos/webinars y eventos se leen y se administran contra Supabase de verdad — se agregaron por urgencia de negocio (evento de la primera semana de agosto de 2026), acotados a lo esencial. Lo que sigue sin conectar: `resources` genéricos, galería de eventos, guardado real de leads de infografías/mensajes de contacto/opiniones (siguen simulados). Antes de asumir que algo "funciona", léase lo siguiente:
 
 - **Build real con Vite, una sola entrada:** todo se sirve desde `index.html` y `react-router-dom` decide qué se renderiza según la URL.
 - **El admin vive en `/admin/...`** — ver el mapa completo de rutas en [Rutas disponibles](#rutas-disponibles) más abajo.
-- **`/admin/*` ya exige sesión real de administrador (Fase 5).** Sin sesión, o con una cuenta que no sea admin activo, se redirige a `/acceso-no-autorizado`. Login en `/login`, recuperación de contraseña desde ahí mismo, definición de nueva contraseña en `/actualizar-contrasena`. Sigue sin haber registro público de usuarios finales (ver [ADR-004](docs/decisions/ADR-004-SIN-REGISTRO-PUBLICO.md)) — el portal público no requiere cuenta para nada; solo los administradores inician sesión, y solo se crean por invitación (`/admin/usuarios`, ver [ADR-005](docs/decisions/ADR-005-PROMOCION-ADMIN-EN-INVITACION.md)).
-- **El contenido del portal sigue sin backend conectado:** todo el contenido (videos, infografías, noticias, eventos, servicios, mensajes, opiniones) vive en `src/data/seed/` y se sirve a través de `src/services/*`, que hoy solo simulan un delay de red. El esquema completo de tablas y políticas de seguridad (RLS) ya existe en Supabase desde la Fase 4 (ver [docs/DATA-MODEL.md](docs/DATA-MODEL.md)) — pero **estos servicios todavía no lo usan** (esa conexión es la Fase 6).
-- **Sigue sin persistencia de contenido:** el panel de administración permite "crear", "editar", "duplicar" y "eliminar" contenido, pero todo ocurre en memoria (`React.useState`). Al recargar la página, todo vuelve al estado inicial. (La sesión de administrador sí persiste de verdad — eso es Supabase Auth, no el estado en memoria del contenido.)
-- **Formularios simulados:** contacto, opinión de cliente y el formulario de lead de infografías muestran un estado de "enviado con éxito", pero ningún dato sale del navegador — no hay `fetch` a un backend real.
+- **`/admin/*` exige sesión real de administrador (Fase 5).** Sin sesión, o con una cuenta que no sea admin activo, se redirige a `/acceso-no-autorizado`. Login en `/login`, recuperación de contraseña desde ahí mismo, definición de nueva contraseña en `/actualizar-contrasena`. Sigue sin haber registro público de usuarios finales (ver [ADR-004](docs/decisions/ADR-004-SIN-REGISTRO-PUBLICO.md)) — solo los administradores inician sesión, y solo se crean por invitación (`/admin/usuarios`, ver [ADR-005](docs/decisions/ADR-005-PROMOCION-ADMIN-EN-INVITACION.md)).
+- **Noticias, infografías, videos/webinars y eventos ya están conectados a Supabase de verdad (Fase 6-7-8):** `src/services/contentService.js`, `newsService.js`, `eventService.js` y `homeService.js` leen la tabla real `content_items`/`events`/`hero_slides`, filtrando `status='published'` y `visibility='public'`. El panel admin (`/admin/contenidos`, `/admin/contenidos/infografias`, `/admin/contenidos/noticias`, `/admin/eventos`) ya crea/edita/publica/archiva/elimina contenido real, con subida de imágenes a Supabase Storage (bucket `content-images`) y miniatura automática para videos de YouTube. Ver [docs/DATA-MODEL.md](docs/DATA-MODEL.md) y [FASE-06-07-08-CONTENIDO-REAL.md](docs/phases/FASE-06-07-08-CONTENIDO-REAL.md).
+- **Lo que sigue sin conectar:** `resources` genéricos, galería de eventos realizados, servicios TIBOX (catálogo), portada/hero (se lee de Supabase pero no hay UI de edición todavía), mensajes de contacto, opiniones de clientes y leads de infografías — todo esto sigue en `src/data/seed/` o simulado con `sessionStorage`, según el caso. Ver el detalle de qué quedó explícitamente fuera de alcance en [FASE-06-07-08-CONTENIDO-REAL.md](docs/phases/FASE-06-07-08-CONTENIDO-REAL.md).
+- **Formularios simulados (los que quedan):** contacto, opinión de cliente y el formulario de lead de infografías muestran un estado de "enviado con éxito", pero ningún dato sale del navegador todavía — no hay `fetch` a un backend real para estos tres.
 - **Sin SMTP propio todavía:** los correos de invitación de administrador y recuperación de contraseña usan el servicio de correo por defecto de Supabase (sin dominio propio configurado) — pueden demorar o caer en spam.
 
-En resumen: la autenticación de administradores ya es real y funcional, pero el contenido del portal sigue siendo un prototipo visual — **no debe presentarse como una aplicación funcional de punta a punta** todavía.
+En resumen: autenticación de administradores y el contenido esencial (noticias/infografías/videos/eventos) ya son reales y funcionales de punta a punta; el resto del portal (servicios, mensajes, opiniones, leads) sigue siendo un prototipo visual.
 
 Ver el detalle completo en [docs/INDEX.md](docs/INDEX.md) (índice de todas las fases).
 
@@ -98,16 +98,20 @@ src/
     AdminSidebar.jsx, AdminHeader.jsx
     AdminWidgets.jsx, PortadaWidgets.jsx   # UI compartida del admin
     pages/                 # Una página por ruta de /admin/* (incluye UsuariosPage.jsx, Fase 5)
-  data/seed/                 # Datos de ejemplo (eventos, contenido, noticias, portada, servicios, admin)
-  services/                  # Una función por caso de uso, sobre los datos de seed
-                              # (adminUsersService.js es la excepción: ya conectado a Supabase, Fase 5)
+  data/seed/                 # Datos de ejemplo — ya no los lee ningún servicio de contenido, se dejan de referencia
+  services/                  # contentService/newsService/eventService/homeService/categoryService ya
+                              # leen de Supabase (Fase 6-7-8). adminContentService/adminEventsService/
+                              # adminUsersService/storageService son de escritura real (Fases 5 y 6-7-8).
+                              # formService.js sigue simulado (mensajes/opiniones/leads, fuera de alcance).
   hooks/useAsyncData.js       # Patrón loading/success/error para los servicios
   context/
     DesignSystemContext.jsx  # Carga perezosa del bundle del design system (solo en /admin/*)
     AuthContext.jsx          # Sesión real de Supabase Auth (Fase 5) — user/profile/isAdmin/signIn/signOut
-  lib/supabase.js             # Cliente de Supabase inicializado
+  lib/
+    supabase.js               # Cliente de Supabase inicializado
+    formatters.js, slugify.js, youtube.js  # Utilidades de fecha/slug/miniatura de YouTube (Fase 6-7-8)
 supabase/
-  migrations/                # Esquema de tablas + RLS (Fase 4) y funciones de auth (Fase 5)
+  migrations/                # Esquema de tablas + RLS (Fase 4), auth (Fase 5), Webinars/hero seed/Storage (Fase 6-7-8)
   seed.sql                   # Datos de ejemplo idempotentes (Fase 4)
   admin-bootstrap.example.sql # Bloque manual para crear el primer administrador (Fase 4)
   functions/invite-admin/     # Edge Function: invitar administradores adicionales (Fase 5)

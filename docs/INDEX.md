@@ -11,10 +11,11 @@ Documentación del proceso de migración y estabilización del prototipo TIBOX C
 - [Fase 03 — Conexión base a Supabase](phases/FASE-03-SUPABASE-SETUP.md) — `.env.local`/`.env.example`, cliente en `src/lib/supabase.js` con validación explícita de variables faltantes. Sin tablas, sin autenticación, sin conectar `src/services/*` todavía.
 - [Fase 04 — Modelo de datos y Row Level Security](phases/FASE-04-MODELO-DATOS-RLS.md) — 9 tablas + RLS vía migraciones SQL versionadas en `supabase/migrations/`, función `is_admin()`, trigger de perfil sobre `auth.users`, seed de datos idempotente. Sin conectar `src/services/*`, sin login todavía.
 - [Fase 05 — Autenticación real de administradores](phases/FASE-05-AUTENTICACION.md) — login/logout real (`supabase.auth`), protección de `/admin/*` vía `AdminRoute`, recuperación de contraseña, invitación de administradores adicionales (Edge Function `invite-admin`). Sin conectar el resto de `src/services/*` todavía.
+- [Fase 06-07-08 — Contenido real (combinada y acotada)](phases/FASE-06-07-08-CONTENIDO-REAL.md) — por urgencia de negocio (evento de la primera semana de agosto 2026): lectura pública del portal conectada a Supabase, Storage para imágenes, y panel admin real para noticias, infografías, videos/webinars y eventos. Sin `resources` genéricos, galería de eventos, ni leads de infografías reales todavía.
 
 ## Modelo de datos
 
-- [DATA-MODEL.md](DATA-MODEL.md) — esquema completo de tablas, relaciones, RLS y funciones creado en la Fase 4.
+- [DATA-MODEL.md](DATA-MODEL.md) — esquema completo de tablas, relaciones, RLS, funciones y Storage.
 
 ## Decisiones de arquitectura (ADR)
 
