@@ -173,9 +173,29 @@ Ajuste urgente pedido por Braulio para la demo, dentro del mismo alcance de esta
 
 Migración `supabase/migrations/20260730100000_demo_content_agosto.sql` (mismo patrón idempotente que `seed.sql` y las migraciones anteriores — `ON CONFLICT` sobre `slug`): agrega 2 videos, 2 infografías, 2 noticias (con `body` completo, no solo `summary`) y 3 eventos (2 próximos con `registration_url` de ejemplo + 1 realizado), todos `status='published'`/`visibility='public'`, usando las categorías ya existentes. No reemplaza `supabase/seed.sql` — es contenido adicional para que el portal no se vea vacío en la demo. Ver el contenido completo del archivo en el mensaje de cierre de esta fase, entregado a Braulio para ejecutar en el SQL Editor.
 
+## Ajuste posterior — colores distintos en los bloques de navegación bajo el hero
+
+Los 4 bloques ("Explora", "Noticias", "Eventos", "Tu Opinión") usaban el mismo degradado azul (`CAT_BLUE`) y no se distinguían entre sí. Se agregó `CAT_GRADIENTS` en `src/components/Hero.jsx`, un color por bloque, tomado de la misma paleta que ya usan las categorías reales (no colores inventados):
+- **Explora** (Videos y Webinars) → morado, el mismo tono que la categoría "Webinars" (`#6a3ed0`).
+- **Noticias** → azul, el mismo tono que "Cloud & Infraestructura" (`#2D6CF2`) — es también el color que ya tenía el bloque original, así que queda como referencia visual.
+- **Eventos** → verde, el mismo tono que "Transformación Digital" (`#2DBE60`).
+- **Tu Opinión** → naranja/rojo, el mismo tono que "Ciberseguridad" (`#F2542D`).
+
+Cada uno es una variante oscuro→color→claro del mismo hex de la categoría, manteniendo el estilo diagonal ya usado (no es un rediseño, solo variar el color de fondo). **Verificado en el navegador:** los 4 bloques se ven claramente distintos, 0 errores de consola.
+
+## Ajuste posterior — descripción completa en el popup de evento próximo (sin cambios de código)
+
+Se confirmó que `EventDetailModal` (popup de "Ver detalles" de un evento próximo, en `src/components/Events.jsx`) ya muestra el campo completo: `event.resena` se arma en `eventService.mapEventRow()` como `row.description || row.summary || ''` — prioriza `description` (el campo largo) sobre `summary`. El párrafo que lo renderiza no tiene `WebkitLineClamp`, ni `maxHeight`+`overflow:hidden`, ni ningún otro recorte — el único límite es que `ModalShell` hace scroll (`overflow-y:auto`) si el modal completo crece mucho, lo cual no trunca contenido, solo agrega una barra de scroll. **No se modificó código para este bloque**, tal como se pidió — el contenido más largo lo agrega Braulio vía datos.
+
+## Ajuste posterior — "Ver eventos realizados" con lista y detalle
+
+El badge que mostraba "`{N}` eventos" en el panel "Eventos Realizados" (`src/components/Events.jsx`) se reemplazó por un botón **"Ver eventos realizados"**, mismo estilo que el botón "Ver calendario" del panel de próximos eventos. Al hacer clic, abre `PastEventsListModal` (nuevo, mismo patrón visual que `CalendarModal`: header oscuro + filas blancas) con **todos** los eventos `status='completed'` (no solo los 2 visibles en la vista paginada, que se mantiene sin cambios). Al elegir uno de la lista, se cierra y abre el `VistaModal` **ya existente** (no se creó un segundo componente de detalle) — título, fecha, hora, lugar y reseña (`description`/`summary`), sin galería (fuera de alcance, ya documentado arriba).
+
+**Verificado en el navegador:** como la base real todavía no tiene ningún evento `completed` (la migración con el evento de ejemplo, `20260730100000_demo_content_agosto.sql`, sigue pendiente de que Braulio la ejecute — ver Pendiente), se verificó con 2 eventos mock temporales inyectados directamente en `eventService.getPastEvents()` (revertido antes de terminar, no llegó a versionarse): el botón abre la lista con ambos eventos, título/fecha/lugar visibles; al hacer clic en uno, la lista se cierra y se abre el detalle correcto (fecha, hora, lugar y la reseña completa, sin recorte); 0 errores de consola en todo el flujo.
+
 ## Pendiente
 
-- **Braulio debe ejecutar la migración `20260730100000_demo_content_agosto.sql`** (contenido de ejemplo adicional para la demo) en el SQL Editor de Supabase.
+- **Braulio debe ejecutar la migración `20260730100000_demo_content_agosto.sql`** (contenido de ejemplo adicional para la demo) en el SQL Editor de Supabase — entre otras cosas, incluye el único evento `completed` disponible hoy; hasta que se ejecute, el botón "Ver eventos realizados" no aparece (el panel muestra correctamente el estado vacío "Todavía no hay eventos realizados").
 - **Braulio debe ejecutar, en este orden, las 3 migraciones nuevas de esta fase** (`20260729100000_webinars_category.sql`, `20260729100100_hero_slides_seed.sql`, `20260729100200_storage_content_images.sql`) en el SQL Editor de Supabase, después de las ya ejecutadas de las Fases 4 y 5.
 - **Si el `INSERT` sobre `storage.buckets` de la migración de Storage falla**, crear el bucket manualmente: Supabase Dashboard → Storage → New bucket → nombre `content-images` → Public bucket activado. Luego ejecutar el resto del archivo (las políticas RLS) igual.
 - **Probar el flujo completo de creación de contenido desde el panel admin** (login real, crear/publicar una noticia con imagen, una infografía con imagen, un video de YouTube, un evento con banner y enlace de inscripción) — ver los pasos exactos en el mensaje de cierre de esta fase.

@@ -363,6 +363,52 @@ function VistaModal({ event, onClose }) {
   );
 }
 
+// Lista completa de eventos realizados (status='completed'), abierta desde
+// el botón "Ver eventos realizados". Mismo patrón visual que CalendarModal
+// (header oscuro + filas blancas). Al elegir uno, delega el detalle al
+// VistaModal ya existente (título/fecha/hora/lugar/reseña) — no se agregó
+// un segundo componente de detalle.
+function PastEventsListModal({ events, onClose, onSelect }) {
+  return (
+    <ModalShell onClose={onClose} maxWidth={520}>
+      <div style={{padding:'20px 24px',background:'var(--grad-corporate)',position:'relative',overflow:'hidden'}}>
+        <CosmicBg variant={2} />
+        <div style={{position:'absolute',inset:0,background:'rgba(3,18,55,0.55)'}}></div>
+        <div style={{position:'relative',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
+          <div>
+            <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:4}}>Historial</div>
+            <div style={{fontSize:17,fontWeight:700,color:'white'}}>Eventos realizados</div>
+          </div>
+          <button onClick={onClose} style={{background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:8,cursor:'pointer',color:'white',padding:6,flexShrink:0,display:'flex'}}>
+            <Icon name="x" style={{width:16,height:16}} />
+          </button>
+        </div>
+      </div>
+      <div style={{maxHeight:'56vh',overflowY:'auto',padding:'14px 18px 18px',display:'flex',flexDirection:'column',gap:8}}>
+        {events.map(ev => (
+          <button key={ev.id} onClick={()=>onSelect(ev)} style={{
+            display:'flex',gap:12,alignItems:'center',padding:'10px 12px',borderRadius:10,
+            border:'1px solid var(--gray-200)',background:'white',cursor:'pointer',textAlign:'left',width:'100%',fontFamily:'inherit',
+          }}
+            onMouseEnter={e=>e.currentTarget.style.background='var(--gray-50)'}
+            onMouseLeave={e=>e.currentTarget.style.background='white'}
+          >
+            <div style={{minWidth:46,textAlign:'center',background:'var(--navy-900)',borderRadius:8,padding:'6px 6px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <div style={{fontSize:7,fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--brand-cyan)',lineHeight:1.2}}>{ev.month}</div>
+              <div style={{fontSize:17,fontWeight:700,color:'white',lineHeight:1}}>{ev.day}</div>
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:12.5,fontWeight:700,color:'var(--navy-900)',lineHeight:1.3}}>{ev.title}</div>
+              {ev.place && <div style={{fontSize:11,color:'var(--gray-500)',marginTop:3,display:'flex',alignItems:'center',gap:4}}><Icon name="map-pin" style={{width:11,height:11}} />{ev.place}</div>}
+            </div>
+            <Icon name="chevron-right" style={{width:16,height:16,color:'var(--gray-400)',flexShrink:0}} />
+          </button>
+        ))}
+      </div>
+    </ModalShell>
+  );
+}
+
 function PastEventCard({ ev, onVer }) {
   const [hov, setHov] = React.useState(false);
   return (
@@ -416,6 +462,7 @@ function PastEventCard({ ev, onVer }) {
 export function EventosRealizadosPanel() {
   const { status, data, error } = useAsyncData(() => eventService.getPastEvents(), []);
   const [openEvent, setOpenEvent] = React.useState(null);
+  const [showAll, setShowAll] = React.useState(false);
   const [page, setPage] = React.useState(0);
 
   const pastEventItems = data || [];
@@ -434,7 +481,17 @@ export function EventosRealizadosPanel() {
             <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'white'}}>Eventos <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>Realizados</span></div>
           </div>
           {status === 'success' && pastEventItems.length > 0 && (
-            <span style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.7)',background:'rgba(255,255,255,0.1)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:999,padding:'6px 13px',whiteSpace:'nowrap'}}>{pastEventItems.length} eventos</span>
+            <button onClick={()=>setShowAll(true)} style={{
+              fontSize:12,fontWeight:700,color:'white',
+              background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.22)',borderRadius:9,
+              padding:'9px 15px',cursor:'pointer',display:'inline-flex',alignItems:'center',gap:7,whiteSpace:'nowrap',
+              transition:'transform 150ms,background 150ms',
+            }}
+              onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-1px)';e.currentTarget.style.background='rgba(255,255,255,0.22)';}}
+              onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.background='rgba(255,255,255,0.12)';}}
+            >
+              <Icon name="calendar-days" style={{width:14,height:14}} />Ver eventos realizados
+            </button>
           )}
         </div>
 
@@ -472,6 +529,13 @@ export function EventosRealizadosPanel() {
           </React.Fragment>
         )}
 
+        {showAll && (
+          <PastEventsListModal
+            events={pastEventItems}
+            onClose={()=>setShowAll(false)}
+            onSelect={(ev)=>{ setShowAll(false); setOpenEvent(ev); }}
+          />
+        )}
         {openEvent && <VistaModal event={openEvent} onClose={()=>setOpenEvent(null)} />}
       </div>
     </div>

@@ -129,8 +129,20 @@ const heroArrow = {
   transition:'background 150ms',
 };
 
-/* ── Category Blocks (unchanged) ────────────────── */
-const CAT_BLUE = 'linear-gradient(135deg, #06246a 0%, #0a63d6 58%, #00c8fa 100%)';
+/* ── Category Blocks ──────────────────────────────
+   Un color distinto por bloque, tomado de la misma paleta que ya usan las
+   categorías reales (ver supabase/migrations/*_webinars_category.sql y
+   seed.sql: ciberseguridad #F2542D, cloud-infraestructura #2D6CF2,
+   transformacion-digital #2DBE60, webinars #6a3ed0) — no son colores nuevos
+   inventados, son variantes (oscuro → color → claro) de tonos que ya
+   existen en la app, para que se sientan parte de la misma paleta. */
+const CAT_GRADIENTS = {
+  explora:  'linear-gradient(135deg, #2c1a5e 0%, #6a3ed0 60%, #b39ddb 100%)', // morado — mismo tono que la categoría "Webinars"
+  noticias: 'linear-gradient(135deg, #06246a 0%, #2D6CF2 58%, #7db2ff 100%)', // azul — mismo tono que "Cloud & Infraestructura"
+  eventos:  'linear-gradient(135deg, #0b3d24 0%, #2DBE60 58%, #7fe0a3 100%)', // verde — mismo tono que "Transformación Digital"
+  opinion:  'linear-gradient(135deg, #7a1f10 0%, #F2542D 58%, #ff9a7d 100%)', // naranja/rojo — mismo tono que "Ciberseguridad"
+};
+const CAT_BLUE = CAT_GRADIENTS.noticias; // fallback si aparece un bloque nuevo sin color asignado
 
 export function CategoryBlocks() {
   const { status, data: cats } = useAsyncData(() => homeService.getCategoryBlocks(), []);
@@ -149,7 +161,7 @@ export function CategoryBlocks() {
             transition:'all 200ms',
           }}
         >
-          <div style={{height:72,background:CAT_BLUE,display:'flex',alignItems:'center',padding:'0 20px',position:'relative',overflow:'hidden'}}>
+          <div style={{height:72,background:CAT_GRADIENTS[c.id] || CAT_BLUE,display:'flex',alignItems:'center',padding:'0 20px',position:'relative',overflow:'hidden'}}>
             <div style={{width:40,height:40,borderRadius:10,background:'rgba(255,255,255,0.18)',display:'flex',alignItems:'center',justifyContent:'center'}}>
               <Icon name={c.icon} style={{width:20,height:20,color:'white'}} />
             </div>
