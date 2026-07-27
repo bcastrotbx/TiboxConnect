@@ -47,9 +47,29 @@ Esta fase **no usa el CLI de Supabase** (no está instalado/vinculado en este pr
 
 1. Ejecutar, en orden, cada archivo de `supabase/migrations/` (por nombre, que ya están numerados: `20260727100000_...` → `20260727100900_...`). Se puede pegar el contenido de cada archivo en una consulta nueva del SQL Editor y ejecutarlo uno por uno, o concatenarlos todos en una sola consulta respetando el orden — el resultado es el mismo porque cada uno depende solo de los anteriores.
 2. Ejecutar `supabase/seed.sql` completo (es idempotente — se puede correr más de una vez sin duplicar datos).
-3. (Opcional, para tener un admin con el que probar el panel en la Fase 5) Abrir `supabase/admin-bootstrap.example.sql`, reemplazar `'CORREO_DEL_ADMIN_AQUI@tibox.cl'` por el correo real de una cuenta ya creada en **Authentication → Users**, y ejecutar el `UPDATE`.
+3. (Opcional, para tener un admin con el que probar el panel en la Fase 5) Abrir `supabase/admin-bootstrap.example.sql`, reemplazar `'CORREO_DEL_ADMIN_AQUI@tibox.cl'` por el correo real de una cuenta ya creada en **Authentication → Users**, y ejecutar el bloque completo (incluye deshabilitar y volver a habilitar un trigger — ver la nota operacional más abajo, [Bootstrap del primer administrador: por qué se deshabilita un trigger](#bootstrap-del-primer-administrador-por-qué-se-deshabilita-un-trigger)).
 
 No se ejecutó nada de esto desde este entorno de trabajo — no hay acceso de este entorno al panel de Supabase ni credenciales de servicio. Braulio debe ejecutarlo manualmente.
+
+### Bootstrap del primer administrador: por qué se deshabilita un trigger
+
+Al ejecutar por primera vez `supabase/admin-bootstrap.example.sql` desde el SQL Editor de Supabase, el `UPDATE public.profiles set role = 'admin' ...` fallaba con el error del trigger `profiles_prevent_self_role_status_change` (`No puedes modificar tu propio role o status.`), incluso siendo la primera vez que se intentaba crear un administrador.
+
+**Causa:** ese trigger llama a `public.is_admin()`, que evalúa `auth.uid()`. El SQL Editor de Supabase ejecuta las consultas sin contexto de sesión de usuario — no hay un usuario autenticado real detrás de la conexión — así que `auth.uid()` no resuelve a nadie e `is_admin()` siempre da `false` ahí, sin importar qué cuenta se esté intentando promover. Esto es distinto de una llamada real hecha desde la aplicación con un usuario autenticado, donde `auth.uid()` sí tiene valor.
+
+**Solución adoptada (ya incorporada al archivo `supabase/admin-bootstrap.example.sql`):** deshabilitar el trigger explícitamente antes del `UPDATE` y volver a habilitarlo inmediatamente después, en la misma ejecución:
+
+```sql
+alter table public.profiles disable trigger profiles_prevent_self_role_status_change;
+
+update public.profiles
+set role = 'admin'
+where id = (select id from auth.users where email = 'CORREO_DEL_ADMIN_AQUI@tibox.cl');
+
+alter table public.profiles enable trigger profiles_prevent_self_role_status_change;
+```
+
+**Este es el método oficial de bootstrap** para crear el primer administrador en cualquier entorno donde todavía no exista ninguno (producción, staging, u otro proyecto Supabase futuro) — no es un workaround puntual de esta fase. Debe repetirse este mismo procedimiento (deshabilitar → `update` → rehabilitar, siempre en la misma sesión de SQL Editor, sin dejar el trigger deshabilitado) cada vez que se necesite bootstrapear el primer admin de un entorno nuevo. Para promover administradores adicionales una vez que ya existe al menos uno, el camino normal es que ese primer admin lo haga desde la aplicación (Fase 5, invitación de administradores vía ADR-004), donde sí hay una sesión autenticada real y el trigger no es un obstáculo.
 
 ## Pruebas de seguridad a realizar (manual, en el panel de Supabase)
 
@@ -76,6 +96,7 @@ Como el entorno de trabajo no tiene acceso directo al proyecto Supabase, estas v
 10. **`contact_messages`/`feedback` dan a los admins permisos de `update`/`delete` además de `select`** (siguiendo literalmente "solo admins pueden leer/actualizar/eliminar" para `contact_messages`, y "mismo patrón" para `feedback`), mientras que `event_registrations`/`infographic_leads` solo dan `select` a los admins, porque el pedido original solo mencionaba lectura para esas dos tablas — se documenta como posible pendiente si se necesita `delete` (p. ej. para solicitudes de borrado de datos).
 11. **Numeración de migraciones por timestamp** (`20260727100000` en adelante) en vez de un contador simple (`0001_`, `0002_`): es la convención que usa el CLI de Supabase (`supabase migration new`), así que si en una fase futura se decide instalar el CLI y vincular el proyecto, estos archivos ya están en el formato esperado sin necesidad de renombrarlos.
 12. **Seed data sin `created_by`:** las filas de ejemplo en `content_items`/`events` no tienen `created_by` (queda `null`) porque el seed está pensado para poder correrse antes de que exista ningún administrador bootstrapeado.
+13. **`admin-bootstrap.example.sql` deshabilita y rehabilita `profiles_prevent_self_role_status_change` alrededor del `UPDATE`:** detectado al ejecutar el bootstrap real (ver [nota operacional](#bootstrap-del-primer-administrador-por-qué-se-deshabilita-un-trigger)) — el SQL Editor de Supabase no tiene contexto de sesión, por lo que `auth.uid()`/`is_admin()` siempre evalúan como "no admin" ahí, y el trigger bloquearía incluso el primer bootstrap. Se documenta como el método oficial para cualquier entorno futuro, no como un ajuste único de esta fase.
 
 ## Problemas conocidos
 
@@ -90,6 +111,7 @@ Como el entorno de trabajo no tiene acceso directo al proyecto Supabase, estas v
 - Conectar `src/services/*` a estas tablas, reemplazando la lectura desde `src/data/seed/*.js` — Fase 6.
 - Proteger las rutas `/admin/*` con la sesión real — Fase 5.
 - Evaluar si `event_registrations`/`infographic_leads` necesitan políticas de `update`/`delete` para administradores más adelante (ver decisión 10).
+- **Replicar la nota operacional del bootstrap de administrador en `docs/DEPLOYMENT.md`** cuando ese documento exista (todavía no se crea — está previsto para la Fase 10). Mientras tanto, esta misma sección de este documento es la referencia oficial del procedimiento para cualquier entorno (staging, producción, u otro proyecto Supabase).
 
 ## Próxima fase recomendada
 
