@@ -14,5 +14,7 @@ export async function getActiveCategories() {
 
   if (error) throw error;
 
-  return (data || []).map((c) => ({ id: c.slug, label: c.name, color: c.color || 'var(--navy-900)' }));
+  // dbId: el uuid real de la fila, usado por el panel admin para guardar
+  // content_items.category_id — el portal público solo usa `id` (el slug).
+  return (data || []).map((c) => ({ id: c.slug, label: c.name, color: c.color || 'var(--navy-900)', dbId: c.id }));
 }

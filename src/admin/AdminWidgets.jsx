@@ -4,6 +4,11 @@ import { LoadingState, EmptyState, ErrorState } from '../components/shared/Async
 import { useDesignSystem } from '../context/DesignSystemContext.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import * as adminService from '../services/adminService.js';
+import * as adminContentService from '../services/adminContentService.js';
+import * as adminEventsService from '../services/adminEventsService.js';
+import * as categoryService from '../services/categoryService.js';
+import * as storageService from '../services/storageService.js';
+import { getYouTubeThumbnailUrl } from '../lib/youtube.js';
 
 export function statusTone(s) {
   if (s === 'Publicado' || s === 'Respondido' || s === 'Realizado') return 'success';
@@ -38,21 +43,35 @@ export function StatRow() {
   );
 }
 
-export function RowMenu({ onAction }) {
+// Menú de acciones de una fila de contenido/evento. Los ítems disponibles
+// dependen del estado actual de la fila (no tiene sentido ofrecer
+// "Publicar" sobre algo ya publicado) — ver ContentTable más abajo, que es
+// quien realmente ejecuta cada acción contra Supabase.
+function buildRowMenuItems(row, isEvent) {
+  const items = [
+    { id:'view', icon:'eye', label:'Ver publicación' },
+    { id:'edit', icon:'pencil', label:'Editar' },
+    { id:'duplicate', icon:'copy', label:'Duplicar' },
+  ];
+  if (row.rawStatus !== 'published') items.push({ id:'publish', icon:'upload', label:'Publicar' });
+  if (isEvent && row.rawStatus !== 'completed') items.push({ id:'complete', icon:'check-circle-2', label:'Marcar como realizado' });
+  if (!isEvent) items.push({ id: row.isFeatured ? 'unfeature' : 'feature', icon:'star', label: row.isFeatured ? 'Quitar destacado' : 'Marcar como destacado' });
+  if (row.rawStatus !== 'archived') items.push({ id:'archive', icon:'archive', label:'Archivar' });
+  if (row.rawStatus !== 'draft') items.push({ id:'draft', icon:'file-edit', label:'Volver a borrador' });
+  items.push({ id:'delete', icon:'trash-2', label:'Eliminar', danger:true });
+  return items;
+}
+
+export function RowMenu({ row, isEvent, onAction }) {
   const [open, setOpen] = React.useState(false);
   const [pos, setPos] = React.useState({ top:0, left:0 });
   const btnRef = React.useRef(null);
   const toggle = () => {
     const r = btnRef.current.getBoundingClientRect();
-    setPos({ top:r.bottom + 6, left:r.right - 184 });
+    setPos({ top:r.bottom + 6, left:r.right - 200 });
     setOpen(o => !o);
   };
-  const items = [
-    { id:'view', icon:'eye', label:'Ver publicación' },
-    { id:'edit', icon:'pencil', label:'Editar' },
-    { id:'duplicate', icon:'copy', label:'Duplicar' },
-    { id:'delete', icon:'trash-2', label:'Eliminar', danger:true },
-  ];
+  const items = buildRowMenuItems(row, isEvent);
   return (
     <React.Fragment>
       <button ref={btnRef} onClick={toggle} title="Acciones" style={{ background:open?'var(--gray-100)':'none', border:'none', cursor:'pointer', padding:5, borderRadius:7, display:'inline-flex', color:'var(--gray-500)' }}>
@@ -61,8 +80,8 @@ export function RowMenu({ onAction }) {
       {open && (
         <React.Fragment>
           <div onClick={() => setOpen(false)} style={{ position:'fixed', inset:0, zIndex:400 }}></div>
-          <div style={{ position:'fixed', top:pos.top, left:pos.left, width:184, background:'white', borderRadius:11, border:'1px solid var(--gray-200)', boxShadow:'0 10px 32px rgba(2,18,55,0.18)', zIndex:401, padding:6 }}>
-            {items.map((it,ix) => (
+          <div style={{ position:'fixed', top:pos.top, left:pos.left, width:200, background:'white', borderRadius:11, border:'1px solid var(--gray-200)', boxShadow:'0 10px 32px rgba(2,18,55,0.18)', zIndex:401, padding:6 }}>
+            {items.map((it) => (
               <React.Fragment key={it.id}>
                 {it.danger && <div style={{ height:1, background:'var(--gray-100)', margin:'5px 4px' }}></div>}
                 <button onClick={() => { setOpen(false); onAction(it.id); }} style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'8px 10px', border:'none', background:'none', borderRadius:8, cursor:'pointer', fontSize:13, fontWeight:600, textAlign:'left', color: it.danger ? '#c0392b' : 'var(--navy-900,#021233)', fontFamily:'inherit' }}
@@ -122,7 +141,9 @@ export function ContentViewModal({ item, onClose }) {
               <Icon name="calendar" style={{ width:14, height:14 }} />{item.date}
             </div>
           </div>
-          <p style={{ fontSize:13.5, color:'var(--gray-500)', lineHeight:1.6, margin:0 }}>Vista previa de la publicación tal como aparece en el portal de clientes de TIBOX Connect.</p>
+          {(item.summary || item.description) && (
+            <p style={{ fontSize:13.5, color:'var(--gray-500)', lineHeight:1.6, margin:0 }}>{item.description || item.summary}</p>
+          )}
         </div>
         <div style={{ padding:'16px 24px', borderTop:'1px solid var(--gray-200)', display:'flex', justifyContent:'flex-end', gap:10 }}>
           <button className="adm-mini-btn" onClick={onClose}>Cerrar</button>
@@ -133,16 +154,140 @@ export function ContentViewModal({ item, onClose }) {
   );
 }
 
-const CONTENT_TYPE_CATEGORIES_FALLBACK = [];
+const SECTION_TO_TYPE = { videos: 'video', infographics: 'infographic', news: 'news' };
+
+function ImageUploadField({ label, value, onChange }) {
+  const [uploading, setUploading] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setError('');
+    try {
+      const url = await storageService.uploadContentImage(file);
+      onChange(url);
+    } catch (err) {
+      setError(err.message || 'No se pudo subir la imagen.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <Field label={label}>
+      {value && (
+        <div style={{ marginBottom:10, borderRadius:10, overflow:'hidden', border:'1px solid var(--gray-200)', maxHeight:140 }}>
+          <img src={value} alt="" style={{ width:'100%', maxHeight:140, objectFit:'cover', display:'block' }} />
+        </div>
+      )}
+      <div className="adm-upload">
+        <Icon name="upload-cloud" style={{ width:24, height:24, marginBottom:8 }} />
+        <div style={{ fontSize:13, fontWeight:600 }}>{uploading ? 'Subiendo…' : value ? 'Reemplazar imagen' : 'Arrastra una imagen o haz clic para subir'}</div>
+        <input type="file" accept="image/jpeg,image/png,image/webp" style={{ display:'none' }} onChange={handleFile} disabled={uploading} />
+      </div>
+      {error && <div style={{ fontSize:12, color:'#c0392b', marginTop:6 }}>{error}</div>}
+    </Field>
+  );
+}
 
 export function NewContentModal({ section, item, onClose }) {
-  const { data: categories } = useAsyncData(() => adminService.getContentTypeCategories(), []);
-  const cats = categories || CONTENT_TYPE_CATEGORIES_FALLBACK;
+  const isEvent = section === 'events';
+  const { data: categoriesData } = useAsyncData(() => (isEvent ? Promise.resolve([]) : categoryService.getActiveCategories()), [isEvent]);
+  const cats = categoriesData || [];
+
+  const [title, setTitle] = React.useState(item?.title || '');
+  const [categoryId, setCategoryId] = React.useState(item?.categoryId || '');
+  const [summary, setSummary] = React.useState(item?.summary || '');
+  const [description, setDescription] = React.useState(item?.description || '');
+  const [thumbnailUrl, setThumbnailUrl] = React.useState(item?.thumbnailUrl || '');
+  const [externalUrl, setExternalUrl] = React.useState(item?.externalUrl || '');
+  const [sourceName, setSourceName] = React.useState(item?.sourceName || '');
+  const [durationMinutes, setDurationMinutes] = React.useState(item?.durationMinutes || '');
+  const [isFeatured, setIsFeatured] = React.useState(item?.isFeatured || false);
+  const [status, setStatus] = React.useState(item?.rawStatus || 'draft');
+  const [saving, setSaving] = React.useState(false);
+  const [saveError, setSaveError] = React.useState('');
+
+  // Solo eventos
+  const [modality, setModality] = React.useState(item?.modality || 'online');
+  const [location, setLocation] = React.useState(item?.location || '');
+  const [partnerName, setPartnerName] = React.useState(item?.partnerName || '');
+  const [registrationUrl, setRegistrationUrl] = React.useState(item?.registrationUrl || '');
+  const [visibility, setVisibility] = React.useState(item?.visibility || 'public');
+  const [startDate, setStartDate] = React.useState(item?.startsAt ? item.startsAt.slice(0, 10) : '');
+  const [startTime, setStartTime] = React.useState(item?.startsAt ? item.startsAt.slice(11, 16) : '');
+  const [endDate, setEndDate] = React.useState(item?.endsAt ? item.endsAt.slice(0, 10) : '');
+  const [endTime, setEndTime] = React.useState(item?.endsAt ? item.endsAt.slice(11, 16) : '');
+
   const newTitles = { videos:'Nuevo video o webinar', infographics:'Nueva infografía', news:'Nueva noticia', events:'Nuevo evento' };
   const editTitles = { videos:'Editar video o webinar', infographics:'Editar infografía', news:'Editar noticia', events:'Editar evento' };
   const titles = item ? editTitles : newTitles;
-  const t = item ? item.title : '';
-  const c = item ? item.cat : '';
+
+  const handleVideoUrlChange = (e) => {
+    const url = e.target.value;
+    setExternalUrl(url);
+    const thumb = getYouTubeThumbnailUrl(url);
+    if (thumb) setThumbnailUrl(thumb);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaveError('');
+    if (!title.trim()) { setSaveError('El título es obligatorio.'); return; }
+    if (isEvent && (!startDate || !startTime)) { setSaveError('La fecha y hora de inicio son obligatorias.'); return; }
+
+    setSaving(true);
+    try {
+      if (isEvent) {
+        const fields = {
+          title: title.trim(),
+          summary: summary || null,
+          description: description || null,
+          modality,
+          location: location || null,
+          thumbnail_url: thumbnailUrl || null,
+          registration_url: registrationUrl || null,
+          partner_name: partnerName || null,
+          visibility,
+          status,
+          starts_at: new Date(`${startDate}T${startTime}`).toISOString(),
+          ends_at: endDate && endTime ? new Date(`${endDate}T${endTime}`).toISOString() : null,
+        };
+        if (item) await adminEventsService.updateEvent(item.id, fields);
+        else await adminEventsService.createEvent(fields);
+      } else {
+        const fields = {
+          title: title.trim(),
+          category_id: categoryId || null,
+          summary: summary || null,
+          thumbnail_url: thumbnailUrl || null,
+          external_url: externalUrl || null,
+          source_name: sourceName || null,
+          duration_minutes: durationMinutes ? Number(durationMinutes) : null,
+          visibility: 'public',
+          status,
+          is_featured: isFeatured,
+        };
+        if (status === 'published' && item?.rawStatus !== 'published') {
+          fields.published_at = new Date().toISOString();
+        }
+        if (item) await adminContentService.updateContentItem(item.id, fields);
+        else await adminContentService.createContentItem(SECTION_TO_TYPE[section], fields);
+      }
+      // Recarga completa tras guardar: ContentTable vuelve a leer de
+      // Supabase con datos reales. Es una simplificación deliberada para
+      // esta fase (ver decisiones en FASE-06-07-08-CONTENIDO-REAL.md) en vez
+      // de propagar el nuevo/actualizado item entre componentes que hoy no
+      // comparten estado (el botón "Nuevo" vive en AdminLayout, la tabla en
+      // la página de la ruta).
+      window.location.reload();
+    } catch (err) {
+      setSaveError(err.message || 'No se pudo guardar. Inténtalo nuevamente.');
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="adm-modal-overlay" onClick={onClose}>
@@ -154,93 +299,213 @@ export function NewContentModal({ section, item, onClose }) {
           </button>
         </div>
 
-        <div style={{ padding:'22px 24px', display:'flex', flexDirection:'column', gap:16 }}>
-          {section === 'videos' && (
-            <React.Fragment>
-              <Field label="Link del video"><input type="url" placeholder="https://youtube.com/watch?v=…" /></Field>
-              <Field label="Título"><input type="text" placeholder="Título del video o webinar" defaultValue={t} /></Field>
-              <Field label="Descripción"><textarea placeholder="Breve descripción del contenido…"></textarea></Field>
-              <Field label="Categoría">
-                <select defaultValue={c}><option value="">Selecciona una categoría</option>{cats.map(cat => <option key={cat} value={cat}>{cat}</option>)}</select>
-              </Field>
-              <Field label="Fecha"><input type="date" /></Field>
-            </React.Fragment>
-          )}
-
-          {section === 'infographics' && (
-            <React.Fragment>
-              <Field label="Imagen">
-                <div className="adm-upload">
-                  <Icon name="upload-cloud" style={{ width:24, height:24, marginBottom:8 }} />
-                  <div style={{ fontSize:13, fontWeight:600 }}>Arrastra una imagen o haz clic para subir</div>
-                  <input type="file" accept="image/*" style={{ display:'none' }} />
+        <form onSubmit={handleSubmit}>
+          <div style={{ padding:'22px 24px', display:'flex', flexDirection:'column', gap:16 }}>
+            {section === 'videos' && (
+              <React.Fragment>
+                <Field label="Link del video (YouTube)">
+                  <input type="url" placeholder="https://youtube.com/watch?v=…" value={externalUrl} onChange={handleVideoUrlChange} />
+                </Field>
+                {thumbnailUrl && (
+                  <div style={{ borderRadius:10, overflow:'hidden', border:'1px solid var(--gray-200)', maxHeight:140 }}>
+                    <img src={thumbnailUrl} alt="" style={{ width:'100%', maxHeight:140, objectFit:'cover', display:'block' }} />
+                  </div>
+                )}
+                <Field label="Título"><input type="text" placeholder="Título del video o webinar" value={title} onChange={e => setTitle(e.target.value)} /></Field>
+                <Field label="Descripción"><textarea placeholder="Breve descripción del contenido…" value={summary} onChange={e => setSummary(e.target.value)}></textarea></Field>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                  <Field label="Categoría">
+                    <select value={categoryId} onChange={e => setCategoryId(e.target.value)}>
+                      <option value="">Selecciona una categoría</option>
+                      {cats.map(cat => <option key={cat.dbId} value={cat.dbId}>{cat.label}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Duración (minutos)"><input type="number" min="0" placeholder="24" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value)} /></Field>
                 </div>
-              </Field>
-              <Field label="Título"><input type="text" placeholder="Título de la infografía" defaultValue={t} /></Field>
-              <Field label="Categoría">
-                <select defaultValue={c}><option value="">Selecciona una categoría</option>{cats.map(cat => <option key={cat} value={cat}>{cat}</option>)}</select>
-              </Field>
-              <Field label="Link de la publicación"><input type="url" placeholder="https://…" /></Field>
-            </React.Fragment>
-          )}
+              </React.Fragment>
+            )}
 
-          {section === 'news' && (
-            <React.Fragment>
-              <Field label="Título de la noticia"><input type="text" placeholder="Título de la noticia" defaultValue={t} /></Field>
-              <Field label="Categoría">
-                <select defaultValue={c}><option value="">Selecciona una categoría</option>{cats.map(cat => <option key={cat} value={cat}>{cat}</option>)}</select>
-              </Field>
-              <Field label="Información"><textarea placeholder="Contenido de la noticia…" style={{ minHeight:130 }}></textarea></Field>
-            </React.Fragment>
-          )}
+            {section === 'infographics' && (
+              <React.Fragment>
+                <ImageUploadField label="Imagen" value={thumbnailUrl} onChange={setThumbnailUrl} />
+                <Field label="Título"><input type="text" placeholder="Título de la infografía" value={title} onChange={e => setTitle(e.target.value)} /></Field>
+                <Field label="Resumen"><textarea placeholder="Breve resumen de la infografía…" value={summary} onChange={e => setSummary(e.target.value)}></textarea></Field>
+                <Field label="Categoría">
+                  <select value={categoryId} onChange={e => setCategoryId(e.target.value)}>
+                    <option value="">Selecciona una categoría</option>
+                    {cats.map(cat => <option key={cat.dbId} value={cat.dbId}>{cat.label}</option>)}
+                  </select>
+                </Field>
+                <Field label="Link de la publicación"><input type="url" placeholder="https://…" value={externalUrl} onChange={e => setExternalUrl(e.target.value)} /></Field>
+              </React.Fragment>
+            )}
 
-          {section === 'events' && (
-            <React.Fragment>
-              <Field label="Título del evento"><input type="text" placeholder="Título del evento" defaultValue={t} /></Field>
-              <Field label="Modalidad">
-                <select><option value="">Selecciona una modalidad</option><option>Presencial</option><option>Online</option><option>Híbrida</option></select>
-              </Field>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-                <Field label="Fecha"><input type="date" /></Field>
-                <Field label="Hora"><input type="time" /></Field>
+            {section === 'news' && (
+              <React.Fragment>
+                <ImageUploadField label="Imagen" value={thumbnailUrl} onChange={setThumbnailUrl} />
+                <Field label="Título de la noticia"><input type="text" placeholder="Título de la noticia" value={title} onChange={e => setTitle(e.target.value)} /></Field>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                  <Field label="Categoría">
+                    <select value={categoryId} onChange={e => setCategoryId(e.target.value)}>
+                      <option value="">Selecciona una categoría</option>
+                      {cats.map(cat => <option key={cat.dbId} value={cat.dbId}>{cat.label}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Fuente"><input type="text" placeholder="Microsoft, Gartner…" value={sourceName} onChange={e => setSourceName(e.target.value)} /></Field>
+                </div>
+                <Field label="Información"><textarea placeholder="Resumen de la noticia…" style={{ minHeight:130 }} value={summary} onChange={e => setSummary(e.target.value)}></textarea></Field>
+              </React.Fragment>
+            )}
+
+            {section === 'events' && (
+              <React.Fragment>
+                <Field label="Título del evento"><input type="text" placeholder="Título del evento" value={title} onChange={e => setTitle(e.target.value)} /></Field>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                  <Field label="Modalidad">
+                    <select value={modality} onChange={e => setModality(e.target.value)}>
+                      <option value="presential">Presencial</option>
+                      <option value="online">Online</option>
+                      <option value="hybrid">Híbrida</option>
+                    </select>
+                  </Field>
+                  <Field label="Lugar"><input type="text" placeholder="Microsoft Teams, Oficina TIBOX…" value={location} onChange={e => setLocation(e.target.value)} /></Field>
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                  <Field label="Fecha de inicio"><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} /></Field>
+                  <Field label="Hora de inicio"><input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} /></Field>
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                  <Field label="Fecha de término (opcional)"><input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} /></Field>
+                  <Field label="Hora de término (opcional)"><input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} /></Field>
+                </div>
+                <Field label="Resumen breve"><textarea placeholder="Descripción breve del evento…" value={summary} onChange={e => setSummary(e.target.value)}></textarea></Field>
+                <Field label="Reseña completa"><textarea placeholder="Descripción completa (se muestra en el detalle del evento)…" value={description} onChange={e => setDescription(e.target.value)}></textarea></Field>
+                <ImageUploadField label="Banner del evento" value={thumbnailUrl} onChange={setThumbnailUrl} />
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                  <Field label="Colaborador"><input type="text" placeholder="Microsoft, Veeam…" value={partnerName} onChange={e => setPartnerName(e.target.value)} /></Field>
+                  <Field label="Enlace de inscripción"><input type="url" placeholder="https://teams.microsoft.com/registration/…" value={registrationUrl} onChange={e => setRegistrationUrl(e.target.value)} /></Field>
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                  <Field label="Visibilidad">
+                    <select value={visibility} onChange={e => setVisibility(e.target.value)}>
+                      <option value="public">Público</option>
+                      <option value="authenticated">Autenticado</option>
+                    </select>
+                  </Field>
+                  <Field label="Estado">
+                    <select value={status} onChange={e => setStatus(e.target.value)}>
+                      <option value="draft">Borrador</option>
+                      <option value="published">Publicado</option>
+                      <option value="completed">Completado (evento realizado)</option>
+                      <option value="archived">Archivado</option>
+                    </select>
+                  </Field>
+                </div>
+              </React.Fragment>
+            )}
+
+            {!isEvent && (
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:14, paddingTop:4, borderTop:'1px solid var(--gray-100)' }}>
+                <label style={{ display:'flex', alignItems:'center', gap:9, fontSize:13, fontWeight:600, color:'var(--navy-900,#021233)', cursor:'pointer' }}>
+                  <input type="checkbox" checked={isFeatured} onChange={e => setIsFeatured(e.target.checked)} />
+                  Marcar como destacado
+                </label>
+                <Field label="Estado">
+                  <select value={status} onChange={e => setStatus(e.target.value)}>
+                    <option value="draft">Borrador</option>
+                    <option value="published">Publicado</option>
+                    <option value="archived">Archivado</option>
+                  </select>
+                </Field>
               </div>
-              <Field label="Breve reseña"><textarea placeholder="Descripción breve del evento…"></textarea></Field>
-              <Field label="Logo del partner">
-                <div className="adm-upload">
-                  <Icon name="upload-cloud" style={{ width:24, height:24, marginBottom:8 }} />
-                  <div style={{ fontSize:13, fontWeight:600 }}>Sube el logo del partner</div>
-                  <input type="file" accept="image/*" style={{ display:'none' }} />
-                </div>
-              </Field>
-            </React.Fragment>
-          )}
-        </div>
+            )}
 
-        <div style={{ padding:'16px 24px', borderTop:'1px solid var(--gray-200)', display:'flex', justifyContent:'flex-end', gap:10 }}>
-          <button onClick={onClose} style={{ background:'white', border:'1px solid var(--gray-200)', borderRadius:10, padding:'10px 18px', fontSize:13, fontWeight:600, color:'var(--gray-600)', cursor:'pointer' }}>Cancelar</button>
-          <button onClick={onClose} style={{ background:'#0050C8', color:'white', border:'none', borderRadius:10, padding:'10px 20px', fontSize:13, fontWeight:700, cursor:'pointer' }}>Guardar</button>
-        </div>
+            {saveError && (
+              <div style={{ fontSize:12.5, color:'#c0392b', background:'rgba(192,57,43,0.08)', border:'1px solid rgba(192,57,43,0.2)', borderRadius:8, padding:'9px 12px' }}>
+                {saveError}
+              </div>
+            )}
+          </div>
+
+          <div style={{ padding:'16px 24px', borderTop:'1px solid var(--gray-200)', display:'flex', justifyContent:'flex-end', gap:10 }}>
+            <button type="button" onClick={onClose} style={{ background:'white', border:'1px solid var(--gray-200)', borderRadius:10, padding:'10px 18px', fontSize:13, fontWeight:600, color:'var(--gray-600)', cursor:'pointer' }}>Cancelar</button>
+            <button type="submit" disabled={saving} style={{ background:'#0050C8', color:'white', border:'none', borderRadius:10, padding:'10px 20px', fontSize:13, fontWeight:700, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1, display:'inline-flex', alignItems:'center', gap:8 }}>
+              {saving && <Icon name="loader-2" className="tbx-spin" style={{ width:14, height:14 }} />}
+              {saving ? 'Guardando…' : 'Guardar'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
 }
 
 export function ContentTable({ section, title }) {
-  const { status, data, error } = useAsyncData(() => adminService.getContentItems(section), [section]);
+  const isEvent = section === 'events';
+  const fetcher = React.useCallback(
+    () => (isEvent ? adminEventsService.listEvents() : adminContentService.listContentItems(SECTION_TO_TYPE[section])),
+    [section, isEvent]
+  );
+  const { status, data, error } = useAsyncData(fetcher, [section]);
   const [rows, setRows] = React.useState([]);
   const [viewing, setViewing] = React.useState(null);
   const [editing, setEditing] = React.useState(null);
   const [confirming, setConfirming] = React.useState(null);
+  const [actionError, setActionError] = React.useState('');
   React.useEffect(() => { if (status === 'success') setRows(data || []); }, [status, data]);
 
-  const editSection = ['videos','infographics','news','events'].includes(section) ? section : 'news';
-  const handle = (action, i) => {
-    if (action === 'view') setViewing(rows[i]);
-    else if (action === 'edit') setEditing(rows[i]);
-    else if (action === 'duplicate') {
-      const dup = { ...rows[i], title: rows[i].title + ' (copia)', status:'Borrador' };
-      setRows([...rows.slice(0,i+1), dup, ...rows.slice(i+1)]);
-    } else if (action === 'delete') setConfirming(i);
+  const deleteFn = isEvent ? adminEventsService.deleteEvent : adminContentService.deleteContentItem;
+  const setStatusFn = isEvent
+    ? (id, s) => adminEventsService.updateEvent(id, { status: s })
+    : (id, s) => adminContentService.updateContentItem(id, { status: s, ...(s === 'published' ? { published_at: new Date().toISOString() } : {}) });
+  const setFeaturedFn = (id, v) => adminContentService.updateContentItem(id, { is_featured: v });
+
+  const handle = async (action, i) => {
+    setActionError('');
+    const row = rows[i];
+    try {
+      if (action === 'view') { setViewing(row); return; }
+      if (action === 'edit') { setEditing(row); return; }
+      if (action === 'duplicate') {
+        if (isEvent) {
+          await adminEventsService.createEvent({
+            title: row.title + ' (copia)', summary: row.summary, description: row.description,
+            modality: row.modality, location: row.location, thumbnail_url: row.thumbnailUrl || null,
+            registration_url: row.registrationUrl || null, partner_name: row.partnerName || null,
+            visibility: row.visibility, status: 'draft', starts_at: row.startsAt, ends_at: row.endsAt,
+          });
+        } else {
+          await adminContentService.createContentItem(SECTION_TO_TYPE[section], {
+            title: row.title + ' (copia)', category_id: row.categoryId || null, summary: row.summary,
+            thumbnail_url: row.thumbnailUrl || null, external_url: row.externalUrl || null,
+            source_name: row.sourceName || null, duration_minutes: row.durationMinutes || null,
+            visibility: 'public', status: 'draft', is_featured: false,
+          });
+        }
+        window.location.reload();
+        return;
+      }
+      if (action === 'delete') { setConfirming(i); return; }
+      if (action === 'publish') { await setStatusFn(row.id, 'published'); }
+      else if (action === 'archive') { await setStatusFn(row.id, 'archived'); }
+      else if (action === 'draft') { await setStatusFn(row.id, 'draft'); }
+      else if (action === 'complete') { await setStatusFn(row.id, 'completed'); }
+      else if (action === 'feature') { await setFeaturedFn(row.id, true); }
+      else if (action === 'unfeature') { await setFeaturedFn(row.id, false); }
+      window.location.reload();
+    } catch (err) {
+      setActionError(err.message || 'No se pudo completar la acción.');
+    }
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteFn(rows[confirming].id);
+      window.location.reload();
+    } catch (err) {
+      setActionError(err.message || 'No se pudo eliminar.');
+      setConfirming(null);
+    }
   };
 
   if (status === 'loading') {
@@ -270,20 +535,26 @@ export function ContentTable({ section, title }) {
         <div style={{ fontSize:15, fontWeight:700, color:'var(--navy-900,#021233)' }}>{title || 'Contenido publicado'}</div>
         <span style={{ fontSize:12, color:'var(--gray-400)' }}>{rows.length} elementos</span>
       </div>
+      {actionError && (
+        <div style={{ margin:'12px 20px 0', fontSize:12.5, color:'#c0392b', background:'rgba(192,57,43,0.08)', border:'1px solid rgba(192,57,43,0.2)', borderRadius:8, padding:'9px 12px' }}>
+          {actionError}
+        </div>
+      )}
       {rows.length === 0 ? (
         <EmptyState label="Todavía no hay publicaciones en esta sección." icon="inbox" />
       ) : (
         <table className="adm-table">
-          <thead><tr><th>Título</th><th>Categoría</th><th>Estado</th><th>Fecha</th><th></th></tr></thead>
+          <thead><tr><th>Título</th><th>{isEvent ? 'Modalidad' : 'Categoría'}</th><th>Estado</th><th>{isEvent ? 'Destacado' : 'Destacado'}</th><th>Fecha</th><th></th></tr></thead>
           <tbody>
             {rows.map((r,i) => (
-              <tr key={i}>
+              <tr key={r.id}>
                 <td style={{ fontWeight:600 }}>{r.title}</td>
                 <td style={{ color:'var(--gray-500)' }}>{r.cat}</td>
                 <td><StatusBadge status={r.status} /></td>
+                <td>{!isEvent && r.isFeatured && <Icon name="star" style={{ width:14, height:14, color:'#FFC600', fill:'#FFC600' }} />}</td>
                 <td style={{ color:'var(--gray-500)' }}>{r.date}</td>
                 <td style={{ textAlign:'right' }}>
-                  <RowMenu onAction={a => handle(a, i)} />
+                  <RowMenu row={r} isEvent={isEvent} onAction={a => handle(a, i)} />
                 </td>
               </tr>
             ))}
@@ -291,12 +562,12 @@ export function ContentTable({ section, title }) {
         </table>
       )}
       {viewing && <ContentViewModal item={viewing} onClose={() => setViewing(null)} />}
-      {editing && <NewContentModal section={editSection} item={editing} onClose={() => setEditing(null)} />}
+      {editing && <NewContentModal section={section} item={editing} onClose={() => setEditing(null)} />}
       {confirming !== null && (
         <ConfirmDialog title="Eliminar publicación"
           message={`¿Seguro que deseas eliminar "${rows[confirming].title}"? Esta acción no se puede deshacer.`}
           onCancel={() => setConfirming(null)}
-          onConfirm={() => { setRows(rows.filter((_,ix) => ix !== confirming)); setConfirming(null); }} />
+          onConfirm={confirmDelete} />
       )}
     </div>
   );
