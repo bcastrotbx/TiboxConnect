@@ -1,6 +1,6 @@
 # Fase 05 — Autenticación real de administradores
 
-**Estado:** Completa (login/logout/protección de rutas verificados sin credenciales reales; login con la cuenta admin real e invitación de administradores pendientes de que Braulio los pruebe — ver [Pruebas](#pruebas-realizadas) y [Pendiente](#pendiente))
+**Estado:** Completa. Login con la cuenta admin real probado por Braulio — encontró y resolvió un problema de permisos base de Postgres (ver [Problemas encontrados y resueltos durante la verificación manual](#problemas-encontrados-y-resueltos-durante-la-verificación-manual)). Invitación de administradores (Edge Function) sigue pendiente de despliegue — ver [Pendiente](#pendiente).
 **Fecha:** 2026-07-27
 **Rama de trabajo:** `feat/react-vite-migration` (misma de las fases anteriores)
 **Repositorio:** https://github.com/bcastrotbx/TiboxConnect
@@ -42,6 +42,7 @@ src/admin/pages/UsuariosPage.jsx                (nuevo)
 src/services/adminUsersService.js               (nuevo)
 supabase/functions/invite-admin/index.ts        (nuevo, Edge Function)
 supabase/migrations/20260728100000_promote_to_admin_function.sql  (nuevo)
+supabase/migrations/20260728110000_grants_anon_authenticated.sql (nuevo — ver hallazgo abajo)
 docs/decisions/ADR-005-PROMOCION-ADMIN-EN-INVITACION.md           (nuevo)
 
 src/main.jsx                    (envuelve <AppRouter/> en <AuthProvider/>)
@@ -92,7 +93,21 @@ Se levantó el servidor de desarrollo (`npm run dev`, `http://localhost:5173`) y
 2. **`/login` renderiza correctamente:** formulario de correo/contraseña, enlace "¿Olvidaste tu contraseña?", sin ningún enlace de registro. 0 errores de consola.
 3. **Header público sin sesión:** en `/`, se confirmó (vía `read_page`) que no existe ningún elemento "ADM", avatar ni "Cerrar sesión" — solo quedan "Mis Tickets" y "Contacta a tu KAM" (no relacionados con sesión). 0 errores de consola.
 
-**Lo que falta verificar con la cuenta admin real (`bcastro+portal@tibox.cl`) queda para que Braulio lo haga** — ver los pasos exactos entregados en el mensaje de cierre de esta fase (login, acceso a `/admin`, cierre de sesión, recarga de `/admin` estando logueado). Este entorno de trabajo no tiene la contraseña de esa cuenta ni forma de obtenerla de manera segura, así que no se simuló ni se asumió su resultado.
+**Lo que faltaba verificar con la cuenta admin real (`bcastro+portal@tibox.cl`) lo hizo Braulio** siguiendo los pasos entregados al cierre de esta fase — y encontró el problema descrito a continuación.
+
+## Problemas encontrados y resueltos durante la verificación manual
+
+### Login fallaba con 403 Forbidden — faltaban los GRANT base de Postgres
+
+Al probar el login real, Braulio obtuvo un **403 Forbidden** al intentar leer el `profile` del usuario recién autenticado (el `select * from profiles where id = ...` que hace `AuthContext` justo después de `signInWithPassword`).
+
+**Causa:** el proyecto Supabase se creó con la opción **"Automatically expose new tables" desmarcada**. Esa opción controla si Supabase otorga automáticamente los permisos base de Postgres (`GRANT SELECT/INSERT/UPDATE/DELETE`) a los roles `anon`/`authenticated` sobre las tablas nuevas. Al estar desmarcada, ninguna de las 9 tablas creadas en la Fase 4 tenía esos `GRANT` — solo tenían las políticas RLS.
+
+Esto es una distinción importante que no se había hecho explícita hasta ahora: **RLS y los `GRANT` de Postgres son dos capas independientes.** Una política RLS decide *qué filas* puede ver/tocar un rol dentro de una operación que ya tiene permitida a nivel de tabla; si el rol no tiene el `GRANT` de tabla para esa operación, Postgres rechaza la consulta **antes** de siquiera evaluar las políticas RLS. Las migraciones de la Fase 4 crearon las tablas y las políticas, pero nunca emitieron los `GRANT` — un paso que normalmente el dashboard de Supabase hace por fuera de las migraciones SQL cuando "Automatically expose new tables" está activo, y que aquí no ocurrió porque esa opción estaba desactivada.
+
+**Solución:** Braulio ejecutó manualmente en el SQL Editor los `GRANT` necesarios para las 9 tablas, y se versionaron en **`supabase/migrations/20260728110000_grants_anon_authenticated.sql`** para que cualquier entorno nuevo (staging, otro proyecto Supabase) los reciba automáticamente al aplicar las migraciones en orden, sin depender de recordar un ajuste manual de configuración del dashboard. El alcance de cada `GRANT` en esa migración refleja exactamente qué operación (`SELECT`/`INSERT`/`UPDATE`/`DELETE`) tiene al menos una política RLS para cada rol en cada tabla (por ejemplo, `profiles` solo otorga `SELECT, UPDATE` a `authenticated`, sin nada para `anon`, porque no existe ninguna política de `anon` sobre esa tabla) — el `GRANT` no amplía el acceso real, que sigue acotado por RLS; solo habilita que RLS pueda evaluarse.
+
+**Por qué no se detectó en la Fase 4:** las pruebas de seguridad de la Fase 4 estaban documentadas como pendientes de que Braulio las ejecutara manualmente (no se pudieron correr desde este entorno de trabajo, sin acceso al proyecto Supabase real) — este `GRANT` faltante solo se manifiesta al intentar una operación real contra la base, que es exactamente lo que ocurrió al probar el login de verdad en esta fase.
 
 ## Decisiones tomadas
 
@@ -110,15 +125,13 @@ Se levantó el servidor de desarrollo (`npm run dev`, `http://localhost:5173`) y
 ## Problemas conocidos
 
 - **La Edge Function `invite-admin` no se pudo desplegar ni probar desde este entorno de trabajo** — no hay Supabase CLI instalado/vinculado ni credenciales de servicio disponibles aquí. El código fue escrito y revisado manualmente, pero su ejecución real contra el proyecto Supabase queda pendiente de que Braulio la despliegue (ver instrucciones en el mensaje de cierre de esta fase).
-- **El login/logout con la cuenta admin real no se pudo probar desde este entorno** — no hay credenciales disponibles aquí de forma segura. Queda pendiente de que Braulio lo verifique siguiendo los pasos entregados.
 - **Sin SMTP propio (SendGrid):** los correos de invitación y recuperación de contraseña dependen del servicio de correo por defecto de Supabase, con límites de volumen y posible demora/spam. Es una limitación temporal esperada, no un bug.
 - **Sin revocación de invitaciones pendientes desde el panel:** si una invitación no se acepta y se quiere cancelarla, hoy debe hacerse manualmente desde Supabase (Authentication → Users).
 - **Bundle único de Vite sigue creciendo** (1,424 kB) — mismo problema estructural documentado desde la Fase 2 (sin code-splitting por ruta).
 
 ## Pendiente
 
-- **Braulio debe desplegar la Edge Function `invite-admin`** y probar el flujo completo de invitación (ver instrucciones paso a paso entregadas en el mensaje de cierre).
-- **Braulio debe probar login/logout/protección de rutas con la cuenta admin real** (`bcastro+portal@tibox.cl`), siguiendo los pasos entregados.
+- **Braulio debe desplegar la Edge Function `invite-admin`** (incluida la migración nueva `20260728110000_grants_anon_authenticated.sql`, que también debe aplicarse) y probar el flujo completo de invitación (ver instrucciones paso a paso entregadas en el mensaje de cierre).
 - Configurar SMTP propio (SendGrid, dominio de TIBOX) para los correos de Supabase Auth, cuando exista acceso al dominio.
 - Evaluar restringir `Access-Control-Allow-Origin` de la Edge Function a un dominio fijo una vez exista uno de producción.
 - Evaluar agregar una lista de administradores existentes (y revocar invitaciones pendientes) en `/admin/usuarios` — hoy solo tiene el formulario de invitar, sin listado.
@@ -127,4 +140,4 @@ Se levantó el servidor de desarrollo (`npm run dev`, `http://localhost:5173`) y
 
 ## Próxima fase recomendada
 
-Fase 6 — conectar `src/services/*` a Supabase, reemplazando la lectura desde `src/data/seed/*.js`, sin tocar los componentes que los consumen. **No se avanza a la Fase 6 sin confirmación explícita de Braulio**, y sin que primero se hayan verificado el despliegue de la Edge Function y el login real con la cuenta admin.
+Fase 6 — conectar `src/services/*` a Supabase, reemplazando la lectura desde `src/data/seed/*.js`, sin tocar los componentes que los consumen. **No se avanza a la Fase 6 sin confirmación explícita de Braulio**, y sin que primero se haya verificado el despliegue de la Edge Function `invite-admin`.
