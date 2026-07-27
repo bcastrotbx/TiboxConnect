@@ -159,9 +159,9 @@ const SECTION_TO_TYPE = { videos: 'video', infographics: 'infographic', news: 'n
 function ImageUploadField({ label, value, onChange }) {
   const [uploading, setUploading] = React.useState(false);
   const [error, setError] = React.useState('');
+  const [dragOver, setDragOver] = React.useState(false);
 
-  const handleFile = async (e) => {
-    const file = e.target.files?.[0];
+  const processFile = async (file) => {
     if (!file) return;
     setUploading(true);
     setError('');
@@ -175,6 +175,20 @@ function ImageUploadField({ label, value, onChange }) {
     }
   };
 
+  const handleInputChange = (e) => {
+    const file = e.target.files?.[0];
+    processFile(file);
+    // Permite volver a elegir el mismo archivo dos veces seguidas (el
+    // navegador no dispara "change" si el value no cambió).
+    e.target.value = '';
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    processFile(e.dataTransfer.files?.[0]);
+  };
+
   return (
     <Field label={label}>
       {value && (
@@ -182,11 +196,28 @@ function ImageUploadField({ label, value, onChange }) {
           <img src={value} alt="" style={{ width:'100%', maxHeight:140, objectFit:'cover', display:'block' }} />
         </div>
       )}
-      <div className="adm-upload">
+      {/* <label> (no <div>) es lo que hace que el clic abra el selector de
+          archivos nativo del sistema operativo — un <input type="file">
+          dentro de un <label> se asocia implícitamente con él sin necesitar
+          htmlFor/id ni un manejador de clic manual (mismo patrón ya usado en
+          PerfilPage.jsx para la foto de perfil). El <div> original nunca
+          tuvo esa asociación, por eso el clic no hacía nada. */}
+      <label
+        className="adm-upload"
+        style={{
+          display: 'block',
+          cursor: uploading ? 'default' : 'pointer',
+          borderColor: dragOver ? '#0050C8' : undefined,
+          background: dragOver ? 'rgba(0,80,200,0.03)' : undefined,
+        }}
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+      >
         <Icon name="upload-cloud" style={{ width:24, height:24, marginBottom:8 }} />
         <div style={{ fontSize:13, fontWeight:600 }}>{uploading ? 'Subiendo…' : value ? 'Reemplazar imagen' : 'Arrastra una imagen o haz clic para subir'}</div>
-        <input type="file" accept="image/jpeg,image/png,image/webp" style={{ display:'none' }} onChange={handleFile} disabled={uploading} />
-      </div>
+        <input type="file" accept="image/jpeg,image/png,image/webp" style={{ display:'none' }} onChange={handleInputChange} disabled={uploading} />
+      </label>
       {error && <div style={{ fontSize:12, color:'#c0392b', marginTop:6 }}>{error}</div>}
     </Field>
   );
