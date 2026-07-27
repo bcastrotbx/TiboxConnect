@@ -12,6 +12,7 @@ Documentación del proceso de migración y estabilización del prototipo TIBOX C
 - [Fase 04 — Modelo de datos y Row Level Security](phases/FASE-04-MODELO-DATOS-RLS.md) — 9 tablas + RLS vía migraciones SQL versionadas en `supabase/migrations/`, función `is_admin()`, trigger de perfil sobre `auth.users`, seed de datos idempotente. Sin conectar `src/services/*`, sin login todavía.
 - [Fase 05 — Autenticación real de administradores](phases/FASE-05-AUTENTICACION.md) — login/logout real (`supabase.auth`), protección de `/admin/*` vía `AdminRoute`, recuperación de contraseña, invitación de administradores adicionales (Edge Function `invite-admin`). Sin conectar el resto de `src/services/*` todavía.
 - [Fase 06-07-08 — Contenido real (combinada y acotada)](phases/FASE-06-07-08-CONTENIDO-REAL.md) — por urgencia de negocio (evento de la primera semana de agosto 2026): lectura pública del portal conectada a Supabase, Storage para imágenes, y panel admin real para noticias, infografías, videos/webinars y eventos. Sin `resources` genéricos, galería de eventos, ni leads de infografías reales todavía.
+- [Fase 10 — Preparación para publicar en Vercel](phases/FASE-10-PUBLICACION-VERCEL.md) — `vercel.json` para el rewrite de SPA, verificación de build/output directory, auditoría de secretos en el repositorio, y la lista final de variables de entorno para Vercel. El despliegue real en el panel de Vercel queda pendiente de que Braulio lo haga manualmente.
 
 ## Modelo de datos
 

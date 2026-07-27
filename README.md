@@ -84,6 +84,7 @@ Todas las rutas `/admin/*` (excepto las de login/recuperación, que son pública
 
 ```
 index.html                 # Única entrada HTML (Vite)
+vercel.json                 # Rewrite de SPA para Vercel (Fase 10)
 src/
   main.jsx                 # Monta AppRouter dentro de AuthProvider
   index.css                # Estilos globales
@@ -122,6 +123,20 @@ legacy/
   uploads/, screenshots/   # Material de referencia, no conectado al código
   tibox-connect-portal-standalone.html  # Wrapper de artifact-host, no es el portal real
 ```
+
+## Despliegue (Vercel)
+
+El proyecto está preparado para publicarse en Vercel (Fase 10), pero **el despliegue real se hace manualmente en el panel de Vercel** — no hay CI/CD ni acceso a Vercel desde este entorno de trabajo.
+
+- **`vercel.json`** (en la raíz) reescribe cualquier ruta hacia `/index.html`, para que rutas de la SPA como `/admin/contenidos` o `/login` no den 404 al recargar directamente.
+- **Build Command:** `npm run build` · **Output Directory:** `dist` (default de Vite, sin configuración especial).
+- **Variables de entorno a cargar en Vercel** (Project Settings → Environment Variables), con los mismos valores reales que ya usas en `.env.local`:
+  - `VITE_SUPABASE_URL`
+  - `VITE_SUPABASE_PUBLISHABLE_KEY`
+
+  No hay ninguna otra variable que configurar — en particular, la `service_role` key de la Edge Function `invite-admin` (Fase 5) no es una variable de Vercel, vive únicamente en la infraestructura de Supabase.
+
+Ver [docs/phases/FASE-10-PUBLICACION-VERCEL.md](docs/phases/FASE-10-PUBLICACION-VERCEL.md) para la auditoría de secretos realizada y la checklist completa de lo que falta hacer en el panel de Vercel.
 
 ## Documentación
 
