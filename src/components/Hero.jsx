@@ -59,8 +59,8 @@ export function HeroSlider() {
           }}>
             <div style={{width:5,height:5,borderRadius:'50%',background:'var(--brand-cyan)',boxShadow:'0 0 6px var(--brand-cyan)'}}></div>
             <span style={{fontSize:11,fontWeight:700,letterSpacing:'0.16em'}}>{slide.eyebrow}</span>
-            <span style={{fontSize:11,color:'rgba(255,255,255,0.5)'}}>·</span>
-            <span style={{fontSize:11,color:'rgba(255,255,255,0.6)',fontWeight:500}}>{slide.tag}</span>
+            {slide.tag && <span style={{fontSize:11,color:'rgba(255,255,255,0.5)'}}>·</span>}
+            {slide.tag && <span style={{fontSize:11,color:'rgba(255,255,255,0.6)',fontWeight:500}}>{slide.tag}</span>}
           </div>
           <h1 style={{fontSize:'clamp(1.7rem,2.8vw,2.5rem)',fontWeight:700,lineHeight:1.12,margin:'0 0 14px',letterSpacing:'-0.02em',color:'white'}}>
             {slide.title}{' '}

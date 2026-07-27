@@ -30,7 +30,7 @@ function EventDetailModal({ event, modalidadById, onClose }) {
       <div style={{padding:'18px 24px 4px'}}>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
           {[
-            {ic:'calendar',  lb:'Fecha',     vl:`${event.day} ${event.month} 2026`},
+            {ic:'calendar',  lb:'Fecha',     vl:`${event.day} ${event.month} ${event.year}`},
             {ic:'clock',     lb:'Hora',      vl:`${event.time} hrs`},
             {ic:mod.icon,    lb:'Modalidad', vl:event.modalidad, color:mod.color},
             {ic:'map-pin',   lb:'Lugar',     vl:event.place},
@@ -158,10 +158,16 @@ function EventCard({ ev, modalidadById, partnersById, onVerDetalle }) {
       <p style={{fontSize:12,color:'var(--gray-600)',lineHeight:1.5,margin:0,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{ev.desc}</p>
 
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,paddingTop:2}}>
+        {(partner.logo || ev.partnerName) && (
         <div style={{display:'flex',alignItems:'center',gap:8,minWidth:0}}>
           <span style={{fontSize:9.5,fontWeight:700,letterSpacing:'0.06em',textTransform:'uppercase',color:'var(--gray-400)'}}>Colaborador</span>
-          <img src={partner.logo} alt={partner.name} title={partner.name} style={{height:17,maxWidth:96,objectFit:'contain'}} />
+          {partner.logo ? (
+            <img src={partner.logo} alt={partner.name} title={partner.name} style={{height:17,maxWidth:96,objectFit:'contain'}} />
+          ) : (
+            <span style={{fontSize:12,fontWeight:700,color:'var(--navy-900)'}}>{ev.partnerName}</span>
+          )}
         </div>
+        )}
         <button onClick={()=>onVerDetalle(ev)} style={{
           fontSize:12,fontWeight:700,color:'white',
           background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',border:'none',borderRadius:9,
@@ -277,6 +283,10 @@ export function EventosPanel() {
 /* ── Vista modal (evento realizado + galería) ───── */
 function VistaModal({ event, onClose }) {
   const [lightbox, setLightbox] = React.useState(null);
+  // Galería de eventos realizados fuera de alcance de la Fase 6/7/8 (ver
+  // docs/phases/FASE-06-07-08-CONTENIDO-REAL.md) — eventos reales no traen
+  // este campo, así que se oculta la sección entera en vez de crashear.
+  const gallery = event.gallery || [];
   return (
     <ModalShell onClose={onClose} maxWidth={560}>
       {/* Imagen principal */}
@@ -298,7 +308,7 @@ function VistaModal({ event, onClose }) {
       <div style={{padding:'18px 24px 4px'}}>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
           {[
-            {ic:'calendar', lb:'Fecha', vl:`${event.day} ${event.month} 2026`},
+            {ic:'calendar', lb:'Fecha', vl:`${event.day} ${event.month} ${event.year}`},
             {ic:'clock',    lb:'Hora',  vl:`${event.time} hrs`},
             {ic:'map-pin',  lb:'Lugar', vl:event.place},
           ].map((it,i)=>(
@@ -322,13 +332,14 @@ function VistaModal({ event, onClose }) {
         <p style={{fontSize:13,color:'var(--gray-600)',lineHeight:1.65,margin:0}}>{event.resena}</p>
       </div>
 
-      {/* Galería fotográfica */}
+      {/* Galería fotográfica (si el evento tiene fotos cargadas) */}
+      {gallery.length > 0 && (
       <div style={{padding:'18px 24px 24px'}}>
         <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.08em',textTransform:'uppercase',color:'#FF6707',marginBottom:10,display:'flex',alignItems:'center',gap:6}}>
           <Icon name="images" style={{width:13,height:13}} />Galería del evento
         </div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-          {event.gallery.map((src,i)=>(
+          {gallery.map((src,i)=>(
             <button key={i} onClick={()=>setLightbox(src)} style={{
               position:'relative',aspectRatio:'4/3',borderRadius:11,overflow:'hidden',cursor:'pointer',
               border:'1px solid var(--gray-200)',padding:0,background:'#0b1a3a',
@@ -341,6 +352,7 @@ function VistaModal({ event, onClose }) {
           ))}
         </div>
       </div>
+      )}
 
       {lightbox && (
         <div onClick={()=>setLightbox(null)} style={{position:'fixed',inset:0,zIndex:700,background:'rgba(2,12,36,0.86)',display:'flex',alignItems:'center',justifyContent:'center',padding:32,cursor:'zoom-out'}}>
