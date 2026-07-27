@@ -1,10 +1,12 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Icon } from '../components/shared/Icon.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 
 // Misma estructura visual y agrupación que en la Fase 1 (General/Contenidos/
 // Negocio/Cuenta) — solo cambia que cada ítem ahora es una ruta real en vez
 // de un setState local. Ver la tabla de mapeo completa en
-// docs/phases/FASE-02-RUTAS-Y-DATOS.md.
+// docs/phases/FASE-02-RUTAS-Y-DATOS.md. "Administradores" se agrega en la
+// Fase 5 (invitar administradores adicionales, ver ADR-004).
 const NAV = [
   { label:'General', items:[
     { path:'/admin', icon:'layout-dashboard', label:'Dashboard' },
@@ -22,12 +24,28 @@ const NAV = [
   ]},
   { label:'Cuenta', items:[
     { path:'/admin/portada', icon:'settings', label:'Configuración' },
+    { path:'/admin/usuarios', icon:'users', label:'Administradores' },
   ]},
 ];
+
+function initialsFor(profile) {
+  const name = profile?.full_name?.trim();
+  if (!name) return 'AD';
+  const parts = name.split(/\s+/).filter(Boolean);
+  const initials = parts.slice(0, 2).map(p => p[0]).join('');
+  return initials.toUpperCase() || 'AD';
+}
 
 export function AdminSidebar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { profile, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
   return (
     <aside className="adm-sidebar">
       <div style={{ padding:'20px 20px 16px', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
@@ -51,14 +69,17 @@ export function AdminSidebar() {
         ))}
       </div>
       <div style={{ padding:'12px 16px', borderTop:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:9 }}>
-        <div style={{ width:32, height:32, borderRadius:'50%', flexShrink:0, background:'var(--grad-title)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:700, color:'white' }}>AD</div>
+        <div style={{ width:32, height:32, borderRadius:'50%', flexShrink:0, background:'var(--grad-title)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:700, color:'white' }}>{initialsFor(profile)}</div>
         <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ fontSize:13, fontWeight:600, color:'white', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Bienvenido (a) ADMIN</div>
+          <div style={{ fontSize:13, fontWeight:600, color:'white', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{profile?.full_name || 'Administrador'}</div>
           <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)' }}>TIBOX Connect</div>
         </div>
         <a href="/" title="Volver al portal" style={{ color:'rgba(255,255,255,0.35)', display:'flex' }}>
           <Icon name="external-link" style={{ width:14, height:14 }} />
         </a>
+        <button onClick={handleSignOut} title="Cerrar sesión" style={{ color:'rgba(255,255,255,0.35)', display:'flex', background:'none', border:'none', cursor:'pointer', padding:0 }}>
+          <Icon name="log-out" style={{ width:14, height:14 }} />
+        </button>
       </div>
     </aside>
   );

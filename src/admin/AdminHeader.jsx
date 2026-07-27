@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Icon } from '../components/shared/Icon.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import * as adminService from '../services/adminService.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const TITLES = {
   '/admin': 'Dashboard',
@@ -15,7 +16,16 @@ const TITLES = {
   '/admin/mensajes/opiniones': 'Opiniones de clientes',
   '/admin/portada': 'Configuración',
   '/admin/perfil': 'Mi Perfil',
+  '/admin/usuarios': 'Administradores',
 };
+
+function initialsFor(profile) {
+  const name = profile?.full_name?.trim();
+  if (!name) return 'AD';
+  const parts = name.split(/\s+/).filter(Boolean);
+  const initials = parts.slice(0, 2).map(p => p[0]).join('');
+  return initials.toUpperCase() || 'AD';
+}
 
 const NEWABLE_PATHS = ['/admin/contenidos', '/admin/contenidos/infografias', '/admin/contenidos/noticias', '/admin/eventos'];
 
@@ -67,7 +77,14 @@ function NotificationBell() {
 
 export function AdminHeader({ pathname, onNew }) {
   const navigate = useNavigate();
+  const { profile, signOut } = useAuth();
   const newable = NEWABLE_PATHS.includes(pathname);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
   return (
     <header className="adm-header">
       <div>
@@ -101,8 +118,20 @@ export function AdminHeader({ pathname, onNew }) {
           onMouseEnter={e => { e.currentTarget.style.background = 'var(--gray-50)'; e.currentTarget.style.borderColor = '#0050C8'; }}
           onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = 'var(--gray-200)'; }}
         >
-          <div style={{ width:22, height:22, borderRadius:'50%', background:'var(--grad-title)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9.5, fontWeight:700, color:'white' }}>AD</div>
+          <div style={{ width:22, height:22, borderRadius:'50%', background:'var(--grad-title)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9.5, fontWeight:700, color:'white' }}>{initialsFor(profile)}</div>
           Mi Perfil
+        </button>
+        <button onClick={handleSignOut} title="Cerrar sesión" style={{
+          display:'inline-flex', alignItems:'center', gap:7,
+          fontSize:12, fontWeight:700, letterSpacing:'0.03em', color:'var(--gray-500)',
+          background:'white', border:'1px solid var(--gray-200)', borderRadius:10,
+          padding:'8px 12px', cursor:'pointer', whiteSpace:'nowrap',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#FF6707'; e.currentTarget.style.borderColor = '#FF6707'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'var(--gray-500)'; e.currentTarget.style.borderColor = 'var(--gray-200)'; }}
+        >
+          <Icon name="log-out" style={{ width:14, height:14 }} />
+          Cerrar sesión
         </button>
         <NotificationBell />
         {newable && (

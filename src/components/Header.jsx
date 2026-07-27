@@ -1,10 +1,26 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Icon } from './shared/Icon.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
+
+function initialsFor(profile) {
+  const name = profile?.full_name?.trim();
+  if (!name) return 'AD';
+  const parts = name.split(/\s+/).filter(Boolean);
+  const initials = parts.slice(0, 2).map(p => p[0]).join('');
+  return initials.toUpperCase() || 'AD';
+}
 
 // Tibox Connect v2 — Header (Mis Tickets = naranja, KAM = azul)
 export function Header({ onScrollContact }) {
   const [showNotif, setShowNotif] = React.useState(false);
+  const { isAdmin, profile, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
   const notifs = [
     { id: 1, text: 'Nuevo webinar: Ciberseguridad para PYMES 2025', time: 'hace 1 h', unread: true },
     { id: 2, text: 'Tu ticket #4821 fue actualizado por soporte', time: 'hace 4 h', unread: true },
@@ -25,20 +41,25 @@ export function Header({ onScrollContact }) {
 
       {/* Buttons */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        {/* ADM — acceso al panel de administración */}
-        <Link to="/admin" title="Panel de administración" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          fontSize: 12, fontWeight: 700, letterSpacing: '0.03em', color: 'var(--gray-600)',
-          background: 'white', border: '1px solid var(--gray-200)', borderRadius: 10,
-          padding: '8px 13px', cursor: 'pointer', whiteSpace: 'nowrap', textDecoration: 'none',
-          transition: 'background 150ms, border-color 150ms, color 150ms',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'var(--gray-50)'; e.currentTarget.style.borderColor = 'var(--gray-300)'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = 'var(--gray-200)'; }}
-        >
-          <Icon name="shield" style={{ width: 14, height: 14 }} />
-          ADM
-        </Link>
+        {/* ADM — acceso al panel de administración. Solo visible con sesión
+            de administrador activa (Fase 5): el portal es 100% público, así
+            que un visitante sin sesión no ve ningún control de cuenta ni
+            atajo al panel (ver ADR-004). */}
+        {isAdmin && (
+          <Link to="/admin" title="Panel de administración" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            fontSize: 12, fontWeight: 700, letterSpacing: '0.03em', color: 'var(--gray-600)',
+            background: 'white', border: '1px solid var(--gray-200)', borderRadius: 10,
+            padding: '8px 13px', cursor: 'pointer', whiteSpace: 'nowrap', textDecoration: 'none',
+            transition: 'background 150ms, border-color 150ms, color 150ms',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--gray-50)'; e.currentTarget.style.borderColor = 'var(--gray-300)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = 'var(--gray-200)'; }}
+          >
+            <Icon name="shield" style={{ width: 14, height: 14 }} />
+            ADM
+          </Link>
+        )}
 
         {/* Mis Tickets — NARANJA */}
         <a href="https://soporte.tibox.cl/Login/LoginCliente" target="_blank" rel="noopener noreferrer" style={{
@@ -136,29 +157,36 @@ export function Header({ onScrollContact }) {
         </button>
       </div>
 
-      <div style={{ width: 1, height: 24, background: 'var(--gray-200)', margin: '0 4px' }}></div>
-
-      {/* Perfil + Cerrar sesión */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{
-          width: 34, height: 34, borderRadius: '50%', background: 'var(--grad-title)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 12, fontWeight: 700, color: 'white', cursor: 'pointer',
-          border: '2px solid var(--gray-200)', flexShrink: 0,
-        }}>CM</div>
-        <button title="Cerrar sesión" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 5,
-          background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px',
-          fontSize: 12.5, fontWeight: 600, color: 'var(--gray-500)', whiteSpace: 'nowrap',
-          borderRadius: 8, transition: 'color 150ms, background 150ms',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.color = '#FF6707'; e.currentTarget.style.background = 'var(--gray-50)'; }}
-          onMouseLeave={e => { e.currentTarget.style.color = 'var(--gray-500)'; e.currentTarget.style.background = 'none'; }}
-        >
-          <Icon name="log-out" style={{ width: 14, height: 14 }} />
-          Cerrar sesión
-        </button>
-      </div>
+      {/* Perfil + Cerrar sesión — antes un usuario de ejemplo hardcodeado
+          ("CM" = Carlos Mora, ver ADR-004); ahora refleja la sesión real de
+          administrador y solo se muestra si existe una. Un admin puede
+          navegar el portal público con su sesión activa y necesita una
+          forma de volver a /admin o cerrar sesión sin salir del portal. */}
+      {isAdmin && (
+        <React.Fragment>
+          <div style={{ width: 1, height: 24, background: 'var(--gray-200)', margin: '0 4px' }}></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div title={profile?.full_name || 'Administrador'} style={{
+              width: 34, height: 34, borderRadius: '50%', background: 'var(--grad-title)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 12, fontWeight: 700, color: 'white', cursor: 'default',
+              border: '2px solid var(--gray-200)', flexShrink: 0,
+            }}>{initialsFor(profile)}</div>
+            <button onClick={handleSignOut} title="Cerrar sesión" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px',
+              fontSize: 12.5, fontWeight: 600, color: 'var(--gray-500)', whiteSpace: 'nowrap',
+              borderRadius: 8, transition: 'color 150ms, background 150ms',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#FF6707'; e.currentTarget.style.background = 'var(--gray-50)'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--gray-500)'; e.currentTarget.style.background = 'none'; }}
+            >
+              <Icon name="log-out" style={{ width: 14, height: 14 }} />
+              Cerrar sesión
+            </button>
+          </div>
+        </React.Fragment>
+      )}
     </header>
   );
 }
