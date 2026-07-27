@@ -141,6 +141,18 @@ Se usó la consola del navegador para invocar directamente `contentService.getVi
 - **No se pudo verificar la creación del bucket `content-images` por SQL contra un proyecto real** — la migración incluye el paso manual alternativo por si el `INSERT` sobre `storage.buckets` no tiene permisos suficientes en el proyecto de Braulio (ver el comentario dentro de `supabase/migrations/20260729100200_storage_content_images.sql`).
 - **Bundle único de Vite** sigue siendo el mismo problema estructural documentado desde la Fase 2.
 
+## Ajuste posterior — popup de noticias en vez de salir a una URL externa
+
+Ajuste acotado pedido por Braulio, dentro del mismo alcance de esta fase (no requirió tocar el modelo de datos ni migraciones nuevas):
+
+- **Antes:** al hacer clic en una tarjeta de noticia de la lista, o en "Ver publicación" de la noticia destacada, se navegaba a `content_items.external_url` en una pestaña nueva.
+- **Ahora:** ambos abren un popup (`NoticiaModal`, en `src/components/Events.jsx`), con el mismo patrón de `ModalShell` que ya usan `InfografiaModal` y `EventDetailModal` — imagen (`thumbnail_url`), categoría, título y el texto completo (`body`). Si `body` está vacío (p. ej. contenido migrado antes de tener este campo), se usa `summary` como respaldo, para que el popup nunca quede en blanco — resuelto en el propio `newsService.mapNewsRow()`/`getFeaturedNews()`, no en el componente.
+- Esto aplica **solo a noticias**: videos, infografías y eventos conservan su interacción actual, sin cambios.
+- `external_url` se sigue leyendo y guardando (no se tocó el modelo de datos ni el formulario del admin), simplemente ya no se usa para navegar desde el portal — queda disponible por si se reactiva un enlace "ver publicación original" más adelante.
+- De paso, se hizo explícito el orden de la lista de noticias: `getNews()`/`getFeaturedNews()` ya ordenaban por `published_at` descendente desde que se conectó esta fase a Supabase, pero se agregó `nullsFirst: false` explícito en el `.order()` — Postgres ordena `NULLS FIRST` por defecto en un orden descendente, así que sin esto una noticia sin `published_at` habría aparecido primera en vez de al final. Aplica solo a noticias; videos, infografías y eventos siguen con su orden actual, sin cambios.
+
+**Verificado en el navegador**, directamente en el portal público (`/`, sin necesitar sesión — esta parte no vive detrás de `/admin/*`): clic en una tarjeta de la lista abre el popup con imagen/categoría/título/texto completo; "Ver publicación" de la noticia destacada abre el mismo popup; la "X" cierra correctamente. 0 errores de consola en los tres casos. De paso se confirmó que el orden de la lista ya reflejaba contenido real recién publicado por Braulio apareciendo primero.
+
 ## Pendiente
 
 - **Braulio debe ejecutar, en este orden, las 3 migraciones nuevas de esta fase** (`20260729100000_webinars_category.sql`, `20260729100100_hero_slides_seed.sql`, `20260729100200_storage_content_images.sql`) en el SQL Editor de Supabase, después de las ya ejecutadas de las Fases 4 y 5.

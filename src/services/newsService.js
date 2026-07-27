@@ -13,6 +13,10 @@ function mapNewsRow(row) {
     source: row.source_name || '',
     date: formatShortDateEs(row.published_at || row.created_at),
     title: row.title,
+    img: row.thumbnail_url || null,
+    // Si no hay cuerpo completo (p.ej. contenido migrado antes de tener este
+    // campo), se usa el resumen para que el popup nunca quede en blanco.
+    body: row.body || row.summary || '',
   };
 }
 
@@ -23,7 +27,11 @@ async function fetchPublishedNews() {
     .eq('type', 'news')
     .eq('status', 'published')
     .eq('visibility', 'public')
-    .order('published_at', { ascending: false });
+    // Más reciente primero. `nullsFirst: false` es explícito a propósito:
+    // Postgres ordena NULLS FIRST por defecto en un order descendente, así
+    // que sin esto una fila con published_at nulo aparecería primera en vez
+    // de al final.
+    .order('published_at', { ascending: false, nullsFirst: false });
 
   if (error) throw error;
   return data || [];
@@ -48,7 +56,7 @@ export async function getFeaturedNews() {
     .eq('status', 'published')
     .eq('visibility', 'public')
     .eq('is_featured', true)
-    .order('published_at', { ascending: false })
+    .order('published_at', { ascending: false, nullsFirst: false })
     .limit(1);
 
   if (error) throw error;
@@ -62,6 +70,7 @@ export async function getFeaturedNews() {
     readtime: estimateReadTime(row.body),
     title: row.title,
     excerpt: row.summary,
+    body: row.body || row.summary || '',
     url: row.external_url || null,
   };
 }

@@ -478,11 +478,44 @@ export function EventosRealizadosPanel() {
   );
 }
 
+// Popup de detalle de una noticia (Fase 6/7/8, ajuste posterior): antes el
+// clic en una tarjeta o en "Ver publicación" salía a una URL externa; ahora
+// abre este modal con el contenido completo (imagen, categoría, título y
+// body — o summary si el body está vacío, ver newsService.mapNewsRow). Sigue
+// el mismo patrón de ModalShell que InfografiaModal/EventDetailModal para
+// mantener consistencia visual.
+function NoticiaModal({ noticia, onClose }) {
+  return (
+    <ModalShell onClose={onClose} maxWidth={640}>
+      <div style={{ position:'relative', background: noticia.img ? '#0b1a3a' : 'var(--grad-corporate)' }}>
+        {noticia.img ? (
+          <img src={noticia.img} alt={noticia.title} style={{ display:'block', width:'100%', maxHeight:'42vh', objectFit:'cover' }} />
+        ) : (
+          <div style={{ height:64 }}></div>
+        )}
+        <button onClick={onClose} style={{ position:'absolute', top:14, right:14, background:'rgba(2,12,36,0.5)', border:'1px solid rgba(255,255,255,0.25)', borderRadius:8, cursor:'pointer', color:'white', padding:6, display:'flex', backdropFilter:'blur(4px)' }}>
+          <Icon name="x" style={{ width:16, height:16 }} />
+        </button>
+        {noticia.catLabel && (
+          <span style={{ position:'absolute', top:14, left:14, fontSize:10.5, fontWeight:700, color:'white', background:noticia.catColor || 'var(--navy-900)', borderRadius:999, padding:'4px 11px', boxShadow:'0 2px 8px rgba(0,0,0,0.3)' }}>
+            {noticia.catLabel}
+          </span>
+        )}
+      </div>
+      <div style={{ padding:'22px 26px 26px' }}>
+        <div style={{ fontSize:17, fontWeight:700, color:'var(--navy-900)', lineHeight:1.32, marginBottom:14 }}>{noticia.title}</div>
+        <p style={{ fontSize:13.5, color:'var(--gray-600)', lineHeight:1.7, margin:0, whiteSpace:'pre-wrap' }}>{noticia.body}</p>
+      </div>
+    </ModalShell>
+  );
+}
+
 export function NoticiasPanel() {
   const { data: allCats } = useAsyncData(() => newsService.getNewsCategories(), []);
   const { data: featuredNews } = useAsyncData(() => newsService.getFeaturedNews(), []);
   const [filter, setFilter] = React.useState('all');
   const { status, data: items, error } = useAsyncData(() => newsService.getNews({ category: filter }), [filter]);
+  const [openNews, setOpenNews] = React.useState(null);
 
   const cats = allCats || [];
   const catsById = React.useMemo(() => Object.fromEntries((allCats || []).map(c => [c.id, c])), [allCats]);
@@ -524,8 +557,8 @@ export function NoticiasPanel() {
                 {items.map((n,idx) => {
                   const c = catsById[n.cat] || {};
                   return (
-                    <a key={n.id} href={featuredNews ? featuredNews.url : '#'} target="_blank" rel="noopener noreferrer"
-                      style={{display:'flex',gap:13,padding:'13px 0',textDecoration:'none',borderTop: idx===0?'none':'1px solid var(--gray-100)',cursor:'pointer'}}
+                    <div key={n.id} onClick={() => setOpenNews({ title:n.title, img:n.img, body:n.body, catLabel:c.label, catColor:c.color })}
+                      style={{display:'flex',gap:13,padding:'13px 0',borderTop: idx===0?'none':'1px solid var(--gray-100)',cursor:'pointer'}}
                       onMouseEnter={e=>e.currentTarget.style.opacity='0.72'}
                       onMouseLeave={e=>e.currentTarget.style.opacity='1'}
                     >
@@ -541,7 +574,7 @@ export function NoticiasPanel() {
                           <Icon name="clock" style={{width:11,height:11}} />{n.date}
                         </div>
                       </div>
-                    </a>
+                    </div>
                   );
                 })}
               </div>
@@ -567,8 +600,8 @@ export function NoticiasPanel() {
             </div>
             <h3 style={{fontSize:17,fontWeight:700,color:'var(--navy-900)',lineHeight:1.3,margin:'0 0 9px'}}>{featuredNews.title}</h3>
             <p style={{fontSize:13,color:'var(--gray-600)',lineHeight:1.6,margin:'0 0 18px'}}>{featuredNews.excerpt}</p>
-            <a href={featuredNews.url} target="_blank" rel="noopener noreferrer" style={{
-              alignSelf:'flex-start',display:'inline-flex',alignItems:'center',gap:8,textDecoration:'none',
+            <button onClick={() => setOpenNews({ title:featuredNews.title, img:featuredNews.img, body:featuredNews.body, catLabel:fc?.label, catColor:fc?.color })} style={{
+              alignSelf:'flex-start',display:'inline-flex',alignItems:'center',gap:8,border:'none',cursor:'pointer',
               fontSize:13.5,fontWeight:700,color:'white',
               background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',borderRadius:10,
               padding:'12px 22px',boxShadow:'0 2px 14px rgba(255,103,7,0.35)',transition:'transform 150ms',
@@ -576,10 +609,12 @@ export function NoticiasPanel() {
               onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'}
               onMouseLeave={e=>e.currentTarget.style.transform='none'}
             >
-              Ver publicación <Icon name="external-link" style={{width:15,height:15}} />
-            </a>
+              Ver publicación <Icon name="arrow-right" style={{width:15,height:15}} />
+            </button>
           </div>
         )}
+
+        {openNews && <NoticiaModal noticia={openNews} onClose={() => setOpenNews(null)} />}
       </div>
     </div>
   );
