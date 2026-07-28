@@ -598,6 +598,49 @@ function SortableTh({ label, sortKey, colSort, onSort, disabled }) {
   );
 }
 
+const PAGE_SIZE = 10;
+
+// Paginación estilo WordPress: números de página + anterior/siguiente. Con
+// los volúmenes de contenido de este panel (decenas, no miles de filas) no
+// hace falta truncar con "…" — se listan todas las páginas.
+function Pagination({ page, totalPages, onChange }) {
+  if (totalPages <= 1) return null;
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+  return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'14px 20px', borderTop:'1px solid var(--gray-200)' }}>
+      <button
+        className="adm-mini-btn"
+        onClick={() => onChange(page - 1)}
+        disabled={page === 1}
+        style={{ opacity: page === 1 ? 0.4 : 1, cursor: page === 1 ? 'default' : 'pointer' }}
+      >
+        <Icon name="chevron-left" style={{ width:13, height:13 }} />
+      </button>
+      {pages.map(p => (
+        <button
+          key={p}
+          onClick={() => onChange(p)}
+          className="adm-mini-btn"
+          style={{
+            minWidth:30, justifyContent:'center', fontWeight: p === page ? 700 : 600,
+            background: p === page ? '#0050C8' : 'white',
+            color: p === page ? 'white' : 'var(--gray-600)',
+            borderColor: p === page ? '#0050C8' : 'var(--gray-200)',
+          }}
+        >{p}</button>
+      ))}
+      <button
+        className="adm-mini-btn"
+        onClick={() => onChange(page + 1)}
+        disabled={page === totalPages}
+        style={{ opacity: page === totalPages ? 0.4 : 1, cursor: page === totalPages ? 'default' : 'pointer' }}
+      >
+        <Icon name="chevron-right" style={{ width:13, height:13 }} />
+      </button>
+    </div>
+  );
+}
+
 export function ContentTable({ section, title }) {
   const isEvent = section === 'events';
   const allowReorder = section !== 'news';
@@ -615,12 +658,15 @@ export function ContentTable({ section, title }) {
   const [colSort, setColSort] = React.useState(null); // { key, dir } | null — vista, no persiste
   const [dragId, setDragId] = React.useState(null);
   const [savingOrder, setSavingOrder] = React.useState(false);
+  const [page, setPage] = React.useState(1);
   React.useEffect(() => {
     if (status === 'success') {
       setRows(data || []);
       setBaselineIds((data || []).filter(r => isReorderable(section, r)).map(r => r.id));
+      setPage(1);
     }
   }, [status, data, section]);
+  React.useEffect(() => { setPage(1); }, [colSort]);
 
   const deleteFn = isEvent ? adminEventsService.deleteEvent : adminContentService.deleteContentItem;
   const updateFn = isEvent ? adminEventsService.updateEvent : adminContentService.updateContentItem;
@@ -654,30 +700,31 @@ export function ContentTable({ section, title }) {
   );
   const orderDirty = allowReorder && currentOrderIds.join(',') !== baselineIds.join(',');
 
-  // Arrastrar-y-soltar y las flechas ↑/↓ ahora solo reordenan la vista local
-  // (rows) — no guardan nada todavía. El guardado real ocurre al hacer clic
-  // en "Guardar cambios" (ver saveOrder). Si el admin sale de la sección o
-  // recarga sin guardar, el nuevo orden se pierde (patrón estándar de
-  // "cambios sin guardar"). Ambos, igual que antes, se deshabilitan mientras
-  // haya un orden de columna activo (ver diseño en
+  // Paginación: 10 elementos por página (estilo WordPress, ver Pagination
+  // más arriba). Arrastrar-y-soltar solo puede reordenar dentro de la página
+  // visible — no es una restricción que se valide explícitamente en el
+  // código, es una consecuencia natural de que las filas de otras páginas ni
+  // siquiera están en el DOM (no hay "onDragEnter" posible sobre una fila que
+  // no está renderizada), así que nunca queda en un estado roto o
+  // inconsistente. Se documenta la decisión en
+  // FASE-06-07-08-CONTENIDO-REAL.md: si el admin necesita mover un elemento
+  // entre páginas lejanas, primero debe reordenar arrastrando dentro de cada
+  // página (ida y vuelta) — suficiente para los volúmenes de contenido
+  // actuales; no se justificó una solución más compleja (ej. arrastrar entre
+  // páginas con auto-scroll) para este panel interno.
+  const totalPages = Math.max(1, Math.ceil(displayRows.length / PAGE_SIZE));
+  React.useEffect(() => { if (page > totalPages) setPage(totalPages); }, [totalPages, page]);
+  const pagedRows = displayRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Arrastrar-y-soltar (único método de reordenar — ver ajuste posterior en
+  // FASE-06-07-08-CONTENIDO-REAL.md, se quitaron las flechas ↑/↓ por
+  // redundantes) solo reordena la vista local (rows) — no guarda nada
+  // todavía. El guardado real ocurre al hacer clic en "Guardar cambios" (ver
+  // saveOrder). Si el admin sale de la sección o recarga sin guardar, el
+  // nuevo orden se pierde (patrón estándar de "cambios sin guardar"). Se
+  // deshabilita mientras haya un orden de columna activo (ver diseño en
   // FASE-06-07-08-CONTENIDO-REAL.md) — el orden visual ya no reflejaría
   // sort_order en ese estado.
-  const moveRow = (rowId, direction) => {
-    if (colSort) return;
-    setRows(prev => {
-      const idx = prev.findIndex(r => r.id === rowId);
-      if (idx === -1) return prev;
-      let swapIdx = idx + (direction === 'up' ? -1 : 1);
-      while (swapIdx >= 0 && swapIdx < prev.length && !isReorderable(section, prev[swapIdx])) {
-        swapIdx += direction === 'up' ? -1 : 1;
-      }
-      if (swapIdx < 0 || swapIdx >= prev.length) return prev;
-      const next = [...prev];
-      [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
-      return next;
-    });
-  };
-
   const handleDragStart = (rowId) => (e) => {
     if (colSort) { e.preventDefault(); return; }
     setDragId(rowId);
@@ -796,19 +843,25 @@ export function ContentTable({ section, title }) {
               <Icon name="rotate-ccw" style={{ width:13, height:13 }} />Volver al orden de publicación
             </button>
           )}
-          {!colSort && orderDirty && (
-            <React.Fragment>
-              <button className="adm-mini-btn" onClick={discardOrder} disabled={savingOrder}>Descartar cambios</button>
-              <button
-                className="adm-mini-btn primary"
-                onClick={saveOrder}
-                disabled={savingOrder}
-                style={{ display:'inline-flex', alignItems:'center', gap:6, opacity: savingOrder ? 0.7 : 1 }}
-              >
-                {savingOrder && <Icon name="loader-2" className="tbx-spin" style={{ width:13, height:13 }} />}
-                {savingOrder ? 'Guardando…' : 'Guardar cambios'}
-              </button>
-            </React.Fragment>
+          {allowReorder && orderDirty && (
+            <button className="adm-mini-btn" onClick={discardOrder} disabled={savingOrder}>Descartar cambios</button>
+          )}
+          {/* "Guardar cambios" queda siempre visible en las secciones reordenables
+              (no solo cuando hay cambios) para que el admin nunca piense que su
+              reordenamiento se perdió — se deshabilita en vez de ocultarse cuando
+              no hay nada pendiente. Se habilita únicamente en base a orderDirty,
+              sin importar si hay un orden de columna activo: un cambio pendiente
+              de antes de activar el orden de columna sigue pudiendo guardarse. */}
+          {allowReorder && (
+            <button
+              className="adm-mini-btn primary"
+              onClick={saveOrder}
+              disabled={savingOrder || !orderDirty}
+              style={{ display:'inline-flex', alignItems:'center', gap:6, opacity: (savingOrder || !orderDirty) ? 0.5 : 1, cursor: (savingOrder || !orderDirty) ? 'default' : 'pointer' }}
+            >
+              {savingOrder && <Icon name="loader-2" className="tbx-spin" style={{ width:13, height:13 }} />}
+              {savingOrder ? 'Guardando…' : 'Guardar cambios'}
+            </button>
           )}
           <span style={{ fontSize:12, color:'var(--gray-400)' }}>{rows.length} elementos</span>
         </div>
@@ -834,7 +887,7 @@ export function ContentTable({ section, title }) {
             </tr>
           </thead>
           <tbody>
-            {displayRows.map((r) => {
+            {pagedRows.map((r) => {
               const reorderable = allowReorder && isReorderable(section, r) && !colSort;
               return (
                 <tr
@@ -849,29 +902,9 @@ export function ContentTable({ section, title }) {
                   {allowReorder && (
                     <td>
                       {reorderable && (
-                        <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-                          <span title="Arrastra para reordenar" style={{ cursor:'grab', display:'flex', color:'var(--gray-400)' }}>
-                            <Icon name="grip-vertical" style={{ width:14, height:14 }} />
-                          </span>
-                          <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
-                            <button
-                              className="adm-mini-btn"
-                              title="Subir"
-                              onClick={() => moveRow(r.id, 'up')}
-                              style={{ padding:'2px 5px' }}
-                            >
-                              <Icon name="chevron-up" style={{ width:13, height:13 }} />
-                            </button>
-                            <button
-                              className="adm-mini-btn"
-                              title="Bajar"
-                              onClick={() => moveRow(r.id, 'down')}
-                              style={{ padding:'2px 5px' }}
-                            >
-                              <Icon name="chevron-down" style={{ width:13, height:13 }} />
-                            </button>
-                          </div>
-                        </div>
+                        <span title="Arrastra para reordenar" style={{ cursor:'grab', display:'inline-flex', color:'var(--gray-400)' }}>
+                          <Icon name="grip-vertical" style={{ width:16, height:16 }} />
+                        </span>
                       )}
                     </td>
                   )}
@@ -889,6 +922,7 @@ export function ContentTable({ section, title }) {
           </tbody>
         </table>
       )}
+      {rows.length > 0 && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
       {viewing && <ContentViewModal item={viewing} onClose={() => setViewing(null)} />}
       {editing && <NewContentModal section={section} item={editing} onClose={() => setEditing(null)} />}
       {confirming !== null && (

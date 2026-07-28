@@ -6,6 +6,7 @@ import { LoadingState, EmptyState, ErrorState } from './shared/AsyncState.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import * as serviceCatalogService from '../services/serviceCatalogService.js';
 import * as formService from '../services/formService.js';
+import { OpinionPanel } from './OpinionPanel.jsx';
 
 /* ── Service detail modal ───────────────────────── */
 function ServiceModal({ service, onClose }) {
@@ -143,57 +144,25 @@ export function ServicesV2() {
 }
 
 /* ── Contact Form Section ───────────────────────── */
-/* ── Map Modal ──────────────────────────────────── */
-function MapModal({ office, offices, onClose }) {
-  const o = offices[office];
-  if (!o) return null;
-  return (
-    <ModalShell onClose={onClose} maxWidth={540}>
-      <div style={{padding:'18px 22px',background:'var(--grad-corporate)',position:'relative',overflow:'hidden'}}>
-        <CosmicBg variant={0} />
-        <div style={{position:'absolute',inset:0,background:'rgba(3,18,55,0.55)'}}></div>
-        <div style={{position:'relative',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12}}>
-          <div>
-            <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:3}}>Oficina TIBOX</div>
-            <div style={{fontSize:17,fontWeight:700,color:'white',lineHeight:1.2}}>{o.label}</div>
-            <div style={{fontSize:12.5,color:'rgba(255,255,255,0.65)',marginTop:5,display:'flex',alignItems:'flex-start',gap:5}}>
-              <Icon name="map-pin" style={{width:13,height:13,flexShrink:0,marginTop:1}} />
-              <span>{o.address}</span>
-            </div>
-          </div>
-          <button onClick={onClose} style={{background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:8,cursor:'pointer',color:'white',padding:6,display:'flex',flexShrink:0}}>
-            <Icon name="x" style={{width:16,height:16}} />
-          </button>
-        </div>
-      </div>
-      <div style={{height:300,overflow:'hidden'}}>
-        <iframe src={o.osmEmbed} title={`Ubicación ${o.label}`}
-          style={{border:'none',width:'100%',height:'100%',display:'block'}} loading="lazy"></iframe>
-      </div>
-      <div style={{padding:'11px 20px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'var(--gray-50)',borderTop:'1px solid var(--gray-200)'}}>
-        <div style={{display:'flex',alignItems:'center',gap:6,fontSize:11.5,color:'var(--gray-500)'}}>
-          <Icon name="info" style={{width:13,height:13}} /> Mapa de referencia
-        </div>
-        <a href={`https://www.openstreetmap.org/?mlat=${o.lat}&mlon=${o.lng}#map=16/${o.lat}/${o.lng}`}
-          target="_blank" rel="noopener noreferrer"
-          style={{fontSize:12.5,fontWeight:700,color:'#0050C8',textDecoration:'none',display:'inline-flex',alignItems:'center',gap:5}}>
-          Abrir en mapa <Icon name="external-link" style={{width:13,height:13}} />
-        </a>
-      </div>
-    </ModalShell>
-  );
-}
-
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): antes esta sección
+// tenía a la izquierda el logo + datos de oficinas Chile/Perú y a la derecha
+// el formulario. Ahora la izquierda lleva el título, el texto y el
+// formulario completo (se quitaron las oficinas y, con ellas, el MapModal y
+// serviceCatalogService.getOffices(), que ya no tienen ningún consumidor en
+// este componente); la derecha pasó a ser el bloque de "Tu Opinión"
+// (OpinionPanel), que dejó de ser una sección aparte de la página. Como
+// ambas columnas quedan sobre el mismo fondo oscuro (grad-corporate), las
+// etiquetas y el texto de ayuda del formulario se ajustaron a colores claros
+// para mantener contraste (antes vivían sobre fondo blanco).
 export function ContactFormSection() {
-  const { data: offices } = useAsyncData(() => serviceCatalogService.getOffices(), []);
   const [form, setForm] = React.useState({ name:'', email:'', empresa:'', phone:'', servicio:'', msg:'' });
   const [sent, setSent] = React.useState(false);
   const [sending, setSending] = React.useState(false);
-  const [mapOffice, setMapOffice] = React.useState(null);
   const [privacyAccepted, setPrivacyAccepted] = React.useState(false);
 
   const update = (k) => (e) => setForm(f => ({...f, [k]: e.target.value}));
   const inputStyle = { width:'100%', padding:'10px 13px', border:'1.5px solid var(--gray-200)', borderRadius:9, fontSize:13, fontFamily:'inherit', outline:'none', background:'white', color:'var(--gray-800)', transition:'border-color 150ms' };
+  const labelStyle = { fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.75)', display:'block', marginBottom:5 };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -203,8 +172,8 @@ export function ContactFormSection() {
 
   return (
     <div className="section-card" style={{ marginBottom:8 }}>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', minHeight:400 }}>
-        {/* Left: dark promo */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:2, minHeight:400 }}>
+        {/* Left: promo + form (dark) */}
         <div style={{
           background:'var(--grad-corporate)', padding:'40px 40px',
           display:'flex', flexDirection:'column', justifyContent:'center', gap:24,
@@ -220,79 +189,31 @@ export function ContactFormSection() {
             <h2 style={{ fontSize:'clamp(1.4rem,2.2vw,2rem)', fontWeight:700, color:'white', lineHeight:1.2, margin:'0 0 14px', letterSpacing:'-0.01em' }}>
               ¿Tienes algún proyecto en mente?
             </h2>
-            <p style={{ fontSize:14, color:'rgba(255,255,255,0.65)', lineHeight:1.65, margin:'0 0 28px' }}>
+            <p style={{ fontSize:14, color:'rgba(255,255,255,0.65)', lineHeight:1.65, margin:0 }}>
               Si tienes una necesidad, iniciativa o proyecto tecnológico en evaluación, cuéntanos. Un consultor TIBOX te contactará en menos de 24 horas hábiles.
             </p>
           </div>
 
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24, position:'relative', alignItems:'start' }}>
-            {/* CHILE */}
-            <div>
-              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
-                <span style={{ fontSize:12, fontWeight:700, letterSpacing:'0.14em', color:'white' }}>CHILE</span>
-                <svg width="22" height="15" viewBox="0 0 22 15" style={{ borderRadius:2, flexShrink:0 }} aria-label="Bandera de Chile">
-                  <rect width="22" height="15" fill="#ffffff"></rect>
-                  <rect y="7.5" width="22" height="7.5" fill="#D52B1E"></rect>
-                  <rect width="7.5" height="7.5" fill="#0039A6"></rect>
-                  <path d="M3.75 1.6 4.3 3.25h1.74L4.63 4.27l0.54 1.65-1.42-1.02-1.42 1.02 0.54-1.65-1.41-1.02h1.74Z" fill="#ffffff"></path>
-                </svg>
-              </div>
-              <div style={{ marginBottom:14 }}>
-                <div style={{ fontSize:13, fontWeight:700, color:'rgba(255,255,255,0.85)', letterSpacing:'0.04em', marginBottom:3 }}>Santiago</div>
-                <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.65)', lineHeight:1.5 }}>Av. Pdte. Kennedy 5600, Oficina 1506, Vitacura.</div>
-                <a href="#" onClick={e=>{e.preventDefault();setMapOffice('santiago');}} style={{ fontSize:12, fontWeight:600, color:'var(--brand-cyan)', textDecoration:'underline', textUnderlineOffset:3 }}>ver mapa</a>
-              </div>
-              <div>
-                <div style={{ fontSize:13, fontWeight:700, color:'rgba(255,255,255,0.85)', letterSpacing:'0.04em', marginBottom:3 }}>Curicó</div>
-                <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.65)', lineHeight:1.5 }}>Jesús Pons 421.</div>
-                <a href="#" onClick={e=>{e.preventDefault();setMapOffice('curico');}} style={{ fontSize:12, fontWeight:600, color:'var(--brand-cyan)', textDecoration:'underline', textUnderlineOffset:3 }}>ver mapa</a>
-              </div>
-            </div>
-            {/* PERÚ */}
-            <div>
-              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
-                <span style={{ fontSize:12, fontWeight:700, letterSpacing:'0.14em', color:'white' }}>PERÚ</span>
-                <svg width="22" height="15" viewBox="0 0 22 15" style={{ borderRadius:2, flexShrink:0 }} aria-label="Bandera de Perú">
-                  <rect width="22" height="15" fill="#D91023"></rect>
-                  <rect x="7.33" width="7.33" height="15" fill="#ffffff"></rect>
-                </svg>
-              </div>
-              <div>
-                <div style={{ fontSize:13, fontWeight:700, color:'rgba(255,255,255,0.85)', letterSpacing:'0.04em', marginBottom:3 }}>Lima</div>
-                <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.65)', lineHeight:1.5 }}>Grimaldo del Solar 162, URB LEURO INT. 407 URB LEURO, Miraflores.</div>
-                <a href="#" onClick={e=>{e.preventDefault();setMapOffice('lima');}} style={{ fontSize:12, fontWeight:600, color:'var(--brand-cyan)', textDecoration:'underline', textUnderlineOffset:3 }}>ver mapa</a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: form */}
-        <div style={{ padding:'40px 40px', display:'flex', flexDirection:'column', justifyContent:'center' }}>
           {sent ? (
-            <div style={{ textAlign:'center', padding:'40px 0' }}>
-              <div style={{ width:64, height:64, borderRadius:'50%', background:'rgba(22,179,100,0.1)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 18px' }}>
-                <Icon name="check-circle-2" style={{ width:32, height:32, color:'#0d8a4e' }} />
+            <div style={{ position:'relative', textAlign:'center', padding:'24px 0' }}>
+              <div style={{ width:56, height:56, borderRadius:'50%', background:'rgba(22,179,100,0.16)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
+                <Icon name="check-circle-2" style={{ width:28, height:28, color:'#3ddc8a' }} />
               </div>
-              <div style={{ fontSize:20, fontWeight:700, color:'var(--navy-900)', marginBottom:8 }}>¡Mensaje enviado!</div>
-              <div style={{ fontSize:14, color:'var(--gray-500)', lineHeight:1.6 }}>Un consultor TIBOX te contactará en las próximas 24 horas hábiles.</div>
-              <button onClick={()=>setSent(false)} style={{ marginTop:24, fontSize:13, fontWeight:600, color:'var(--brand-cyan-700)', background:'none', border:'none', cursor:'pointer', textDecoration:'underline' }}>Enviar otro mensaje</button>
+              <div style={{ fontSize:18, fontWeight:700, color:'white', marginBottom:6 }}>¡Mensaje enviado!</div>
+              <div style={{ fontSize:13.5, color:'rgba(255,255,255,0.65)', lineHeight:1.6 }}>Un consultor TIBOX te contactará en las próximas 24 horas hábiles.</div>
+              <button onClick={()=>setSent(false)} style={{ marginTop:20, fontSize:13, fontWeight:600, color:'var(--brand-cyan)', background:'none', border:'none', cursor:'pointer', textDecoration:'underline' }}>Enviar otro mensaje</button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:16 }}>
-              <div style={{ marginBottom:4 }}>
-                <div style={{ fontSize:'clamp(1.3rem,2vw,1.7rem)', fontWeight:700, color:'var(--navy-900)' }}>Contáctanos</div>
-                <div style={{ fontSize:13, color:'var(--gray-500)', marginTop:3 }}>Todos los campos son requeridos</div>
-              </div>
-
+            <form onSubmit={handleSubmit} style={{ position:'relative', display:'flex', flexDirection:'column', gap:14 }}>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div>
-                  <label style={{ fontSize:12, fontWeight:600, color:'var(--gray-600)', display:'block', marginBottom:5 }}>Nombre completo</label>
+                  <label style={labelStyle}>Nombre completo</label>
                   <input value={form.name} onChange={update('name')} placeholder="Juan Pérez" required style={inputStyle}
                     onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize:12, fontWeight:600, color:'var(--gray-600)', display:'block', marginBottom:5 }}>Correo corporativo</label>
+                  <label style={labelStyle}>Correo corporativo</label>
                   <input type="email" value={form.email} onChange={update('email')} placeholder="tu@empresa.cl" required style={inputStyle}
                     onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'}
                   />
@@ -301,13 +222,13 @@ export function ContactFormSection() {
 
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div>
-                  <label style={{ fontSize:12, fontWeight:600, color:'var(--gray-600)', display:'block', marginBottom:5 }}>Empresa</label>
+                  <label style={labelStyle}>Empresa</label>
                   <input value={form.empresa} onChange={update('empresa')} placeholder="Empresa S.A." required style={inputStyle}
                     onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize:12, fontWeight:600, color:'var(--gray-600)', display:'block', marginBottom:5 }}>Teléfono</label>
+                  <label style={labelStyle}>Teléfono</label>
                   <input value={form.phone} onChange={update('phone')} placeholder="+56 9 XXXX XXXX" style={inputStyle}
                     onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'}
                   />
@@ -315,7 +236,7 @@ export function ContactFormSection() {
               </div>
 
               <div>
-                <label style={{ fontSize:12, fontWeight:600, color:'var(--gray-600)', display:'block', marginBottom:5 }}>Áreas de interés</label>
+                <label style={labelStyle}>Áreas de interés</label>
                 <select value={form.servicio} onChange={update('servicio')} style={{...inputStyle, cursor:'pointer'}}>
                   <option value="">Selecciona un área…</option>
                   <option>Cloud</option>
@@ -333,17 +254,17 @@ export function ContactFormSection() {
               </div>
 
               <div>
-                <label style={{ fontSize:12, fontWeight:600, color:'var(--gray-600)', display:'block', marginBottom:5 }}>Mensaje</label>
+                <label style={labelStyle}>Mensaje</label>
                 <textarea value={form.msg} onChange={update('msg')} placeholder="Cuéntanos en qué podemos ayudarte…" rows={3} required
                   style={{...inputStyle, resize:'vertical'}}
                   onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'}
                 />
               </div>
 
-              <label style={{display:'flex',gap:9,alignItems:'flex-start',cursor:'pointer',fontSize:12.5,color:'var(--gray-600)',lineHeight:1.45}}>
+              <label style={{display:'flex',gap:9,alignItems:'flex-start',cursor:'pointer',fontSize:12.5,color:'rgba(255,255,255,0.65)',lineHeight:1.45}}>
                 <input type="checkbox" checked={privacyAccepted} onChange={e=>setPrivacyAccepted(e.target.checked)} required
                   style={{width:16,height:16,marginTop:1,accentColor:'#FF6707',cursor:'pointer',flexShrink:0}} />
-                <span>He leído y acepto el <a href="https://www.tibox.cl/aviso-de-privacidad/" target="_blank" rel="noopener noreferrer" style={{color:'#0050C8',fontWeight:600}}>Aviso de Privacidad / Información del titular</a>.</span>
+                <span>He leído y acepto el <a href="https://www.tibox.cl/aviso-de-privacidad/" target="_blank" rel="noopener noreferrer" style={{color:'var(--brand-cyan)',fontWeight:600}}>Aviso de Privacidad / Información del titular</a>.</span>
               </label>
 
               <button type="submit" disabled={sending || !privacyAccepted} style={{
@@ -365,8 +286,10 @@ export function ContactFormSection() {
             </form>
           )}
         </div>
+
+        {/* Right: "Tu Opinión" — antes era su propia sección, ver comentario arriba */}
+        <OpinionPanel />
       </div>
-      {mapOffice && <MapModal office={mapOffice} offices={offices || {}} onClose={() => setMapOffice(null)} />}
     </div>
   );
 }
