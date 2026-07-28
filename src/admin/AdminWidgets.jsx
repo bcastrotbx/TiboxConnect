@@ -558,6 +558,20 @@ function isReorderable(section, row) {
   return true;
 }
 
+// Mueve la fila `dragId` a la posición de `overId` dentro del arreglo
+// completo (splice), usado tanto por drag-and-drop como, indirectamente, por
+// las flechas ↑/↓ (que solo intercambian con el vecino reordenable más
+// cercano, saltando filas no reordenables como los eventos ya realizados).
+function moveToPosition(rows, dragId, overId) {
+  const dragIdx = rows.findIndex(r => r.id === dragId);
+  const overIdx = rows.findIndex(r => r.id === overId);
+  if (dragIdx === -1 || overIdx === -1 || dragIdx === overIdx) return rows;
+  const next = [...rows];
+  const [dragged] = next.splice(dragIdx, 1);
+  next.splice(overIdx, 0, dragged);
+  return next;
+}
+
 function sortValue(row, key) {
   switch (key) {
     case 'title': return (row.title || '').toLowerCase();
@@ -593,12 +607,20 @@ export function ContentTable({ section, title }) {
   );
   const { status, data, error } = useAsyncData(fetcher, [section]);
   const [rows, setRows] = React.useState([]);
+  const [baselineIds, setBaselineIds] = React.useState([]); // último orden guardado del subconjunto reordenable — se compara contra el orden actual para saber si hay cambios pendientes
   const [viewing, setViewing] = React.useState(null);
   const [editing, setEditing] = React.useState(null);
   const [confirming, setConfirming] = React.useState(null);
   const [actionError, setActionError] = React.useState('');
   const [colSort, setColSort] = React.useState(null); // { key, dir } | null — vista, no persiste
-  React.useEffect(() => { if (status === 'success') setRows(data || []); }, [status, data]);
+  const [dragId, setDragId] = React.useState(null);
+  const [savingOrder, setSavingOrder] = React.useState(false);
+  React.useEffect(() => {
+    if (status === 'success') {
+      setRows(data || []);
+      setBaselineIds((data || []).filter(r => isReorderable(section, r)).map(r => r.id));
+    }
+  }, [status, data, section]);
 
   const deleteFn = isEvent ? adminEventsService.deleteEvent : adminContentService.deleteContentItem;
   const updateFn = isEvent ? adminEventsService.updateEvent : adminContentService.updateContentItem;
@@ -626,36 +648,74 @@ export function ContentTable({ section, title }) {
     });
   }, [rows, colSort]);
 
-  // Reordenar solo tiene sentido sobre el orden real (sort_order), así que
-  // las flechas se deshabilitan mientras haya un orden de columna activo
-  // (ver diseño documentado en FASE-06-07-08-CONTENIDO-REAL.md).
-  const moveRow = async (rowId, direction) => {
-    setActionError('');
-    const reorderableIds = rows.filter(r => isReorderable(section, r)).map(r => r.id);
-    const pos = reorderableIds.indexOf(rowId);
-    const swapPos = direction === 'up' ? pos - 1 : pos + 1;
-    if (pos === -1 || swapPos < 0 || swapPos >= reorderableIds.length) return;
+  const currentOrderIds = React.useMemo(
+    () => rows.filter(r => isReorderable(section, r)).map(r => r.id),
+    [rows, section]
+  );
+  const orderDirty = allowReorder && currentOrderIds.join(',') !== baselineIds.join(',');
 
-    const newOrderIds = [...reorderableIds];
-    [newOrderIds[pos], newOrderIds[swapPos]] = [newOrderIds[swapPos], newOrderIds[pos]];
-
-    // Renumera secuencialmente el subconjunto reordenable según la nueva
-    // posición visual — así converge a un orden consistente aunque varias
-    // filas compartan sort_order=0 por defecto (contenido recién creado).
-    const orderMap = new Map(newOrderIds.map((id, idx) => [id, idx]));
-    const newRows = rows.map(r => orderMap.has(r.id) ? { ...r, sortOrder: orderMap.get(r.id) } : r);
-    newRows.sort((a, b) => {
-      const oa = orderMap.has(a.id) ? orderMap.get(a.id) : a.sortOrder;
-      const ob = orderMap.has(b.id) ? orderMap.get(b.id) : b.sortOrder;
-      return oa - ob;
+  // Arrastrar-y-soltar y las flechas ↑/↓ ahora solo reordenan la vista local
+  // (rows) — no guardan nada todavía. El guardado real ocurre al hacer clic
+  // en "Guardar cambios" (ver saveOrder). Si el admin sale de la sección o
+  // recarga sin guardar, el nuevo orden se pierde (patrón estándar de
+  // "cambios sin guardar"). Ambos, igual que antes, se deshabilitan mientras
+  // haya un orden de columna activo (ver diseño en
+  // FASE-06-07-08-CONTENIDO-REAL.md) — el orden visual ya no reflejaría
+  // sort_order en ese estado.
+  const moveRow = (rowId, direction) => {
+    if (colSort) return;
+    setRows(prev => {
+      const idx = prev.findIndex(r => r.id === rowId);
+      if (idx === -1) return prev;
+      let swapIdx = idx + (direction === 'up' ? -1 : 1);
+      while (swapIdx >= 0 && swapIdx < prev.length && !isReorderable(section, prev[swapIdx])) {
+        swapIdx += direction === 'up' ? -1 : 1;
+      }
+      if (swapIdx < 0 || swapIdx >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
+      return next;
     });
-    setRows(newRows);
+  };
 
+  const handleDragStart = (rowId) => (e) => {
+    if (colSort) { e.preventDefault(); return; }
+    setDragId(rowId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+  const handleDragEnter = (overId) => (e) => {
+    e.preventDefault();
+    if (colSort || !dragId || dragId === overId) return;
+    setRows(prev => {
+      const dragRow = prev.find(r => r.id === dragId);
+      const overRow = prev.find(r => r.id === overId);
+      if (!dragRow || !overRow || !isReorderable(section, dragRow) || !isReorderable(section, overRow)) return prev;
+      return moveToPosition(prev, dragId, overId);
+    });
+  };
+  const handleDragOver = (e) => { e.preventDefault(); };
+  const handleDragEnd = () => setDragId(null);
+
+  const saveOrder = async () => {
+    setActionError('');
+    setSavingOrder(true);
+    const newIds = currentOrderIds;
     try {
-      await Promise.all(newOrderIds.map((id, idx) => updateFn(id, { sort_order: idx })));
+      await Promise.all(newIds.map((id, idx) => updateFn(id, { sort_order: idx })));
+      setRows(prev => {
+        const orderMap = new Map(newIds.map((id, idx) => [id, idx]));
+        return prev.map(r => orderMap.has(r.id) ? { ...r, sortOrder: orderMap.get(r.id) } : r);
+      });
+      setBaselineIds(newIds);
     } catch (err) {
-      setActionError(err.message || 'No se pudo reordenar.');
+      setActionError(err.message || 'No se pudo guardar el nuevo orden.');
+    } finally {
+      setSavingOrder(false);
     }
+  };
+
+  const discardOrder = () => {
+    setRows(data || []);
   };
 
   const handle = async (action, row) => {
@@ -736,6 +796,20 @@ export function ContentTable({ section, title }) {
               <Icon name="rotate-ccw" style={{ width:13, height:13 }} />Volver al orden de publicación
             </button>
           )}
+          {!colSort && orderDirty && (
+            <React.Fragment>
+              <button className="adm-mini-btn" onClick={discardOrder} disabled={savingOrder}>Descartar cambios</button>
+              <button
+                className="adm-mini-btn primary"
+                onClick={saveOrder}
+                disabled={savingOrder}
+                style={{ display:'inline-flex', alignItems:'center', gap:6, opacity: savingOrder ? 0.7 : 1 }}
+              >
+                {savingOrder && <Icon name="loader-2" className="tbx-spin" style={{ width:13, height:13 }} />}
+                {savingOrder ? 'Guardando…' : 'Guardar cambios'}
+              </button>
+            </React.Fragment>
+          )}
           <span style={{ fontSize:12, color:'var(--gray-400)' }}>{rows.length} elementos</span>
         </div>
       </div>
@@ -761,31 +835,42 @@ export function ContentTable({ section, title }) {
           </thead>
           <tbody>
             {displayRows.map((r) => {
-              const reorderable = allowReorder && isReorderable(section, r);
+              const reorderable = allowReorder && isReorderable(section, r) && !colSort;
               return (
-                <tr key={r.id}>
+                <tr
+                  key={r.id}
+                  draggable={reorderable}
+                  onDragStart={reorderable ? handleDragStart(r.id) : undefined}
+                  onDragEnter={reorderable ? handleDragEnter(r.id) : undefined}
+                  onDragOver={reorderable ? handleDragOver : undefined}
+                  onDragEnd={reorderable ? handleDragEnd : undefined}
+                  style={{ opacity: dragId === r.id ? 0.4 : 1 }}
+                >
                   {allowReorder && (
                     <td>
                       {reorderable && (
-                        <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
-                          <button
-                            className="adm-mini-btn"
-                            title="Subir"
-                            disabled={!!colSort}
-                            onClick={() => moveRow(r.id, 'up')}
-                            style={{ padding:'2px 5px', opacity: colSort ? 0.4 : 1, cursor: colSort ? 'default' : 'pointer' }}
-                          >
-                            <Icon name="chevron-up" style={{ width:13, height:13 }} />
-                          </button>
-                          <button
-                            className="adm-mini-btn"
-                            title="Bajar"
-                            disabled={!!colSort}
-                            onClick={() => moveRow(r.id, 'down')}
-                            style={{ padding:'2px 5px', opacity: colSort ? 0.4 : 1, cursor: colSort ? 'default' : 'pointer' }}
-                          >
-                            <Icon name="chevron-down" style={{ width:13, height:13 }} />
-                          </button>
+                        <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                          <span title="Arrastra para reordenar" style={{ cursor:'grab', display:'flex', color:'var(--gray-400)' }}>
+                            <Icon name="grip-vertical" style={{ width:14, height:14 }} />
+                          </span>
+                          <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
+                            <button
+                              className="adm-mini-btn"
+                              title="Subir"
+                              onClick={() => moveRow(r.id, 'up')}
+                              style={{ padding:'2px 5px' }}
+                            >
+                              <Icon name="chevron-up" style={{ width:13, height:13 }} />
+                            </button>
+                            <button
+                              className="adm-mini-btn"
+                              title="Bajar"
+                              onClick={() => moveRow(r.id, 'down')}
+                              style={{ padding:'2px 5px' }}
+                            >
+                              <Icon name="chevron-down" style={{ width:13, height:13 }} />
+                            </button>
+                          </div>
                         </div>
                       )}
                     </td>
