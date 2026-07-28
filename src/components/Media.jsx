@@ -6,38 +6,66 @@ import { LoadingState, EmptyState, ErrorState } from './shared/AsyncState.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import * as contentService from '../services/contentService.js';
 import * as formService from '../services/formService.js';
+import { extractYouTubeVideoId } from '../lib/youtube.js';
 
-/* ── Video player modal (simulated) ─────────────── */
+/* ── Video player modal — Fase 6/7/8, ajuste posterior: reproductor real de
+   YouTube en vez del reproductor decorativo heredado del prototipo original
+   (barra de progreso falsa + texto "Reproducción de demostración"). Se
+   arranca en estado "poster" (miniatura + botón Play) y solo se embebe el
+   iframe al hacer clic — evita autoplay con sonido apenas se abre el
+   popup, más apropiado para una demo en vivo. Reutiliza
+   extractYouTubeVideoId() (src/lib/youtube.js) en vez de duplicar la
+   extracción del ID. Si external_url no es un link de YouTube válido, no
+   se finge un reproductor — se ofrece un enlace real a "Ver contenido". ── */
 function VideoModal({ video, catsById, onClose }) {
   const cat = catsById[video.cat] || { color:'var(--navy-900)', label:'' };
+  const [playing, setPlaying] = React.useState(false);
+  const youtubeId = extractYouTubeVideoId(video.externalUrl);
+
   return (
     <ModalShell onClose={onClose} maxWidth={680}>
       <div style={{position:'relative',aspectRatio:'16/9',background:'#040b22',overflow:'hidden'}}>
-        <img src={video.thumb} alt="" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}} />
-        <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(2,12,36,0.25),rgba(2,12,36,0.82))'}}></div>
+        {playing && youtubeId ? (
+          <iframe
+            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`}
+            title={video.title}
+            style={{position:'absolute',inset:0,width:'100%',height:'100%',border:'none'}}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+          />
+        ) : (
+          <React.Fragment>
+            <img src={video.thumb} alt="" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}} />
+            <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(2,12,36,0.25),rgba(2,12,36,0.82))'}}></div>
+            <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+              {youtubeId ? (
+                <button onClick={()=>setPlaying(true)} title="Reproducir" style={{
+                  width:74,height:74,borderRadius:'50%',border:'none',padding:0,
+                  background:'linear-gradient(135deg,#FF6707,#FF8C3A)',
+                  display:'flex',alignItems:'center',justifyContent:'center',
+                  boxShadow:'0 0 0 10px rgba(255,103,7,0.18), 0 8px 28px rgba(255,103,7,0.45)',
+                  cursor:'pointer',
+                }}>
+                  <Icon name="play" style={{width:30,height:30,color:'white',marginLeft:3}} />
+                </button>
+              ) : video.externalUrl ? (
+                <a href={video.externalUrl} target="_blank" rel="noopener noreferrer" title="Ver contenido" style={{
+                  width:74,height:74,borderRadius:'50%',textDecoration:'none',
+                  background:'rgba(255,255,255,0.14)',border:'1.5px solid rgba(255,255,255,0.4)',
+                  display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',
+                }}>
+                  <Icon name="external-link" style={{width:26,height:26,color:'white'}} />
+                </a>
+              ) : (
+                <span style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.75)'}}>Sin video disponible</span>
+              )}
+            </div>
+            <span style={{position:'absolute',top:14,left:16,zIndex:2,fontSize:10.5,fontWeight:700,color:'white',background:cat.color,borderRadius:999,padding:'4px 11px',boxShadow:'0 2px 8px rgba(0,0,0,0.3)'}}>{cat.label}</span>
+          </React.Fragment>
+        )}
         <button onClick={onClose} style={{position:'absolute',top:12,right:12,zIndex:3,width:34,height:34,borderRadius:'50%',background:'rgba(0,0,0,0.45)',border:'1px solid rgba(255,255,255,0.2)',color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
           <Icon name="x" style={{width:17,height:17}} />
         </button>
-        <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <div style={{
-            width:74,height:74,borderRadius:'50%',
-            background:'linear-gradient(135deg,#FF6707,#FF8C3A)',
-            display:'flex',alignItems:'center',justifyContent:'center',
-            boxShadow:'0 0 0 10px rgba(255,103,7,0.18), 0 8px 28px rgba(255,103,7,0.45)',
-            cursor:'pointer',
-          }}>
-            <Icon name="play" style={{width:30,height:30,color:'white',marginLeft:3}} />
-          </div>
-        </div>
-        <div style={{position:'absolute',left:18,right:18,bottom:16,zIndex:2}}>
-          <div style={{height:4,borderRadius:999,background:'rgba(255,255,255,0.25)',overflow:'hidden'}}>
-            <div style={{width:'24%',height:'100%',background:'var(--brand-cyan)'}}></div>
-          </div>
-          <div style={{display:'flex',justifyContent:'space-between',marginTop:7,fontSize:11,color:'rgba(255,255,255,0.7)',fontVariantNumeric:'tabular-nums'}}>
-            <span>06:32</span><span>{video.dur}</span>
-          </div>
-        </div>
-        <span style={{position:'absolute',top:14,left:16,zIndex:2,fontSize:10.5,fontWeight:700,color:'white',background:cat.color,borderRadius:999,padding:'4px 11px',boxShadow:'0 2px 8px rgba(0,0,0,0.3)'}}>{cat.label}</span>
       </div>
       <div style={{padding:'18px 22px 20px'}}>
         <div style={{fontSize:16,fontWeight:700,color:'var(--navy-900)',lineHeight:1.3}}>{video.title}</div>
@@ -45,9 +73,13 @@ function VideoModal({ video, catsById, onClose }) {
           <span style={{fontSize:12,color:'var(--gray-500)',display:'inline-flex',alignItems:'center',gap:5}}><Icon name="clock" style={{width:13,height:13}} />{video.dur}</span>
           <span style={{fontSize:12,color:'var(--gray-500)',display:'inline-flex',alignItems:'center',gap:5}}><Icon name="calendar" style={{width:13,height:13}} />{video.date}</span>
         </div>
-        <div style={{fontSize:13,color:'var(--gray-500)',marginTop:10,lineHeight:1.55}}>
-          Reproducción de demostración. En el portal real, este contenido se transmite desde la videoteca de TIBOX Connect con calidad adaptativa.
-        </div>
+        {!youtubeId && (
+          <div style={{fontSize:13,color:'var(--gray-500)',marginTop:10,lineHeight:1.55}}>
+            {video.externalUrl
+              ? 'Este contenido no está alojado en YouTube — usa "Ver contenido" para abrirlo en una pestaña nueva.'
+              : 'Este video todavía no tiene un link asociado.'}
+          </div>
+        )}
       </div>
     </ModalShell>
   );

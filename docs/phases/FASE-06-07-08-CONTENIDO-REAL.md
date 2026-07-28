@@ -205,6 +205,18 @@ Tres cambios visuales pedidos por Braulio antes de una presentación, revisados 
 
 **Este commit se dejó en local, sin `git push`**, a la espera de que Braulio lo revise con `npm run dev` antes de la presentación.
 
+## Ajuste posterior — reproductor real de YouTube en el popup de video
+
+Bug crítico encontrado por Braulio antes de la demo: `VideoModal` (`src/components/Media.jsx`) todavía usaba el reproductor decorativo heredado del prototipo original — barra de progreso falsa, "06:32" fijo, y el texto "Reproducción de demostración. En el portal real, este contenido se transmite desde la videoteca de TIBOX Connect con calidad adaptativa." El botón Play no reproducía nada real.
+
+**Ahora:** el popup arranca en estado "poster" (miniatura + botón Play, igual que antes visualmente) y, al hacer clic en Play, embebe un iframe real de YouTube (`https://www.youtube.com/embed/ID`) usando el ID extraído de `content_items.external_url` con `extractYouTubeVideoId()` (`src/lib/youtube.js`, ya existente desde la Fase 6/7/8 — reutilizado, no se duplicó la lógica). Se decidió no reproducir automáticamente al abrir el popup, para no autoreproducir con sonido justo al hacer clic en una tarjeta — el clic en Play es una acción explícita, más apropiado para una demo en vivo. Se eliminó por completo la barra de progreso falsa y el texto de "demostración".
+
+Si `external_url` no es un link de YouTube válido, no se finge un reproductor: se muestra un botón "Ver contenido" que abre `external_url` en una pestaña nueva; si tampoco hay `external_url`, se muestra "Sin video disponible" — en ningún caso rompe el popup.
+
+**Verificado en el navegador:** se abrió el video "Copilot Studio: crea tu propio agente de IA" (el que usa el link de YouTube corregido en una fase anterior) — el popup abre en estado poster sin texto de "demostración"; al hacer clic en Play, se embebe y reproduce de verdad el video real de YouTube (controles, marca y subtítulos de YouTube visibles, tiempo avanzando); la X cierra correctamente en cualquier estado. 0 errores de consola en todo el flujo.
+
+**Commit local únicamente, sin `git push`** — a la espera de que Braulio lo confirme antes de publicarlo.
+
 ## Pendiente
 
 - **Braulio debe ejecutar la migración `20260730100000_demo_content_agosto.sql`** (contenido de ejemplo adicional para la demo) en el SQL Editor de Supabase — entre otras cosas, incluye el único evento `completed` disponible hoy; hasta que se ejecute, el botón "Ver eventos realizados" no aparece (el panel muestra correctamente el estado vacío "Todavía no hay eventos realizados").
