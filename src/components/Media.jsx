@@ -428,14 +428,14 @@ function InfoCard({ inf, channelsById, onOpen }) {
       onClick={()=>onOpen(inf)}
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{
-        flex:'0 0 calc((100% - 36px) / 3)', minWidth:200, scrollSnapAlign:'start',
+        flex:'0 0 calc((100% - 54px) / 4)', minWidth:180, scrollSnapAlign:'start',
         background:'white', borderRadius:16, overflow:'hidden', cursor:'pointer',
         boxShadow: hov ? '0 14px 32px rgba(2,18,55,0.28)' : '0 4px 14px rgba(2,18,55,0.16)',
         transform: hov ? 'translateY(-5px)' : 'none',
         transition:'box-shadow 220ms, transform 220ms',
       }}
     >
-        <div style={{position:'relative', aspectRatio:'1 / 1', overflow:'hidden', background:'#0b1a3a'}}>
+        <div style={{position:'relative', aspectRatio:'4 / 3', overflow:'hidden', background:'#0b1a3a'}}>
         <img src={inf.img} alt={inf.title} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',transform:hov?'scale(1.04)':'none',transition:'transform 340ms'}} />
       </div>
       <div style={{padding:'13px 15px 16px'}}>

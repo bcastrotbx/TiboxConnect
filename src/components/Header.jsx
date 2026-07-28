@@ -11,8 +11,9 @@ function initialsFor(profile) {
   return initials.toUpperCase() || 'AD';
 }
 
-// Tibox Connect v2 — Header (Mis Tickets = naranja, KAM = azul)
-export function Header({ onScrollContact }) {
+// Tibox Connect v2 — Header (Crear Tickets = naranja; el botón azul
+// "Contacta a tu KAM" se eliminó a pedido de negocio)
+export function Header() {
   const [showNotif, setShowNotif] = React.useState(false);
   const { isAdmin, profile, signOut } = useAuth();
   const navigate = useNavigate();
@@ -61,7 +62,7 @@ export function Header({ onScrollContact }) {
           </Link>
         )}
 
-        {/* Mis Tickets — NARANJA */}
+        {/* Crear Tickets — NARANJA (antes "Mis Tickets", mismo estilo) */}
         <a href="https://soporte.tibox.cl/Login/LoginCliente" target="_blank" rel="noopener noreferrer" style={{
           display: 'inline-flex', alignItems: 'center', gap: 7,
           fontSize: 13, fontWeight: 700, color: 'white',
@@ -75,25 +76,8 @@ export function Header({ onScrollContact }) {
           onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(255,103,7,0.28)'; }}
         >
           <Icon name="ticket" style={{ width: 15, height: 15 }} />
-          Mis Tickets
+          Crear Tickets
         </a>
-
-        {/* Contacta a tu KAM — AZUL */}
-        <button onClick={() => onScrollContact && onScrollContact()} style={{
-          display: 'inline-flex', alignItems: 'center', gap: 7,
-          fontSize: 13, fontWeight: 700, color: 'white',
-          background: 'linear-gradient(135deg, #0050C8 0%, #0080F0 100%)',
-          border: 'none', borderRadius: 10, padding: '8px 16px',
-          cursor: 'pointer', whiteSpace: 'nowrap',
-          boxShadow: '0 2px 10px rgba(0,80,200,0.28)',
-          transition: 'transform 150ms, box-shadow 150ms',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,80,200,0.4)'; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,80,200,0.28)'; }}
-        >
-          <Icon name="user-check" style={{ width: 15, height: 15 }} />
-          Contacta a tu KAM
-        </button>
       </div>
 
       <div style={{ width: 1, height: 24, background: 'var(--gray-200)', margin: '0 6px' }}></div>

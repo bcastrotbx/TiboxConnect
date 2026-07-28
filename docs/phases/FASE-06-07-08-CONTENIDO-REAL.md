@@ -193,6 +193,18 @@ El badge que mostraba "`{N}` eventos" en el panel "Eventos Realizados" (`src/com
 
 **Verificado en el navegador:** como la base real todavía no tiene ningún evento `completed` (la migración con el evento de ejemplo, `20260730100000_demo_content_agosto.sql`, sigue pendiente de que Braulio la ejecute — ver Pendiente), se verificó con 2 eventos mock temporales inyectados directamente en `eventService.getPastEvents()` (revertido antes de terminar, no llegó a versionarse): el botón abre la lista con ambos eventos, título/fecha/lugar visibles; al hacer clic en uno, la lista se cierra y se abre el detalle correcto (fecha, hora, lugar y la reseña completa, sin recorte); 0 errores de consola en todo el flujo.
 
+## Ajuste posterior — header del portal y densidad de la grilla de infografías
+
+Tres cambios visuales pedidos por Braulio antes de una presentación, revisados primero en local con `npm run dev` (no se pusheó de inmediato, a pedido explícito):
+
+1. **"Mis Tickets" → "Crear Tickets"** en `src/components/Header.jsx` — mismo botón, mismo estilo, solo cambió el texto.
+2. **Se eliminó por completo el botón "Contacta a tu KAM"** (azul) del header. Como consecuencia, `onScrollContact` (la prop que `PortalLayout.jsx` le pasaba a `Header` solo para ese botón) quedó sin ningún consumidor — se quitó de ambos archivos en vez de dejarla declarada sin uso. `scrollToSection` en sí (usado por el Sidebar, `window.scrollToSection` y `CategoryBlocks`) no se tocó.
+3. **Investigación de "solo se ven 3 infografías":** no había ningún `slice`/límite en el código (`contentService.getInfographics()` no recorta nada) — se confirmó en el navegador que la consulta ya devuelve las 6 infografías publicadas, incluida "Guía rápida: cómo aprovechar al máximo un webinar TIBOX". La causa real era puramente visual: `InfoCard` (`src/components/Media.jsx`) tenía el ancho fijo en `flex:'0 0 calc((100% - 36px) / 3)'`, es decir, el carrusel estaba dimensionado a propósito para mostrar exactamente 3 tarjetas por pantalla (la 4ª ya estaba en el DOM, solo había que hacer scroll o tocar la flecha). Se cambió a `calc((100% - 54px) / 4)` para que se vean 4 a la vez. De paso, se redujo la altura de la imagen de cada tarjeta (de `aspectRatio:'1/1'`, cuadrada, a `4/3`) sin tocar el ancho, como se pidió.
+
+**Verificado en el navegador:** header muestra "Crear Tickets" y ya no muestra el botón azul, 0 errores de consola. La grilla de infografías muestra 4 tarjetas visibles (incluida la de Webinars) con imágenes más compactas, y la flecha permite llegar a las 2 restantes; 0 errores de consola.
+
+**Este commit se dejó en local, sin `git push`**, a la espera de que Braulio lo revise con `npm run dev` antes de la presentación.
+
 ## Pendiente
 
 - **Braulio debe ejecutar la migración `20260730100000_demo_content_agosto.sql`** (contenido de ejemplo adicional para la demo) en el SQL Editor de Supabase — entre otras cosas, incluye el único evento `completed` disponible hoy; hasta que se ejecute, el botón "Ver eventos realizados" no aparece (el panel muestra correctamente el estado vacío "Todavía no hay eventos realizados").

@@ -101,7 +101,7 @@ export function PortalLayout() {
     <React.Fragment>
       <Sidebar active={active} onNav={setActive} onScroll={scrollToSection} onSoporte={() => setShowSoporte(true)} collapsed={collapsed} onToggle={() => setCollapsed(c => !c)} />
       <div className="portal-main">
-        <Header onScrollContact={() => scrollToSection('contact')} />
+        <Header />
         <div className="portal-content">
           <div className="content-wrap">
             <Outlet />
