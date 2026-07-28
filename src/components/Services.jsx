@@ -155,7 +155,7 @@ export function ServicesV2() {
 // etiquetas y el texto de ayuda del formulario se ajustaron a colores claros
 // para mantener contraste (antes vivían sobre fondo blanco).
 export function ContactFormSection() {
-  const [form, setForm] = React.useState({ name:'', email:'', empresa:'', phone:'', servicio:'', msg:'' });
+  const [form, setForm] = React.useState({ name:'', email:'', empresa:'', phone:'', msg:'' });
   const [sent, setSent] = React.useState(false);
   const [sending, setSending] = React.useState(false);
   const [privacyAccepted, setPrivacyAccepted] = React.useState(false);
@@ -187,7 +187,7 @@ export function ContactFormSection() {
             <img src="/assets/logo-tibox.png" alt="TIBOX" style={{ height:22, marginBottom:28 }} />
             <div style={{ fontSize:11, fontWeight:700, letterSpacing:'0.16em', textTransform:'uppercase', color:'var(--brand-cyan)', marginBottom:12 }}>Cuéntanos tu idea</div>
             <h2 style={{ fontSize:'clamp(1.4rem,2.2vw,2rem)', fontWeight:700, color:'white', lineHeight:1.2, margin:'0 0 14px', letterSpacing:'-0.01em' }}>
-              ¿Tienes algún proyecto en mente?
+              ¿Tienes algún <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>proyecto en mente</span>?
             </h2>
             <p style={{ fontSize:14, color:'rgba(255,255,255,0.65)', lineHeight:1.65, margin:0 }}>
               Si tienes una necesidad, iniciativa o proyecto tecnológico en evaluación, cuéntanos. Un consultor TIBOX te contactará en menos de 24 horas hábiles.
@@ -233,24 +233,6 @@ export function ContactFormSection() {
                     onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'}
                   />
                 </div>
-              </div>
-
-              <div>
-                <label style={labelStyle}>Áreas de interés</label>
-                <select value={form.servicio} onChange={update('servicio')} style={{...inputStyle, cursor:'pointer'}}>
-                  <option value="">Selecciona un área…</option>
-                  <option>Cloud</option>
-                  <option>Ciberseguridad</option>
-                  <option>Microsoft 365</option>
-                  <option>Backup</option>
-                  <option>IA</option>
-                  <option>Automatización de procesos</option>
-                  <option>Power BI y analítica</option>
-                  <option>Desarrollo de aplicaciones</option>
-                  <option>Intranet o SharePoint</option>
-                  <option>Diseño de sitios web</option>
-                  <option>Otro</option>
-                </select>
               </div>
 
               <div>

@@ -11,9 +11,26 @@ function initialsFor(profile) {
   return initials.toUpperCase() || 'AD';
 }
 
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): se eliminó el
+// Sidebar del portal público — el logo y la navegación por secciones
+// (Inicio/Videos/Infografías/Noticias/Eventos) que antes vivían ahí se
+// movieron acá. "Soporte" también se movió acá (antes un ítem del sidebar
+// que abría el mismo modal, ver PortalLayout.jsx). "Mi Perfil" y
+// "Configuración" NO se migraron: en el sidebar original no tenían ningún
+// destino real (no navegaban a ninguna ruta ni sección, solo marcaban un
+// estado "activo" decorativo) — eran enlaces sin función, así que se
+// consideran eliminados a propósito en vez de recrear una navegación falsa.
+const NAV_LINKS = [
+  { label: 'Inicio', scrollTarget: 'hero' },
+  { label: 'Videos y Webinars', scrollTarget: 'videos' },
+  { label: 'Infografías', scrollTarget: 'infographics' },
+  { label: 'Noticias', scrollTarget: 'news' },
+  { label: 'Eventos', scrollTarget: 'events' },
+];
+
 // Tibox Connect v2 — Header (Crear Tickets = naranja; el botón azul
 // "Contacta a tu KAM" se eliminó a pedido de negocio)
-export function Header() {
+export function Header({ onSoporte }) {
   const [showNotif, setShowNotif] = React.useState(false);
   const { isAdmin, profile, signOut } = useAuth();
   const navigate = useNavigate();
@@ -31,12 +48,39 @@ export function Header() {
 
   return (
     <header className="portal-header">
-      {/* Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
-        <span style={{ fontSize: 13, color: 'var(--gray-400)', fontWeight: 500 }}>Portal</span>
-        <Icon name="chevron-right" style={{ width: 13, height: 13, color: 'var(--gray-400)' }} />
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--navy-900)' }}>Tibox Connect</span>
-      </div>
+      {/* Logo — antes vivía en el Sidebar del portal, ahora eliminado (ver
+          FASE-06-07-08-CONTENIDO-REAL.md) */}
+      <img src="/assets/logo-tibox.png" alt="TIBOX" style={{ height: 22, flexShrink: 0 }} />
+
+      {/* Navegación por secciones — reemplaza los ítems del Sidebar
+          eliminado. Mismo mecanismo de scroll (window.scrollToSection) que
+          ya usaban los bloques de categoría bajo el hero. */}
+      <nav style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 18 }}>
+        {NAV_LINKS.map(link => (
+          <button key={link.scrollTarget} onClick={() => window.scrollToSection && window.scrollToSection(link.scrollTarget)} style={{
+            background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
+            fontSize: 13, fontWeight: 600, color: 'var(--gray-600)',
+            padding: '7px 10px', borderRadius: 8, transition: 'background 150ms, color 150ms',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--gray-50)'; e.currentTarget.style.color = 'var(--navy-900)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--gray-600)'; }}
+          >
+            {link.label}
+          </button>
+        ))}
+        {onSoporte && (
+          <button onClick={onSoporte} style={{
+            background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
+            fontSize: 13, fontWeight: 600, color: 'var(--gray-600)',
+            padding: '7px 10px', borderRadius: 8, transition: 'background 150ms, color 150ms',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--gray-50)'; e.currentTarget.style.color = 'var(--navy-900)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--gray-600)'; }}
+          >
+            Soporte
+          </button>
+        )}
+      </nav>
 
       <div style={{ flex: 1 }}></div>
 
@@ -82,8 +126,10 @@ export function Header() {
 
       <div style={{ width: 1, height: 24, background: 'var(--gray-200)', margin: '0 6px' }}></div>
 
-      {/* Icons */}
-      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+      {/* Icons — ocultos a pedido de Braulio (ver FASE-06-07-08-CONTENIDO-REAL.md);
+          se deja el código intacto (solo display:'none') por si se reactivan más
+          adelante, en vez de borrarlo. */}
+      <div style={{ display: 'none', gap: 4, alignItems: 'center' }}>
         {/* Bell */}
         <div style={{ position: 'relative' }}>
           <button onClick={() => setShowNotif(v => !v)} style={{

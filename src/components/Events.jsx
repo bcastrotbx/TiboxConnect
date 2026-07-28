@@ -4,6 +4,7 @@ import { ModalShell } from './shared/ModalShell.jsx';
 import { CosmicBg } from './shared/CosmicBg.jsx';
 import { LoadingState, EmptyState, ErrorState } from './shared/AsyncState.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
+import { useFadeContent } from '../hooks/useFadeContent.js';
 import * as eventService from '../services/eventService.js';
 import * as newsService from '../services/newsService.js';
 
@@ -579,6 +580,7 @@ export function NoticiasPanel() {
   const { data: featuredNews } = useAsyncData(() => newsService.getFeaturedNews(), []);
   const [filter, setFilter] = React.useState('all');
   const { status, data: items, error } = useAsyncData(() => newsService.getNews({ category: filter }), [filter]);
+  const { displayData: fadeItems, isInitialLoad, isRefreshing } = useFadeContent(status, items);
   const [openNews, setOpenNews] = React.useState(null);
 
   const cats = allCats || [];
@@ -611,14 +613,15 @@ export function NoticiasPanel() {
               );
             })}
           </div>
-          {/* News list */}
-          {status === 'loading' && <LoadingState label="Cargando noticias…" />}
+          {/* News list — mismo criterio de crossfade que ExploraPanel/
+              InfographicsPanel al cambiar de categoría (ver useFadeContent). */}
+          {isInitialLoad && <LoadingState label="Cargando noticias…" />}
           {status === 'error' && <ErrorState label="No pudimos cargar las noticias." error={error} />}
-          {status === 'success' && (items || []).length === 0 && <EmptyState label="No hay noticias en esta categoría todavía." icon="rss" />}
-          {status === 'success' && (items || []).length > 0 && (
+          {!isInitialLoad && status !== 'error' && (fadeItems || []).length === 0 && <EmptyState label="No hay noticias en esta categoría todavía." icon="rss" />}
+          {!isInitialLoad && status !== 'error' && (fadeItems || []).length > 0 && (
             <div style={{position:'relative'}}>
-              <div style={{display:'flex',flexDirection:'column',maxHeight:450,overflowY:'auto',scrollbarWidth:'thin',scrollbarColor:'var(--gray-300) transparent',paddingRight:4}}>
-                {items.map((n,idx) => {
+              <div style={{display:'flex',flexDirection:'column',maxHeight:450,overflowY:'auto',scrollbarWidth:'thin',scrollbarColor:'var(--gray-300) transparent',paddingRight:4,opacity:isRefreshing?0.35:1,transition:'opacity 220ms ease'}}>
+                {fadeItems.map((n,idx) => {
                   const c = catsById[n.cat] || {};
                   return (
                     <div key={n.id} onClick={() => setOpenNews({ title:n.title, img:n.img, body:n.body, catLabel:c.label, catColor:c.color })}

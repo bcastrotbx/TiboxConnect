@@ -144,6 +144,11 @@ const CAT_GRADIENTS = {
 };
 const CAT_BLUE = CAT_GRADIENTS.noticias; // fallback si aparece un bloque nuevo sin color asignado
 
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): se eliminó el
+// bloque blanco inferior (título + descripción + dato estadístico) — ahora
+// todo (ícono, título y descripción) vive dentro del mismo recuadro de
+// color. `c.count` (el dato estadístico, ej. "8 próximos") ya no se
+// muestra en ningún lado de este componente.
 export function CategoryBlocks() {
   const { status, data: cats } = useAsyncData(() => homeService.getCategoryBlocks(), []);
   const [hov, setHov] = React.useState(null);
@@ -155,26 +160,22 @@ export function CategoryBlocks() {
           onMouseEnter={()=>setHov(c.id)} onMouseLeave={()=>setHov(null)}
           onClick={()=>window.scrollToSection&&window.scrollToSection(c.scrollTarget)}
           style={{
-            borderRadius:14,overflow:'hidden',cursor:'pointer',
+            borderRadius:14,overflow:'hidden',cursor:'pointer',position:'relative',
+            background:CAT_GRADIENTS[c.id] || CAT_BLUE,
+            padding:'20px 22px',
             transform: hov===c.id ? 'translateY(-3px)' : 'none',
-            boxShadow: hov===c.id ? '0 8px 24px rgba(0,0,0,0.13)' : '0 1px 4px rgba(0,0,0,0.07)',
+            boxShadow: hov===c.id ? '0 8px 24px rgba(0,0,0,0.18)' : '0 1px 4px rgba(0,0,0,0.1)',
             transition:'all 200ms',
           }}
         >
-          <div style={{height:72,background:CAT_GRADIENTS[c.id] || CAT_BLUE,display:'flex',alignItems:'center',padding:'0 20px',position:'relative',overflow:'hidden'}}>
-            <div style={{width:40,height:40,borderRadius:10,background:'rgba(255,255,255,0.18)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{position:'absolute',right:-16,top:-16,width:72,height:72,borderRadius:'50%',background:'rgba(255,255,255,0.07)'}}></div>
+          <div style={{position:'relative',display:'flex',alignItems:'center',gap:12,marginBottom:8}}>
+            <div style={{width:40,height:40,borderRadius:10,background:'rgba(255,255,255,0.18)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
               <Icon name={c.icon} style={{width:20,height:20,color:'white'}} />
             </div>
-            <div style={{position:'absolute',right:-16,top:-16,width:72,height:72,borderRadius:'50%',background:'rgba(255,255,255,0.07)'}}></div>
+            <div style={{fontSize:15.5,fontWeight:700,color:'white'}}>{c.label}</div>
           </div>
-          <div style={{background:'white',padding:'14px 18px 16px'}}>
-            <div style={{fontSize:15,fontWeight:700,color:'var(--navy-900)',marginBottom:2}}>{c.label}</div>
-            <div style={{fontSize:12,color:'var(--gray-500)',marginBottom:8}}>{c.sub}</div>
-            <div style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:11,fontWeight:700,color:'var(--gray-500)',background:'var(--gray-100)',borderRadius:999,padding:'3px 9px'}}>
-              <Icon name="sparkles" style={{width:11,height:11}} />
-              {c.count}
-            </div>
-          </div>
+          <div style={{position:'relative',fontSize:12.5,color:'rgba(255,255,255,0.78)',lineHeight:1.45}}>{c.sub}</div>
         </div>
       ))}
     </div>

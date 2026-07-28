@@ -9,13 +9,19 @@ import { ServicesV2, ContactFormSection } from '../components/Services.jsx';
 // de Contacto, renderizada dentro de ContactFormSection (Services.jsx). El
 // ancla de navegación #section-opinion sigue existiendo, solo que ahora
 // envuelve directamente esa columna en vez de esta sección completa.
+//
+// SHOW_SERVICES: el bloque "Servicios TIBOX" se ocultó a pedido de Braulio,
+// sin borrar el componente (ServicesV2 sigue intacto en Services.jsx) por si
+// se reactiva más adelante — basta con volver esta constante a `true`.
+const SHOW_SERVICES = false;
+
 export function HomePage() {
   return (
     <>
       <div id="section-hero"><HeroSlider /></div>
       <CategoryBlocks />
       <ContentGrid />
-      <div id="section-services"><ServicesV2 /></div>
+      {SHOW_SERVICES && <div id="section-services"><ServicesV2 /></div>}
       <div id="section-contact"><ContactFormSection /></div>
     </>
   );

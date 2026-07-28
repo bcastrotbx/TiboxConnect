@@ -3,7 +3,6 @@ import { Outlet } from 'react-router-dom';
 import { Icon } from '../components/shared/Icon.jsx';
 import { ModalShell } from '../components/shared/ModalShell.jsx';
 import { CosmicBg } from '../components/shared/CosmicBg.jsx';
-import { Sidebar } from '../components/Sidebar.jsx';
 import { Header } from '../components/Header.jsx';
 
 function SoporteModal({ onClose }) {
@@ -74,15 +73,15 @@ function SoporteModal({ onClose }) {
   );
 }
 
-// Chrome del portal (sidebar + header + wrapper de contenido con scroll),
-// antes fijo dentro de src/App.jsx. Las páginas del portal se renderizan
-// vía <Outlet/>. window.scrollToSection sigue siendo un global deliberado
-// (igual que en la Fase 1) porque lo consume CategoryBlocks, que vive en
-// una página distinta de este layout.
+// Chrome del portal (header + wrapper de contenido con scroll), antes fijo
+// dentro de src/App.jsx. Las páginas del portal se renderizan vía <Outlet/>.
+// window.scrollToSection sigue siendo un global deliberado (igual que en la
+// Fase 1) porque lo consume tanto CategoryBlocks como los links de
+// navegación del Header (ver ajuste posterior en
+// FASE-06-07-08-CONTENIDO-REAL.md: se eliminó el Sidebar del portal — no el
+// del admin — y su navegación se movió al Header).
 export function PortalLayout() {
-  const [active, setActive] = React.useState('home');
   const [showSoporte, setShowSoporte] = React.useState(false);
-  const [collapsed, setCollapsed] = React.useState(false);
 
   const scrollToSection = React.useCallback((id) => {
     const content = document.querySelector('.portal-content');
@@ -99,9 +98,8 @@ export function PortalLayout() {
 
   return (
     <React.Fragment>
-      <Sidebar active={active} onNav={setActive} onScroll={scrollToSection} onSoporte={() => setShowSoporte(true)} collapsed={collapsed} onToggle={() => setCollapsed(c => !c)} />
       <div className="portal-main">
-        <Header />
+        <Header onSoporte={() => setShowSoporte(true)} />
         <div className="portal-content">
           <div className="content-wrap">
             <Outlet />

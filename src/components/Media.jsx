@@ -4,6 +4,7 @@ import { ModalShell } from './shared/ModalShell.jsx';
 import { CosmicBg } from './shared/CosmicBg.jsx';
 import { LoadingState, EmptyState, ErrorState } from './shared/AsyncState.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
+import { useFadeContent } from '../hooks/useFadeContent.js';
 import * as contentService from '../services/contentService.js';
 import * as formService from '../services/formService.js';
 import { extractYouTubeVideoId } from '../lib/youtube.js';
@@ -253,6 +254,7 @@ export function ExploraPanel() {
   const { data: categories } = useAsyncData(() => contentService.getVideoCategories(), []);
   const [filter, setFilter] = React.useState('all');
   const { status, data: items, error } = useAsyncData(() => contentService.getVideos({ category: filter }), [filter]);
+  const { displayData: fadeItems, isInitialLoad, isRefreshing } = useFadeContent(status, items);
   const [openVideo, setOpenVideo] = React.useState(null);
   const [showLibrary, setShowLibrary] = React.useState(false);
   const trackRef = React.useRef(null);
@@ -303,25 +305,29 @@ export function ExploraPanel() {
         })}
       </div>
 
-      {/* Carousel track — 5 visible, horizontal scroll */}
-      {status === 'loading' && <LoadingState label="Cargando videos…" />}
+      {/* Carousel track — 5 visible, horizontal scroll. Al cambiar de
+          categoría se mantiene la última grilla cargada (fadeItems) con
+          opacidad reducida durante el refetch, en vez de desmontarla y
+          mostrar el spinner — ver useFadeContent. */}
+      {isInitialLoad && <LoadingState label="Cargando videos…" />}
       {status === 'error' && <ErrorState label="No pudimos cargar la videoteca." onRetry={() => setFilter(f => f)} error={error} />}
-      {status === 'success' && (
-        (items || []).length === 0 ? (
+      {!isInitialLoad && status !== 'error' && (
+        (fadeItems || []).length === 0 ? (
           <EmptyState label="No hay videos en esta categoría todavía." icon="film" />
         ) : (
           <div ref={trackRef} style={{
             display:'flex', gap:16, padding:'16px 24px 24px',
             overflowX:'auto', scrollSnapType:'x mandatory',
             scrollbarWidth:'none',
+            opacity: isRefreshing ? 0.35 : 1, transition:'opacity 220ms ease',
           }} className="hide-scroll">
-            {items.map(v => <VideoCard key={v.id} v={v} catsById={catsById} onOpen={setOpenVideo} />)}
+            {fadeItems.map(v => <VideoCard key={v.id} v={v} catsById={catsById} onOpen={setOpenVideo} />)}
           </div>
         )
       )}
 
       {openVideo && <VideoModal video={openVideo} catsById={catsById} onClose={()=>setOpenVideo(null)} />}
-      {showLibrary && <VideoLibraryModal allVideos={items || []} catsById={catsById} onClose={()=>setShowLibrary(false)} />}
+      {showLibrary && <VideoLibraryModal allVideos={fadeItems || []} catsById={catsById} onClose={()=>setShowLibrary(false)} />}
     </div>
   );
 }
@@ -491,6 +497,7 @@ export function InfographicsPanel() {
   const { data: allCats } = useAsyncData(() => contentService.getInfographicCategories(), []);
   const [filter, setFilter] = React.useState('all');
   const { status, data: items, error } = useAsyncData(() => contentService.getInfographics({ category: filter }), [filter]);
+  const { displayData: fadeItems, isInitialLoad, isRefreshing } = useFadeContent(status, items);
   const [openInfo, setOpenInfo] = React.useState(null);
   const trackRef = React.useRef(null);
 
@@ -543,11 +550,12 @@ export function InfographicsPanel() {
         })}
       </div>
 
-      {/* Carousel con flechas laterales */}
-      {status === 'loading' && <div style={{position:'relative'}}><LoadingState label="Cargando infografías…" tone="dark" /></div>}
+      {/* Carousel con flechas laterales — mismo criterio de crossfade que
+          ExploraPanel al cambiar de categoría (ver useFadeContent). */}
+      {isInitialLoad && <div style={{position:'relative'}}><LoadingState label="Cargando infografías…" tone="dark" /></div>}
       {status === 'error' && <div style={{position:'relative'}}><ErrorState label="No pudimos cargar las infografías." tone="dark" error={error} /></div>}
-      {status === 'success' && (
-        (items || []).length === 0 ? (
+      {!isInitialLoad && status !== 'error' && (
+        (fadeItems || []).length === 0 ? (
           <div style={{position:'relative'}}><EmptyState label="No hay infografías en esta categoría todavía." icon="pie-chart" tone="dark" /></div>
         ) : (
           <div style={{display:'flex',alignItems:'center',padding:'18px 20px 28px',gap:10,position:'relative'}}>
@@ -557,8 +565,9 @@ export function InfographicsPanel() {
             <div ref={trackRef} style={{
               flex:1, display:'flex', gap:18,
               overflowX:'auto', scrollSnapType:'x mandatory', scrollbarWidth:'none',
+              opacity: isRefreshing ? 0.35 : 1, transition:'opacity 220ms ease',
             }} className="hide-scroll">
-              {items.map(inf => <InfoCard key={inf.id} inf={inf} channelsById={channelsById} onOpen={setOpenInfo} />)}
+              {fadeItems.map(inf => <InfoCard key={inf.id} inf={inf} channelsById={channelsById} onOpen={setOpenInfo} />)}
             </div>
             <button onClick={()=>scroll(1)} aria-label="Siguiente" style={navBtnGlassStyle}>
               <Icon name="chevron-right" style={{width:18,height:18}} />
