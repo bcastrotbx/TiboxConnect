@@ -39,12 +39,17 @@ function mapEventRow(row) {
 }
 
 export async function getUpcomingEvents() {
+  // Orden manual (sort_order) primero — controlado con las flechas del panel
+  // admin (ver AdminWidgets.jsx, ajuste posterior de la Fase 6/7/8) — y
+  // starts_at como desempate. Los eventos realizados (getPastEvents) no
+  // participan de este reordenamiento manual, siguen por fecha.
   const { data, error } = await supabase
     .from('events')
     .select('*')
     .eq('status', 'published')
     .eq('visibility', 'public')
     .gte('starts_at', new Date().toISOString())
+    .order('sort_order', { ascending: true })
     .order('starts_at', { ascending: true });
 
   if (error) throw error;

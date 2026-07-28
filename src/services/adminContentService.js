@@ -20,6 +20,7 @@ function mapAdminRow(row) {
     status: STATUS_LABEL[row.status] || row.status,
     rawStatus: row.status,
     date: formatShortDateEs(row.published_at || row.created_at),
+    dateRaw: row.published_at || row.created_at,
     isFeatured: row.is_featured,
     summary: row.summary || '',
     body: row.body || '',
@@ -28,15 +29,26 @@ function mapAdminRow(row) {
     durationMinutes: row.duration_minutes || '',
     sourceName: row.source_name || '',
     visibility: row.visibility,
+    sortOrder: row.sort_order ?? 0,
   };
 }
 
+// video/infographic: mismo orden manual (sort_order) que ve el portal
+// público, para que las flechas de reordenar del admin sean fieles a lo que
+// el usuario final ve. news: se excluye del reordenamiento manual (ver
+// ajuste posterior en FASE-06-07-08-CONTENIDO-REAL.md) — siempre por fecha
+// de publicación descendente, igual que en el portal (newsService.js).
 export async function listContentItems(type) {
-  const { data, error } = await supabase
+  let query = supabase
     .from('content_items')
     .select('*, category:categories(id, slug, name)')
-    .eq('type', type)
-    .order('created_at', { ascending: false });
+    .eq('type', type);
+
+  query = type === 'news'
+    ? query.order('published_at', { ascending: false, nullsFirst: false })
+    : query.order('sort_order', { ascending: true });
+
+  const { data, error } = await query;
 
   if (error) throw error;
   return (data || []).map(mapAdminRow);

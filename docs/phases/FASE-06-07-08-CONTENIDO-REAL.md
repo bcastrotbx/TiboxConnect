@@ -217,8 +217,31 @@ Si `external_url` no es un link de YouTube válido, no se finge un reproductor: 
 
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo confirme antes de publicarlo.
 
+## Ajuste posterior — reordenar manualmente y ordenar por columna en el panel admin
+
+Mejora pedida por Braulio para las 4 secciones del panel de contenidos (`src/admin/AdminWidgets.jsx`, componente `ContentTable`): reordenar publicaciones manualmente y ordenar la vista de la tabla haciendo clic en los encabezados de columna.
+
+**Parte 1 — Reordenar manualmente (Videos, Infografías y Eventos; Noticias excluida).** Se agregó una columna de flechas ↑/↓ a la izquierda de la tabla, visible solo en `videos`/`infographics`/`events` — nunca en `news`, ya que esa sección se ordena automáticamente por `published_at` descendente (ver ajuste anterior en este mismo documento) y unas flechas ahí serían contradictorias con ese comportamiento. Cada clic renumera secuencialmente el `sort_order` de todo el subconjunto reordenable según la nueva posición visual (no solo intercambia los dos valores) y persiste el cambio de inmediato contra Supabase (`updateContentItem`/`updateEvent`), protegido por las políticas RLS ya existentes (solo admins pueden escribir). `content_items` ya tenía `sort_order` desde la Fase 4; `events` no lo tenía — se agregó en la migración nueva `supabase/migrations/20260731100000_events_sort_order.sql` (columna `integer not null default 0` + índice), pendiente de que Braulio la ejecute en el SQL Editor de Supabase.
+
+Los servicios públicos (`contentService.js` para video/infographic, `eventService.js` para `getUpcomingEvents()`) ahora ordenan por `sort_order` ascendente (con la fecha como desempate), así el orden del panel admin coincide exactamente con lo que ve el portal. `getPastEvents()` (eventos realizados) **no se tocó** — Braulio no pidió reordenar manualmente los eventos ya realizados, así que siguen con su propio orden por fecha descendente; se dejó como decisión explícita, documentada aquí.
+
+**Parte 2 — Ordenar por columna (las 4 secciones).** Los encabezados Título, Categoría/Modalidad, Estado, Destacado (no aplica a eventos) y Fecha son ahora clickeables: alternan orden ascendente/descendente sobre una copia en memoria de las filas (`displayRows`), sin tocar `sort_order` ni las fechas reales — es solo una ayuda de vista para el administrador. La columna Fecha ordena por el timestamp real (`dateRaw`, agregado a `mapAdminRow()` en ambos servicios admin), no por el string ya formateado que se muestra en pantalla, para que el orden cronológico sea correcto.
+
+**Conflicto de diseño resuelto:** mientras haya un orden de columna activo, las flechas de reordenar se deshabilitan (visualmente atenuadas y sin efecto al hacer clic) — el orden visual ya no refleja `sort_order`, así que reordenar en ese estado no tendría sentido. Aparece un botón "Volver al orden de publicación" junto al contador de elementos que limpia el orden de columna y restaura la vista por `sort_order`/fecha real, reactivando las flechas.
+
+**Verificado en el navegador** (ruta temporal `/dev-test-upload`, sin sesión de admin real — revertida por completo antes de terminar, `git status`/`git diff` confirmaron cero cambios residuales): en Videos, las flechas reordenan las filas correctamente en memoria y disparan una escritura real contra Supabase (confirmado vía `performance.getEntriesByType('resource')`, que mostró la llamada a `content_items`); como no había sesión de admin autenticada en esta ruta de prueba, Supabase respondió `permission denied for table content_items` — el comportamiento esperado de RLS protegiendo la escritura en el servidor, y el error se mostró correctamente en el banner de la tabla sin romper la UI. Se ordenó la columna Categoría (ascendente/descendente, indicador de flecha correcto) y las filas de flechas de reordenar quedaron deshabilitadas mientras el orden de columna estaba activo; "Volver al orden de publicación" restauró el orden original y reactivó las flechas. En Noticias se confirmó que no aparece ninguna columna de flechas. La sección Eventos no pudo probarse end-to-end todavía: la migración `20260731100000_events_sort_order.sql` (columna `sort_order` en `events`) sigue pendiente de que Braulio la ejecute en Supabase — mientras tanto, `listEvents()`/`getUpcomingEvents()` fallan con "no pudimos cargar las publicaciones" porque la columna no existe aún en la base real (comportamiento esperado, no un bug del código).
+
+**Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise, como en los ajustes anteriores.
+
 ## Pendiente
 
+- **Braulio debe ejecutar la migración `20260731100000_events_sort_order.sql`** (agrega `sort_order` a `events`) en el SQL Editor de Supabase — hasta entonces, la sección Eventos del panel admin y "Próximos Eventos" del portal fallarán al cargar (columna inexistente). Contenido completo de la migración:
+  ```sql
+  alter table public.events
+    add column if not exists sort_order integer not null default 0;
+
+  create index if not exists events_sort_order_idx on public.events (sort_order);
+  ```
 - **Braulio debe ejecutar la migración `20260730100000_demo_content_agosto.sql`** (contenido de ejemplo adicional para la demo) en el SQL Editor de Supabase — entre otras cosas, incluye el único evento `completed` disponible hoy; hasta que se ejecute, el botón "Ver eventos realizados" no aparece (el panel muestra correctamente el estado vacío "Todavía no hay eventos realizados").
 - **Braulio debe ejecutar, en este orden, las 3 migraciones nuevas de esta fase** (`20260729100000_webinars_category.sql`, `20260729100100_hero_slides_seed.sql`, `20260729100200_storage_content_images.sql`) en el SQL Editor de Supabase, después de las ya ejecutadas de las Fases 4 y 5.
 - **Si el `INSERT` sobre `storage.buckets` de la migración de Storage falla**, crear el bucket manualmente: Supabase Dashboard → Storage → New bucket → nombre `content-images` → Public bucket activado. Luego ejecutar el resto del archivo (las políticas RLS) igual.

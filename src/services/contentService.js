@@ -30,13 +30,20 @@ function mapContentRow(row) {
 }
 
 async function fetchPublished(type) {
+  // Orden manual (sort_order) primero — es lo que el admin controla con las
+  // flechas arriba/abajo (ver AdminWidgets.jsx, ajuste posterior de la Fase
+  // 6/7/8) — y published_at como desempate para filas que compartan
+  // sort_order (p.ej. contenido recién creado, todavía en 0). Solo aplica a
+  // video/infographic — las noticias tienen su propia consulta en
+  // newsService.js, siempre por published_at, sin orden manual.
   const { data, error } = await supabase
     .from('content_items')
     .select('*, category:categories(slug, name, color)')
     .eq('type', type)
     .eq('status', 'published')
     .eq('visibility', 'public')
-    .order('published_at', { ascending: false });
+    .order('sort_order', { ascending: true })
+    .order('published_at', { ascending: false, nullsFirst: false });
 
   if (error) throw error;
   return data || [];

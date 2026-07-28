@@ -27,13 +27,21 @@ function mapAdminRow(row) {
     visibility: row.visibility,
     startsAt: row.starts_at,
     endsAt: row.ends_at,
+    dateRaw: row.starts_at,
+    sortOrder: row.sort_order ?? 0,
   };
 }
 
+// sort_order primero (mismo orden manual que "Próximos Eventos" en el
+// portal), starts_at desc como desempate. Los eventos con status='completed'
+// no se reordenan manualmente desde el admin (ver ajuste posterior en
+// FASE-06-07-08-CONTENIDO-REAL.md) — quedan con sort_order=0 por defecto y
+// caen ordenados por fecha entre sí gracias al desempate.
 export async function listEvents() {
   const { data, error } = await supabase
     .from('events')
     .select('*')
+    .order('sort_order', { ascending: true })
     .order('starts_at', { ascending: false });
 
   if (error) throw error;

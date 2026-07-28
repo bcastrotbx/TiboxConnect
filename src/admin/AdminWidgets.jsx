@@ -546,8 +546,47 @@ export function NewContentModal({ section, item, onClose }) {
   );
 }
 
+// Noticias queda fuera del reordenamiento manual: su orden público siempre es
+// por fecha de publicación descendente (ver ajuste posterior en
+// FASE-06-07-08-CONTENIDO-REAL.md), así que unas flechas de reordenar ahí
+// serían contradictorias con ese comportamiento ya definido. Eventos
+// realizados (status='completed') tampoco se reordenan manualmente — no fue
+// pedido y mantienen su propio orden por fecha (ver mismo documento).
+function isReorderable(section, row) {
+  if (section === 'news') return false;
+  if (section === 'events') return row.rawStatus !== 'completed';
+  return true;
+}
+
+function sortValue(row, key) {
+  switch (key) {
+    case 'title': return (row.title || '').toLowerCase();
+    case 'cat': return (row.cat || '').toLowerCase();
+    case 'status': return (row.status || '').toLowerCase();
+    case 'isFeatured': return row.isFeatured ? 1 : 0;
+    case 'date': return row.dateRaw ? new Date(row.dateRaw).getTime() : 0;
+    default: return '';
+  }
+}
+
+// Encabezado de columna clickeable para el orden de vista (client-side,
+// no persiste ni altera sort_order/fechas reales — ver PARTE 2 del ajuste
+// posterior en FASE-06-07-08-CONTENIDO-REAL.md).
+function SortableTh({ label, sortKey, colSort, onSort, disabled }) {
+  if (disabled) return <th>{label}</th>;
+  const active = colSort && colSort.key === sortKey;
+  const iconName = active ? (colSort.dir === 'asc' ? 'chevron-up' : 'chevron-down') : 'chevrons-up-down';
+  return (
+    <th onClick={() => onSort(sortKey)} style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+      {label}
+      <Icon name={iconName} style={{ width: 12, height: 12, marginLeft: 4, verticalAlign: -1, opacity: active ? 1 : 0.35 }} />
+    </th>
+  );
+}
+
 export function ContentTable({ section, title }) {
   const isEvent = section === 'events';
+  const allowReorder = section !== 'news';
   const fetcher = React.useCallback(
     () => (isEvent ? adminEventsService.listEvents() : adminContentService.listContentItems(SECTION_TO_TYPE[section])),
     [section, isEvent]
@@ -558,17 +597,69 @@ export function ContentTable({ section, title }) {
   const [editing, setEditing] = React.useState(null);
   const [confirming, setConfirming] = React.useState(null);
   const [actionError, setActionError] = React.useState('');
+  const [colSort, setColSort] = React.useState(null); // { key, dir } | null — vista, no persiste
   React.useEffect(() => { if (status === 'success') setRows(data || []); }, [status, data]);
 
   const deleteFn = isEvent ? adminEventsService.deleteEvent : adminContentService.deleteContentItem;
+  const updateFn = isEvent ? adminEventsService.updateEvent : adminContentService.updateContentItem;
   const setStatusFn = isEvent
     ? (id, s) => adminEventsService.updateEvent(id, { status: s })
     : (id, s) => adminContentService.updateContentItem(id, { status: s, ...(s === 'published' ? { published_at: new Date().toISOString() } : {}) });
   const setFeaturedFn = (id, v) => adminContentService.updateContentItem(id, { is_featured: v });
 
-  const handle = async (action, i) => {
+  const toggleSort = (key) => {
+    setColSort((cur) => {
+      if (!cur || cur.key !== key) return { key, dir: 'asc' };
+      if (cur.dir === 'asc') return { key, dir: 'desc' };
+      return null;
+    });
+  };
+
+  const displayRows = React.useMemo(() => {
+    if (!colSort) return rows;
+    return [...rows].sort((a, b) => {
+      const va = sortValue(a, colSort.key);
+      const vb = sortValue(b, colSort.key);
+      if (va < vb) return colSort.dir === 'asc' ? -1 : 1;
+      if (va > vb) return colSort.dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [rows, colSort]);
+
+  // Reordenar solo tiene sentido sobre el orden real (sort_order), así que
+  // las flechas se deshabilitan mientras haya un orden de columna activo
+  // (ver diseño documentado en FASE-06-07-08-CONTENIDO-REAL.md).
+  const moveRow = async (rowId, direction) => {
     setActionError('');
-    const row = rows[i];
+    const reorderableIds = rows.filter(r => isReorderable(section, r)).map(r => r.id);
+    const pos = reorderableIds.indexOf(rowId);
+    const swapPos = direction === 'up' ? pos - 1 : pos + 1;
+    if (pos === -1 || swapPos < 0 || swapPos >= reorderableIds.length) return;
+
+    const newOrderIds = [...reorderableIds];
+    [newOrderIds[pos], newOrderIds[swapPos]] = [newOrderIds[swapPos], newOrderIds[pos]];
+
+    // Renumera secuencialmente el subconjunto reordenable según la nueva
+    // posición visual — así converge a un orden consistente aunque varias
+    // filas compartan sort_order=0 por defecto (contenido recién creado).
+    const orderMap = new Map(newOrderIds.map((id, idx) => [id, idx]));
+    const newRows = rows.map(r => orderMap.has(r.id) ? { ...r, sortOrder: orderMap.get(r.id) } : r);
+    newRows.sort((a, b) => {
+      const oa = orderMap.has(a.id) ? orderMap.get(a.id) : a.sortOrder;
+      const ob = orderMap.has(b.id) ? orderMap.get(b.id) : b.sortOrder;
+      return oa - ob;
+    });
+    setRows(newRows);
+
+    try {
+      await Promise.all(newOrderIds.map((id, idx) => updateFn(id, { sort_order: idx })));
+    } catch (err) {
+      setActionError(err.message || 'No se pudo reordenar.');
+    }
+  };
+
+  const handle = async (action, row) => {
+    setActionError('');
     try {
       if (action === 'view') { setViewing(row); return; }
       if (action === 'edit') { setEditing(row); return; }
@@ -591,7 +682,7 @@ export function ContentTable({ section, title }) {
         window.location.reload();
         return;
       }
-      if (action === 'delete') { setConfirming(i); return; }
+      if (action === 'delete') { setConfirming(row); return; }
       if (action === 'publish') { await setStatusFn(row.id, 'published'); }
       else if (action === 'archive') { await setStatusFn(row.id, 'archived'); }
       else if (action === 'draft') { await setStatusFn(row.id, 'draft'); }
@@ -606,7 +697,7 @@ export function ContentTable({ section, title }) {
 
   const confirmDelete = async () => {
     try {
-      await deleteFn(rows[confirming].id);
+      await deleteFn(confirming.id);
       window.location.reload();
     } catch (err) {
       setActionError(err.message || 'No se pudo eliminar.');
@@ -637,9 +728,16 @@ export function ContentTable({ section, title }) {
 
   return (
     <div className="adm-card">
-      <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--gray-200)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+      <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--gray-200)', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
         <div style={{ fontSize:15, fontWeight:700, color:'var(--navy-900,#021233)' }}>{title || 'Contenido publicado'}</div>
-        <span style={{ fontSize:12, color:'var(--gray-400)' }}>{rows.length} elementos</span>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          {colSort && (
+            <button className="adm-mini-btn" onClick={() => setColSort(null)}>
+              <Icon name="rotate-ccw" style={{ width:13, height:13 }} />Volver al orden de publicación
+            </button>
+          )}
+          <span style={{ fontSize:12, color:'var(--gray-400)' }}>{rows.length} elementos</span>
+        </div>
       </div>
       {actionError && (
         <div style={{ margin:'12px 20px 0', fontSize:12.5, color:'#c0392b', background:'rgba(192,57,43,0.08)', border:'1px solid rgba(192,57,43,0.2)', borderRadius:8, padding:'9px 12px' }}>
@@ -650,20 +748,59 @@ export function ContentTable({ section, title }) {
         <EmptyState label="Todavía no hay publicaciones en esta sección." icon="inbox" />
       ) : (
         <table className="adm-table">
-          <thead><tr><th>Título</th><th>{isEvent ? 'Modalidad' : 'Categoría'}</th><th>Estado</th><th>{isEvent ? 'Destacado' : 'Destacado'}</th><th>Fecha</th><th></th></tr></thead>
+          <thead>
+            <tr>
+              {allowReorder && <th style={{ width:56 }}></th>}
+              <SortableTh label="Título" sortKey="title" colSort={colSort} onSort={toggleSort} />
+              <SortableTh label={isEvent ? 'Modalidad' : 'Categoría'} sortKey="cat" colSort={colSort} onSort={toggleSort} />
+              <SortableTh label="Estado" sortKey="status" colSort={colSort} onSort={toggleSort} />
+              <SortableTh label="Destacado" sortKey="isFeatured" colSort={colSort} onSort={toggleSort} disabled={isEvent} />
+              <SortableTh label="Fecha" sortKey="date" colSort={colSort} onSort={toggleSort} />
+              <th></th>
+            </tr>
+          </thead>
           <tbody>
-            {rows.map((r,i) => (
-              <tr key={r.id}>
-                <td style={{ fontWeight:600 }}>{r.title}</td>
-                <td style={{ color:'var(--gray-500)' }}>{r.cat}</td>
-                <td><StatusBadge status={r.status} /></td>
-                <td>{!isEvent && r.isFeatured && <Icon name="star" style={{ width:14, height:14, color:'#FFC600', fill:'#FFC600' }} />}</td>
-                <td style={{ color:'var(--gray-500)' }}>{r.date}</td>
-                <td style={{ textAlign:'right' }}>
-                  <RowMenu row={r} isEvent={isEvent} onAction={a => handle(a, i)} />
-                </td>
-              </tr>
-            ))}
+            {displayRows.map((r) => {
+              const reorderable = allowReorder && isReorderable(section, r);
+              return (
+                <tr key={r.id}>
+                  {allowReorder && (
+                    <td>
+                      {reorderable && (
+                        <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
+                          <button
+                            className="adm-mini-btn"
+                            title="Subir"
+                            disabled={!!colSort}
+                            onClick={() => moveRow(r.id, 'up')}
+                            style={{ padding:'2px 5px', opacity: colSort ? 0.4 : 1, cursor: colSort ? 'default' : 'pointer' }}
+                          >
+                            <Icon name="chevron-up" style={{ width:13, height:13 }} />
+                          </button>
+                          <button
+                            className="adm-mini-btn"
+                            title="Bajar"
+                            disabled={!!colSort}
+                            onClick={() => moveRow(r.id, 'down')}
+                            style={{ padding:'2px 5px', opacity: colSort ? 0.4 : 1, cursor: colSort ? 'default' : 'pointer' }}
+                          >
+                            <Icon name="chevron-down" style={{ width:13, height:13 }} />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  )}
+                  <td style={{ fontWeight:600 }}>{r.title}</td>
+                  <td style={{ color:'var(--gray-500)' }}>{r.cat}</td>
+                  <td><StatusBadge status={r.status} /></td>
+                  <td>{!isEvent && r.isFeatured && <Icon name="star" style={{ width:14, height:14, color:'#FFC600', fill:'#FFC600' }} />}</td>
+                  <td style={{ color:'var(--gray-500)' }}>{r.date}</td>
+                  <td style={{ textAlign:'right' }}>
+                    <RowMenu row={r} isEvent={isEvent} onAction={a => handle(a, r)} />
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}
@@ -671,7 +808,7 @@ export function ContentTable({ section, title }) {
       {editing && <NewContentModal section={section} item={editing} onClose={() => setEditing(null)} />}
       {confirming !== null && (
         <ConfirmDialog title="Eliminar publicación"
-          message={`¿Seguro que deseas eliminar "${rows[confirming].title}"? Esta acción no se puede deshacer.`}
+          message={`¿Seguro que deseas eliminar "${confirming.title}"? Esta acción no se puede deshacer.`}
           onCancel={() => setConfirming(null)}
           onConfirm={confirmDelete} />
       )}
