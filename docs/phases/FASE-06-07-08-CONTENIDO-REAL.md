@@ -292,6 +292,25 @@ Cinco cambios de diseño/UX pedidos por Braulio para el portal público (no toca
 
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
+## Ajuste posterior — bloque de Contacto + Feedback: proporción 60/40, tarjetas redondeadas y menos aire
+
+Ajustes de detalle sobre el bloque de Contacto/Feedback del ajuste anterior, pedidos por Braulio.
+
+**Sobre las oficinas de Chile/Perú:** Braulio reportó que seguían apareciendo, ahora en la columna de Feedback. Se revisó el código y el navegador (con recarga forzada) y no se encontró ningún rastro — `OpinionPanel.jsx` nunca tuvo datos de oficinas, y `Services.jsx` ya no las renderiza desde el ajuste anterior (`document.body.innerText.includes('Santiago'|'Curicó'|'Lima')` da `false` en la app corriendo). Lo más probable es que Braulio estuviera viendo una versión en caché del `npm run dev` de la sesión anterior sin recargar. Se deja documentado por transparencia, sin cambios de código para este punto — si vuelve a aparecer después de un refresh real, avisar para investigar a fondo.
+
+**Proporción 60/40 y tarjetas independientes.** Antes, Contacto y Feedback eran una sola tarjeta (`.section-card`, radio 16px) partida al medio con `1fr 1fr` y `overflow:hidden` — por eso ambas columnas se veían como un único rectángulo sin esquinas redondeadas propias. Ahora cada columna es su propia tarjeta independiente con el mismo radio de 16px que usa `.section-card` en el resto del sitio (no se inventó un valor nuevo), con un espacio real entre ambas (20px, el mismo que ya se usaba entre `EventosPanel`/`EventosRealizadosPanel`). La proporción 60/40 y el apilado en móvil viven en una clase CSS nueva, `.contact-grid` (`index.css`): `grid-template-columns: 3fr 2fr` en escritorio, `1fr` bajo `@media (max-width: 760px)`. **Nota técnica:** el proyecto no tenía ningún `@media` todavía — todo el layout era de ancho fijo de escritorio, así que el apilado en móvil que Braulio daba por hecho ("como ya debe estar funcionando") no existía realmente; esta es la primera regla responsive real del proyecto. Se implementó tal como se pidió, no se dejó pendiente.
+
+**Menos aire en el bloque de Contacto**, sin tocar la grilla de campos (Nombre+Correo, Empresa+Teléfono, Mensaje ancho completo, sin reordenar): padding de la tarjeta de 40px a 32px/36px, separación entre el bloque de título/texto y el formulario de 24px a 16px, separación entre título y párrafo descriptivo reducida, `gap` del formulario de 14px a 10px, el textarea de Mensaje de `rows={3}` a `rows={2}` (con `minHeight:56` para que no se vea recortado) manteniendo `resize:'vertical'` para que el usuario lo agrande si necesita escribir más, y el botón "Enviar mensaje" con menos padding vertical. El resultado es más compacto sin apretar el texto ni los campos.
+
+**Feedback equilibrado.** La columna de Feedback (`OpinionPanel.jsx`) redujo su radio de 20px a 16px (para igualar el nuevo estándar) y su padding/espaciados internos en la misma proporción que Contacto, así ambas columnas se ven consistentes. Como además es un hijo de una fila de grid (`align-items: stretch` por defecto), su alto siempre coincide con el de Contacto — al compactar Contacto, Feedback se compacta automáticamente con él, sin dejar espacio vacío desproporcionado.
+
+**Verificado en el navegador:**
+- Escritorio (1300px): las dos columnas miden 732.6px y 488.4px respectivamente — exactamente 60.0%/40.0% del ancho disponible (`getBoundingClientRect()` sobre `.contact-grid`). Ambas con esquinas redondeadas visibles y separadas por un espacio real, no una sola tarjeta partida. El formulario se ve notablemente más compacto (título, descripción y campos con menos aire) sin verse apretado; Feedback ya no deja un vacío desproporcionado abajo.
+- Móvil (390px, iPhone-width): las columnas se apilan verticalmente (Contacto arriba, Feedback abajo), confirmado por captura de pantalla — la regla `@media (max-width: 760px)` de `.contact-grid` funciona. (Nota aparte, fuera de alcance de este ajuste: el header con la navegación agregada en el ajuste anterior no tiene su propio comportamiento responsive todavía — a este ancho los links se cortan sin menú hamburguesa. No se tocó porque no fue parte de este pedido, pero queda para un ajuste futuro si Braulio lo prioriza.)
+- No se encontró texto de oficinas ("Santiago", "Curicó", "Lima") en ningún punto de la página tras una recarga forzada.
+
+**Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
+
 ## Pendiente
 
 - **Braulio debe ejecutar la migración `20260731100000_events_sort_order.sql`** (agrega `sort_order` a `events`) en el SQL Editor de Supabase — hasta entonces, la sección Eventos del panel admin y "Próximos Eventos" del portal fallarán al cargar (columna inexistente). Contenido completo de la migración:

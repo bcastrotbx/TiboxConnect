@@ -171,31 +171,38 @@ export function ContactFormSection() {
   };
 
   return (
-    <div className="section-card" style={{ marginBottom:8 }}>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:2, minHeight:400 }}>
-        {/* Left: promo + form (dark) */}
+    <div style={{ marginBottom:8 }}>
+      {/* Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): cada columna
+          es ahora su propia tarjeta redondeada (16px, el mismo radio que
+          .section-card) en vez de un único rectángulo con overflow:hidden —
+          por eso ya no usan la clase section-card ni comparten un borde
+          exterior. La proporción 60/40 y el apilado en móvil viven en
+          .contact-grid (index.css). */}
+      <div className="contact-grid">
+        {/* Left: promo + form (dark) — 60% */}
         <div style={{
-          background:'var(--grad-corporate)', padding:'40px 40px',
-          display:'flex', flexDirection:'column', justifyContent:'center', gap:24,
-          position:'relative', overflow:'hidden',
+          background:'var(--grad-corporate)', padding:'32px 36px',
+          display:'flex', flexDirection:'column', justifyContent:'center', gap:16,
+          position:'relative', overflow:'hidden', borderRadius:16,
+          boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
         }}>
           {/* Nebula */}
           <div style={{ position:'absolute', top:-60, right:-40, width:240, height:240, borderRadius:'50%', background:'radial-gradient(circle, rgba(0,80,200,0.3) 0%, transparent 70%)', pointerEvents:'none' }}></div>
           <div style={{ position:'absolute', bottom:-40, left:20, width:160, height:160, borderRadius:'50%', background:'radial-gradient(circle, rgba(100,20,200,0.2) 0%, transparent 70%)', pointerEvents:'none' }}></div>
 
           <div style={{ position:'relative' }}>
-            <img src="/assets/logo-tibox.png" alt="TIBOX" style={{ height:22, marginBottom:28 }} />
-            <div style={{ fontSize:11, fontWeight:700, letterSpacing:'0.16em', textTransform:'uppercase', color:'var(--brand-cyan)', marginBottom:12 }}>Cuéntanos tu idea</div>
-            <h2 style={{ fontSize:'clamp(1.4rem,2.2vw,2rem)', fontWeight:700, color:'white', lineHeight:1.2, margin:'0 0 14px', letterSpacing:'-0.01em' }}>
+            <img src="/assets/logo-tibox.png" alt="TIBOX" style={{ height:22, marginBottom:16 }} />
+            <div style={{ fontSize:11, fontWeight:700, letterSpacing:'0.16em', textTransform:'uppercase', color:'var(--brand-cyan)', marginBottom:8 }}>Cuéntanos tu idea</div>
+            <h2 style={{ fontSize:'clamp(1.4rem,2.2vw,2rem)', fontWeight:700, color:'white', lineHeight:1.2, margin:'0 0 8px', letterSpacing:'-0.01em' }}>
               ¿Tienes algún <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>proyecto en mente</span>?
             </h2>
-            <p style={{ fontSize:14, color:'rgba(255,255,255,0.65)', lineHeight:1.65, margin:0 }}>
+            <p style={{ fontSize:14, color:'rgba(255,255,255,0.65)', lineHeight:1.55, margin:0 }}>
               Si tienes una necesidad, iniciativa o proyecto tecnológico en evaluación, cuéntanos. Un consultor TIBOX te contactará en menos de 24 horas hábiles.
             </p>
           </div>
 
           {sent ? (
-            <div style={{ position:'relative', textAlign:'center', padding:'24px 0' }}>
+            <div style={{ position:'relative', textAlign:'center', padding:'20px 0' }}>
               <div style={{ width:56, height:56, borderRadius:'50%', background:'rgba(22,179,100,0.16)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
                 <Icon name="check-circle-2" style={{ width:28, height:28, color:'#3ddc8a' }} />
               </div>
@@ -204,7 +211,7 @@ export function ContactFormSection() {
               <button onClick={()=>setSent(false)} style={{ marginTop:20, fontSize:13, fontWeight:600, color:'var(--brand-cyan)', background:'none', border:'none', cursor:'pointer', textDecoration:'underline' }}>Enviar otro mensaje</button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} style={{ position:'relative', display:'flex', flexDirection:'column', gap:14 }}>
+            <form onSubmit={handleSubmit} style={{ position:'relative', display:'flex', flexDirection:'column', gap:10 }}>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div>
                   <label style={labelStyle}>Nombre completo</label>
@@ -237,20 +244,20 @@ export function ContactFormSection() {
 
               <div>
                 <label style={labelStyle}>Mensaje</label>
-                <textarea value={form.msg} onChange={update('msg')} placeholder="Cuéntanos en qué podemos ayudarte…" rows={3} required
-                  style={{...inputStyle, resize:'vertical'}}
+                <textarea value={form.msg} onChange={update('msg')} placeholder="Cuéntanos en qué podemos ayudarte…" rows={2} required
+                  style={{...inputStyle, resize:'vertical', minHeight:56}}
                   onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'}
                 />
               </div>
 
-              <label style={{display:'flex',gap:9,alignItems:'flex-start',cursor:'pointer',fontSize:12.5,color:'rgba(255,255,255,0.65)',lineHeight:1.45}}>
+              <label style={{display:'flex',gap:9,alignItems:'flex-start',cursor:'pointer',fontSize:12.5,color:'rgba(255,255,255,0.65)',lineHeight:1.4}}>
                 <input type="checkbox" checked={privacyAccepted} onChange={e=>setPrivacyAccepted(e.target.checked)} required
                   style={{width:16,height:16,marginTop:1,accentColor:'#FF6707',cursor:'pointer',flexShrink:0}} />
                 <span>He leído y acepto el <a href="https://www.tibox.cl/aviso-de-privacidad/" target="_blank" rel="noopener noreferrer" style={{color:'var(--brand-cyan)',fontWeight:600}}>Aviso de Privacidad / Información del titular</a>.</span>
               </label>
 
               <button type="submit" disabled={sending || !privacyAccepted} style={{
-                padding:'13px', borderRadius:10, border:'none', cursor: (sending || !privacyAccepted)?'default':'pointer',
+                padding:'11px', borderRadius:10, border:'none', cursor: (sending || !privacyAccepted)?'default':'pointer',
                 background: (sending || !privacyAccepted) ? 'var(--gray-300)' : 'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',
                 color:'white', fontSize:14, fontWeight:700,
                 display:'flex', alignItems:'center', justifyContent:'center', gap:8,
@@ -269,7 +276,7 @@ export function ContactFormSection() {
           )}
         </div>
 
-        {/* Right: "Tu Opinión" — antes era su propia sección, ver comentario arriba */}
+        {/* Right: "Tu Opinión" — antes era su propia sección, ver comentario arriba — 40% */}
         <OpinionPanel />
       </div>
     </div>

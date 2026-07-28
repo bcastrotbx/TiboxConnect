@@ -25,16 +25,16 @@ export function OpinionPanel() {
   };
 
   return (
-    <div id="section-opinion" style={{position:'relative',overflow:'hidden',background:'var(--grad-corporate)',borderRadius:20,padding:'40px 40px',height:'100%',display:'flex',flexDirection:'column',justifyContent:'center'}}>
+    <div id="section-opinion" style={{position:'relative',overflow:'hidden',background:'var(--grad-corporate)',borderRadius:16,boxShadow:'0 1px 4px rgba(0,0,0,0.06)',padding:'32px 36px',height:'100%',display:'flex',flexDirection:'column',justifyContent:'center'}}>
       <CosmicBg variant={0} />
       <div style={{position:'absolute',inset:0,background:'linear-gradient(120deg, rgba(2,16,46,0.82), rgba(5,24,72,0.55))',pointerEvents:'none'}}></div>
 
       <div style={{position:'relative'}}>
-        <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.16em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:12}}>Feedback</div>
-        <h2 style={{fontSize:'clamp(1.4rem,2.2vw,2rem)',fontWeight:700,color:'white',lineHeight:1.2,margin:'0 0 14px',letterSpacing:'-0.01em'}}>
+        <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.16em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:8}}>Feedback</div>
+        <h2 style={{fontSize:'clamp(1.4rem,2.2vw,2rem)',fontWeight:700,color:'white',lineHeight:1.2,margin:'0 0 8px',letterSpacing:'-0.01em'}}>
           Tu <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>Opinión</span> nos ayuda a mejorar
         </h2>
-        <p style={{fontSize:14,color:'rgba(255,255,255,0.65)',lineHeight:1.65,margin:'0 0 28px'}}>
+        <p style={{fontSize:14,color:'rgba(255,255,255,0.65)',lineHeight:1.55,margin:'0 0 18px'}}>
           Cuéntanos qué te parece el portal Tibox Connect. Tu feedback orienta el contenido y la experiencia que construimos para tu empresa.
         </p>
         <button onClick={()=>setShowModal(true)} style={{
