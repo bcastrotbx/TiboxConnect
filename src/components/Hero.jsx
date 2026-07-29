@@ -30,11 +30,10 @@ export function HeroSlider() {
   const slide = slides[cur];
 
   return (
-    <div style={{
+    <div className="hero-shell" style={{
       borderRadius: 18, overflow: 'hidden',
       background: 'var(--grad-corporate)',
-      position: 'relative', height: 360,
-      padding: '40px 52px', color: 'white',
+      position: 'relative', color: 'white',
       display: 'flex', flexDirection: 'column', justifyContent: 'center',
     }}>
       {/* Real background image per slide */}
@@ -49,11 +48,11 @@ export function HeroSlider() {
       {/* Right glow */}
       <div style={{position:'absolute',top:-40,right:40,width:300,height:300,borderRadius:'50%',background:'radial-gradient(circle,rgba(0,200,250,0.16) 0%,transparent 70%)',pointerEvents:'none'}}></div>
 
-      <div style={{position:'relative',display:'grid',gridTemplateColumns:'1fr 220px',gap:32,alignItems:'center'}}>
+      <div className="hero-grid" style={{position:'relative',display:'grid',alignItems:'center'}}>
         {/* Text */}
         <div key={cur} style={{animation:'tbxFade 500ms ease-out'}}>
           <div style={{
-            display:'inline-flex',alignItems:'center',gap:8,marginBottom:16,
+            display:'inline-flex',alignItems:'center',gap:8,marginBottom:16,flexWrap:'wrap',maxWidth:'100%',
             background:'rgba(255,255,255,0.12)',borderRadius:999,padding:'4px 14px',
             border:'1px solid rgba(255,255,255,0.2)',
           }}>
@@ -91,8 +90,8 @@ export function HeroSlider() {
         </div>
 
         {/* Slide counter & indicators */}
-        <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',justifyContent:'space-between',height:'100%',gap:20}}>
-          <div style={{fontSize:40,fontWeight:700,color:'rgba(255,255,255,0.16)',lineHeight:1,fontVariantNumeric:'tabular-nums'}}>
+        <div className="hero-side" style={{display:'flex',flexDirection:'column',alignItems:'flex-end',justifyContent:'space-between',height:'100%',gap:20}}>
+          <div className="hero-counter" style={{fontSize:40,fontWeight:700,color:'rgba(255,255,255,0.16)',lineHeight:1,fontVariantNumeric:'tabular-nums'}}>
             {String(cur+1).padStart(2,'0')}<span style={{fontSize:20,color:'rgba(255,255,255,0.1)'}}>/0{total}</span>
           </div>
           <div style={{display:'flex',flexDirection:'column',gap:10,alignItems:'flex-end'}}>

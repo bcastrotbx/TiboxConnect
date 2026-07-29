@@ -11,6 +11,32 @@ html, body { margin: 0; height: 100%; background: #F0F2F6; font-family: var(--fo
   display: flex; align-items: center; padding: 0 24px; gap: 12px;
   position: sticky; top: 0; z-index: 50;
 }
+/* Responsividad, Bloque 1 (ver FASE-06-07-08-CONTENIDO-REAL.md): menú
+   hamburguesa bajo los 900px — el header nunca tuvo un punto de quiebre
+   antes de este ajuste. `.header-burger-btn` está oculto por defecto
+   (`display:none` inline en Header.jsx) y solo esta regla lo muestra; las
+   otras dos clases empiezan visibles (`display:flex` inline) y esta regla
+   las oculta — por eso necesitan `!important` para ganarle al inline style
+   en el punto de quiebre. */
+.header-burger-btn { display: none; }
+@media (max-width: 900px) {
+  .portal-header { padding: 0 16px; gap: 8px; }
+  .header-nav-desktop { display: none !important; }
+  .header-secondary-desktop { display: none !important; }
+  .header-burger-btn { display: inline-flex !important; }
+}
+@media (min-width: 901px) {
+  /* Salvaguarda: si la ventana crece con el menú móvil ya abierto, no debe
+     quedar superpuesto al header de escritorio (además del listener de
+     resize en Header.jsx que lo cierra). */
+  .header-mobile-menu { display: none !important; }
+}
+.header-mobile-link {
+  display: block; width: 100%; text-align: left; background: none; border: none;
+  color: white; font-size: 15px; font-weight: var(--fw-semibold); font-family: inherit;
+  padding: 14px 12px; border-radius: 8px; cursor: pointer;
+}
+.header-mobile-link:hover, .header-mobile-link:active { background: rgba(255,255,255,0.1); }
 .portal-content {
   flex: 1; overflow-y: auto; overflow-x: hidden;
   background: #F0F2F6;
@@ -52,6 +78,22 @@ html, body { margin: 0; height: 100%; background: #F0F2F6; font-family: var(--fo
 }
 @media (max-width: 560px) {
   .category-grid { grid-template-columns: 1fr; }
+}
+/* Responsividad, Bloque 1 (ver FASE-06-07-08-CONTENIDO-REAL.md): el hero
+   nunca tuvo un punto de quiebre — a 375px, la columna fija de 220px para
+   el contador/flechas (`.hero-grid`, `grid-template-columns:1fr 220px` por
+   defecto) no dejaba casi nada de ancho para el texto. Bajo los 700px la
+   columna lateral pasa a ser una fila horizontal debajo del texto
+   (flechas + puntos), y se oculta el número grande "02/04" (decorativo, de
+   baja prioridad) para no competir por espacio vertical. */
+.hero-shell { padding: 40px 52px; height: 360px; }
+.hero-grid { grid-template-columns: 1fr 220px; gap: 32px; }
+.hero-side { height: 100%; }
+@media (max-width: 700px) {
+  .hero-shell { padding: 28px 20px; height: auto; min-height: 420px; }
+  .hero-grid { grid-template-columns: 1fr; gap: 18px; }
+  .hero-side { flex-direction: row !important; align-items: center !important; justify-content: space-between !important; height: auto !important; width: 100%; }
+  .hero-counter { display: none; }
 }
 .section-card {
   background: white; border-radius: 16px;

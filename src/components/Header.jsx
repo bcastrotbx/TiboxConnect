@@ -30,8 +30,27 @@ const NAV_LINKS = [
 
 // Tibox Connect v2 — Header (Crear Tickets = naranja; el botón azul
 // "Contacta a tu KAM" se eliminó a pedido de negocio)
+//
+// Ajuste posterior — responsividad, Bloque 1 (ver
+// FASE-06-07-08-CONTENIDO-REAL.md): el diseño original no tenía ningún
+// punto de quiebre para el header — en celular, el menú de 6 ítems se
+// habría comprimido ilegible o desbordado la pantalla. Se eligió el patrón
+// estándar de "menú hamburguesa": bajo los 900px (`.header-nav-desktop` /
+// `.header-secondary-desktop` / `.header-burger-btn` en index.css) el menú
+// de navegación, el link ADM y el bloque de avatar/cerrar sesión se ocultan
+// y se reemplazan por un botón de hamburguesa que despliega un panel
+// vertical con todas esas opciones como filas grandes (fáciles de tocar con
+// el pulgar). "Crear Tickets" se mantiene siempre visible en el header
+// compacto — es el CTA de negocio más importante y hay espacio de sobra
+// para él junto al logo y la hamburguesa incluso en un celular angosto
+// (~375px). Se prefirió este patrón sobre "elementos que quepan + resto
+// colapsado" porque con 6 ítems de navegación (uno bastante largo, "Videos
+// y Webinars") casi ninguno cabría de forma legible en una fila de celular,
+// así que ocultarlos todos detrás de un solo control conocido es más
+// predecible para el usuario que una fila parcial más un "+2 más".
 export function Header({ onSoporte }) {
   const [showNotif, setShowNotif] = React.useState(false);
+  const [mobileOpen, setMobileOpen] = React.useState(false);
   const { isAdmin, profile, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -39,12 +58,30 @@ export function Header({ onSoporte }) {
     await signOut();
     navigate('/');
   };
+  const handleNavClick = (target) => {
+    setMobileOpen(false);
+    window.scrollToSection && window.scrollToSection(target);
+  };
+  const handleSoporteClick = () => {
+    setMobileOpen(false);
+    onSoporte && onSoporte();
+  };
   const notifs = [
     { id: 1, text: 'Nuevo webinar: Ciberseguridad para PYMES 2025', time: 'hace 1 h', unread: true },
     { id: 2, text: 'Tu ticket #4821 fue actualizado por soporte', time: 'hace 4 h', unread: true },
     { id: 3, text: 'Infografía publicada: Redes SD-WAN explicadas', time: 'ayer', unread: false },
   ];
   const unread = notifs.filter(n => n.unread).length;
+
+  // Si la ventana crece más allá del punto de quiebre mientras el menú
+  // móvil está abierto (ej. al rotar un dispositivo o redimensionar en
+  // devtools), lo cierra — evita que quede un panel "fantasma" abierto
+  // sobre el header de escritorio.
+  React.useEffect(() => {
+    const onResize = () => { if (window.innerWidth > 900) setMobileOpen(false); };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   return (
     <header className="portal-header">
@@ -54,16 +91,12 @@ export function Header({ onSoporte }) {
 
       {/* Navegación por secciones — reemplaza los ítems del Sidebar
           eliminado. Mismo mecanismo de scroll (window.scrollToSection) que
-          ya usaban los bloques de categoría bajo el hero. */}
-      {/* Fondo oscuro (ver ajuste posterior): texto en blanco. Peso
-          var(--fw-semibold) — se probó var(--fw-regular) primero pero se
-          leía demasiado delgado sobre el azul; semibold (600, el mismo peso
-          que ya tenía sobre fondo blanco) es el punto intermedio que existe
-          en tokens/typography.css entre regular (400) y bold (700) — no hay
-          un token "medium" (500) en el sistema. */}
-      <nav style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 18 }}>
+          ya usaban los bloques de categoría bajo el hero. Oculta bajo los
+          900px (ver .header-nav-desktop en index.css) — reemplazada por el
+          menú hamburguesa. */}
+      <nav className="header-nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 18 }}>
         {NAV_LINKS.map(link => (
-          <button key={link.scrollTarget} onClick={() => window.scrollToSection && window.scrollToSection(link.scrollTarget)} style={{
+          <button key={link.scrollTarget} onClick={() => handleNavClick(link.scrollTarget)} style={{
             background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
             fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'white',
             padding: '7px 10px', borderRadius: 8, transition: 'background 150ms, opacity 150ms',
@@ -75,7 +108,7 @@ export function Header({ onSoporte }) {
           </button>
         ))}
         {onSoporte && (
-          <button onClick={onSoporte} style={{
+          <button onClick={handleSoporteClick} style={{
             background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
             fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'white',
             padding: '7px 10px', borderRadius: 8, transition: 'background 150ms, opacity 150ms',
@@ -90,13 +123,11 @@ export function Header({ onSoporte }) {
 
       <div style={{ flex: 1 }}></div>
 
-      {/* Buttons */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        {/* ADM — acceso al panel de administración. Solo visible con sesión
-            de administrador activa (Fase 5): el portal es 100% público, así
-            que un visitante sin sesión no ve ningún control de cuenta ni
-            atajo al panel (ver ADR-004). */}
-        {isAdmin && (
+      {/* ADM — acceso al panel de administración. Solo visible con sesión de
+          administrador activa (Fase 5) y, en escritorio, como link directo;
+          en celular se mueve al menú hamburguesa (ver más abajo). */}
+      {isAdmin && (
+        <div className="header-secondary-desktop" style={{ display: 'flex', alignItems: 'center' }}>
           <Link to="/admin" title="Panel de administración" style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             fontSize: 12, fontWeight: 700, letterSpacing: '0.03em', color: 'var(--gray-600)',
@@ -110,27 +141,28 @@ export function Header({ onSoporte }) {
             <Icon name="shield" style={{ width: 14, height: 14 }} />
             ADM
           </Link>
-        )}
+        </div>
+      )}
 
-        {/* Crear Tickets — NARANJA (antes "Mis Tickets", mismo estilo) */}
-        <a href="https://soporte.tibox.cl/Login/LoginCliente" target="_blank" rel="noopener noreferrer" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 7,
-          fontSize: 13, fontWeight: 700, color: 'white',
-          background: 'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',
-          border: 'none', borderRadius: 10, padding: '8px 16px',
-          cursor: 'pointer', whiteSpace: 'nowrap', textDecoration: 'none',
-          boxShadow: '0 2px 10px rgba(255,103,7,0.28)',
-          transition: 'transform 150ms, box-shadow 150ms',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(255,103,7,0.4)'; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(255,103,7,0.28)'; }}
-        >
-          <Icon name="ticket" style={{ width: 15, height: 15 }} />
-          Crear Tickets
-        </a>
-      </div>
+      {/* Crear Tickets — siempre visible, incluso en celular (ver nota de
+          diseño arriba). NARANJA (antes "Mis Tickets", mismo estilo) */}
+      <a href="https://soporte.tibox.cl/Login/LoginCliente" target="_blank" rel="noopener noreferrer" style={{
+        display: 'inline-flex', alignItems: 'center', gap: 7,
+        fontSize: 13, fontWeight: 700, color: 'white',
+        background: 'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',
+        border: 'none', borderRadius: 10, padding: '8px 16px',
+        cursor: 'pointer', whiteSpace: 'nowrap', textDecoration: 'none', flexShrink: 0,
+        boxShadow: '0 2px 10px rgba(255,103,7,0.28)',
+        transition: 'transform 150ms, box-shadow 150ms',
+      }}
+        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(255,103,7,0.4)'; }}
+        onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(255,103,7,0.28)'; }}
+      >
+        <Icon name="ticket" style={{ width: 15, height: 15 }} />
+        Crear Tickets
+      </a>
 
-      <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.15)', margin: '0 6px' }}></div>
+      <div className="header-secondary-desktop" style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.15)', margin: '0 6px' }}></div>
 
       {/* Icons — ocultos a pedido de Braulio (ver FASE-06-07-08-CONTENIDO-REAL.md);
           se deja el código intacto (solo display:'none') por si se reactivan más
@@ -197,9 +229,10 @@ export function Header({ onSoporte }) {
           ("CM" = Carlos Mora, ver ADR-004); ahora refleja la sesión real de
           administrador y solo se muestra si existe una. Un admin puede
           navegar el portal público con su sesión activa y necesita una
-          forma de volver a /admin o cerrar sesión sin salir del portal. */}
+          forma de volver a /admin o cerrar sesión sin salir del portal. En
+          celular se mueve al menú hamburguesa. */}
       {isAdmin && (
-        <React.Fragment>
+        <div className="header-secondary-desktop" style={{ display: 'flex', alignItems: 'center' }}>
           <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.15)', margin: '0 4px' }}></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div title={profile?.full_name || 'Administrador'} style={{
@@ -220,6 +253,60 @@ export function Header({ onSoporte }) {
               <Icon name="log-out" style={{ width: 14, height: 14 }} />
               Cerrar sesión
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Botón hamburguesa — oculto en escritorio, visible bajo los 900px
+          (ver .header-burger-btn en index.css). */}
+      <button
+        className="header-burger-btn"
+        onClick={() => setMobileOpen(o => !o)}
+        aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
+        aria-expanded={mobileOpen}
+        style={{
+          width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+          background: mobileOpen ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.08)',
+          border: '1px solid rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer',
+          alignItems: 'center', justifyContent: 'center',
+        }}
+      >
+        <Icon name={mobileOpen ? 'x' : 'menu'} style={{ width: 20, height: 20 }} />
+      </button>
+
+      {/* Panel del menú móvil — todas las opciones de navegación como filas
+          grandes (padding vertical generoso, ver .header-mobile-link en
+          index.css) para que sean fáciles de tocar con el pulgar. */}
+      {mobileOpen && (
+        <React.Fragment>
+          <div onClick={() => setMobileOpen(false)} style={{ position: 'fixed', inset: 0, top: 62, zIndex: 55 }}></div>
+          <div className="header-mobile-menu" style={{
+            position: 'absolute', top: 62, left: 0, right: 0, zIndex: 60,
+            background: 'var(--grad-corporate)', borderBottom: '1px solid rgba(255,255,255,0.12)',
+            boxShadow: '0 16px 32px rgba(0,0,0,0.3)',
+            display: 'flex', flexDirection: 'column', padding: '8px 12px 16px',
+          }}>
+            {NAV_LINKS.map(link => (
+              <button key={link.scrollTarget} onClick={() => handleNavClick(link.scrollTarget)} className="header-mobile-link">
+                {link.label}
+              </button>
+            ))}
+            {onSoporte && (
+              <button onClick={handleSoporteClick} className="header-mobile-link">
+                Soporte
+              </button>
+            )}
+            {isAdmin && (
+              <React.Fragment>
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.12)', margin: '8px 4px' }}></div>
+                <Link to="/admin" onClick={() => setMobileOpen(false)} className="header-mobile-link" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+                  <Icon name="shield" style={{ width: 15, height: 15 }} /> Panel de administración
+                </Link>
+                <button onClick={() => { setMobileOpen(false); handleSignOut(); }} className="header-mobile-link" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Icon name="log-out" style={{ width: 15, height: 15 }} /> Cerrar sesión
+                </button>
+              </React.Fragment>
+            )}
           </div>
         </React.Fragment>
       )}
