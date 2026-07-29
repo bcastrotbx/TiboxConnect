@@ -329,6 +329,24 @@ Braulio pidió unificar Contacto y Feedback en un único bloque, en vez de las d
 
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
+## Ajuste posterior — Contacto/Feedback a 50/50, Feedback centrado verticalmente
+
+Ajuste de detalle sobre el bloque combinado del ajuste anterior.
+
+**Proporción 50/50.** `.contact-grid` pasó de `3fr 2fr` (60/40) a `1fr 1fr` — ambas columnas ahora ocupan el mismo ancho, confirmado en el navegador vía `getBoundingClientRect()` (ratio exacto `0.5`).
+
+**Feedback centrado verticalmente.** Al quedar Feedback con el mismo ancho que el formulario (que tiene bastante más contenido), su columna se estira a la misma altura por ser fila de grid, dejando aire de sobra. `OpinionPanel.jsx` ya usaba `height:'100%'` + `justifyContent:'center'` desde el ajuste en que se integró como columna — no hizo falta ningún cambio de código para este punto, ese centrado vertical ya estaba en su lugar y simplemente se volvió más visible con la columna más ancha. Verificado con `getBoundingClientRect()`: el contenido de Feedback queda a 172.9px del borde superior de la fila y 172.9px del inferior — perfectamente centrado, no pegado arriba.
+
+**Fondo cósmico:** ya estaba compartido por ambas columnas desde el ajuste anterior (`<CosmicBg variant={0}/>` vive en el contenedor único de `ContactFormSection`, no en cada columna por separado), así que no hizo falta agregar nada — el fondo estrellado ya se ve detrás de Feedback como textura visual sin agregar texto ni botones nuevos.
+
+**Sin tercer CTA ni oficinas.** Se confirmó en el navegador que el bloque solo tiene dos botones ("Enviar mensaje" y "Enviar mi opinión") y que no hay texto de oficinas ("Santiago"/"Curicó"/"Lima") en ningún punto de la página.
+
+**Verificado en el navegador:**
+- Escritorio (1300px): columnas de igual ancho (ratio `0.5`); contenido de Feedback centrado con simetría exacta arriba/abajo; fondo cósmico visible detrás de ambas columnas; exactamente 2 botones en todo el bloque.
+- Móvil (390px): las columnas se apilan verticalmente sobre el mismo fondo compartido, sin cambios respecto al ajuste anterior — confirmado por captura de pantalla.
+
+**Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
+
 ## Pendiente
 
 - **Braulio debe ejecutar la migración `20260731100000_events_sort_order.sql`** (agrega `sort_order` a `events`) en el SQL Editor de Supabase — hasta entonces, la sección Eventos del panel admin y "Próximos Eventos" del portal fallarán al cargar (columna inexistente). Contenido completo de la migración:
