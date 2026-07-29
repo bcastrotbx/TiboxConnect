@@ -19,12 +19,15 @@ import { formatDurationMinutes, formatShortDateEs } from '../lib/formatters.js';
 function mapContentRow(row) {
   return {
     id: row.id,
+    slug: row.slug,
     cat: row.category?.slug || null,
     libCat: row.category?.slug || null, // misma categoría para ambos filtros (ver decisión de unificación)
     thumb: row.thumbnail_url,
     title: row.title,
+    summary: row.summary || '',
     dur: formatDurationMinutes(row.duration_minutes),
     date: formatShortDateEs(row.published_at || row.created_at),
+    dateRaw: row.published_at || row.created_at,
     externalUrl: row.external_url,
   };
 }
@@ -61,6 +64,25 @@ export async function getVideoLibrary({ category, query } = {}) {
   return rows
     .map(mapContentRow)
     .filter((v) => (!category || category === 'all' || v.libCat === category) && v.title.toLowerCase().includes(q));
+}
+
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): usada por la
+// página de detalle /videoteca/:slug — busca un video individual por su
+// slug real (no por id), igual que el resto del portal público hace con
+// noticias/infografías. Devuelve null si no existe o no está publicado (la
+// página de detalle lo trata como "no encontrado", no como un error).
+export async function getVideoBySlug(slug) {
+  const { data, error } = await supabase
+    .from('content_items')
+    .select('*, category:categories(slug, name, color)')
+    .eq('type', 'video')
+    .eq('slug', slug)
+    .eq('status', 'published')
+    .eq('visibility', 'public')
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? mapContentRow(data) : null;
 }
 
 export async function getVideoCategories() {

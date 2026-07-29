@@ -2,6 +2,8 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { PortalLayout } from '../layouts/PortalLayout.jsx';
 import { AdminLayout } from '../layouts/AdminLayout.jsx';
 import { HomePage } from '../pages/HomePage.jsx';
+import { VideotecaPage } from '../pages/VideotecaPage.jsx';
+import { VideotecaDetailPage } from '../pages/VideotecaDetailPage.jsx';
 import { NotFound } from '../pages/NotFound.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';
 import { UpdatePasswordPage } from '../pages/UpdatePasswordPage.jsx';
@@ -45,6 +47,11 @@ const router = createBrowserRouter([
     element: <PortalLayout />,
     children: [
       { index: true, element: <HomePage /> },
+      // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): "Ver todos
+      // los videos" pasó de abrir un popup a navegar acá — páginas propias
+      // con URL, dentro del mismo PortalLayout (header siempre visible).
+      { path: 'videoteca', element: <VideotecaPage /> },
+      { path: 'videoteca/:slug', element: <VideotecaDetailPage /> },
     ],
   },
   { path: '/login', element: <LoginPage /> },

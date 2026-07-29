@@ -10,7 +10,7 @@ import * as newsService from '../services/newsService.js';
 
 /* ── Detalle del evento (sin formulario propio: la inscripción ocurre
    en la URL externa de registrationUrl, abierta en una pestaña nueva) ── */
-function EventDetailModal({ event, modalidadById, onClose }) {
+export function EventDetailModal({ event, modalidadById, onClose }) {
   const mod = modalidadById[event.modalidad] || { color:'#0050C8', icon:'wifi' };
   return (
     <ModalShell onClose={onClose} maxWidth={460}>

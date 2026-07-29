@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icon } from '../components/shared/Icon.jsx';
 import { LoadingState, EmptyState, ErrorState } from '../components/shared/AsyncState.jsx';
+import { Pagination } from '../components/shared/Pagination.jsx';
 import { useDesignSystem } from '../context/DesignSystemContext.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import * as adminService from '../services/adminService.js';
@@ -600,47 +601,6 @@ function SortableTh({ label, sortKey, colSort, onSort, disabled }) {
 
 const PAGE_SIZE = 10;
 
-// Paginación estilo WordPress: números de página + anterior/siguiente. Con
-// los volúmenes de contenido de este panel (decenas, no miles de filas) no
-// hace falta truncar con "…" — se listan todas las páginas.
-function Pagination({ page, totalPages, onChange }) {
-  if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
-  return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'14px 20px', borderTop:'1px solid var(--gray-200)' }}>
-      <button
-        className="adm-mini-btn"
-        onClick={() => onChange(page - 1)}
-        disabled={page === 1}
-        style={{ opacity: page === 1 ? 0.4 : 1, cursor: page === 1 ? 'default' : 'pointer' }}
-      >
-        <Icon name="chevron-left" style={{ width:13, height:13 }} />
-      </button>
-      {pages.map(p => (
-        <button
-          key={p}
-          onClick={() => onChange(p)}
-          className="adm-mini-btn"
-          style={{
-            minWidth:30, justifyContent:'center', fontWeight: p === page ? 700 : 600,
-            background: p === page ? '#0050C8' : 'white',
-            color: p === page ? 'white' : 'var(--gray-600)',
-            borderColor: p === page ? '#0050C8' : 'var(--gray-200)',
-          }}
-        >{p}</button>
-      ))}
-      <button
-        className="adm-mini-btn"
-        onClick={() => onChange(page + 1)}
-        disabled={page === totalPages}
-        style={{ opacity: page === totalPages ? 0.4 : 1, cursor: page === totalPages ? 'default' : 'pointer' }}
-      >
-        <Icon name="chevron-right" style={{ width:13, height:13 }} />
-      </button>
-    </div>
-  );
-}
-
 export function ContentTable({ section, title }) {
   const isEvent = section === 'events';
   const allowReorder = section !== 'news';
@@ -922,7 +882,7 @@ export function ContentTable({ section, title }) {
           </tbody>
         </table>
       )}
-      {rows.length > 0 && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
+      {rows.length > 0 && <Pagination page={page} totalPages={totalPages} onChange={setPage} bordered />}
       {viewing && <ContentViewModal item={viewing} onClose={() => setViewing(null)} />}
       {editing && <NewContentModal section={section} item={editing} onClose={() => setEditing(null)} />}
       {confirming !== null && (

@@ -21,6 +21,7 @@ function mapEventRow(row) {
   const { day, month, year } = formatDayMonth(row.starts_at);
   return {
     id: row.id,
+    slug: row.slug,
     day,
     month,
     year,
@@ -35,6 +36,8 @@ function mapEventRow(row) {
     desc: row.summary || '',
     resena: row.description || row.summary || '',
     resumen: row.summary || '',
+    startsAtRaw: row.starts_at,
+    rawStatus: row.status,
   };
 }
 
@@ -66,6 +69,24 @@ export async function getPastEvents() {
 
   if (error) throw error;
   return (data || []).map(mapEventRow);
+}
+
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): usada por la
+// página de detalle /videoteca/:slug para eventos ya realizados — solo
+// eventos con status='completed' tienen página de detalle propia; los
+// próximos/publicados abren el popup existente (EventDetailModal) en vez de
+// navegar, así que no se buscan acá.
+export async function getEventBySlug(slug) {
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .eq('slug', slug)
+    .eq('status', 'completed')
+    .eq('visibility', 'public')
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? mapEventRow(data) : null;
 }
 
 export async function getEventById(id) {

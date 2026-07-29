@@ -1,10 +1,12 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Icon } from './shared/Icon.jsx';
 import { ModalShell } from './shared/ModalShell.jsx';
 import { CosmicBg } from './shared/CosmicBg.jsx';
 import { LoadingState, EmptyState, ErrorState } from './shared/AsyncState.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import { useFadeContent } from '../hooks/useFadeContent.js';
+import { YouTubePlayer } from './shared/YouTubePlayer.jsx';
 import * as contentService from '../services/contentService.js';
 import * as formService from '../services/formService.js';
 import { extractYouTubeVideoId } from '../lib/youtube.js';
@@ -20,50 +22,12 @@ import { extractYouTubeVideoId } from '../lib/youtube.js';
    se finge un reproductor — se ofrece un enlace real a "Ver contenido". ── */
 function VideoModal({ video, catsById, onClose }) {
   const cat = catsById[video.cat] || { color:'var(--navy-900)', label:'' };
-  const [playing, setPlaying] = React.useState(false);
   const youtubeId = extractYouTubeVideoId(video.externalUrl);
 
   return (
     <ModalShell onClose={onClose} maxWidth={680}>
-      <div style={{position:'relative',aspectRatio:'16/9',background:'#040b22',overflow:'hidden'}}>
-        {playing && youtubeId ? (
-          <iframe
-            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`}
-            title={video.title}
-            style={{position:'absolute',inset:0,width:'100%',height:'100%',border:'none'}}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-          />
-        ) : (
-          <React.Fragment>
-            <img src={video.thumb} alt="" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}} />
-            <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(2,12,36,0.25),rgba(2,12,36,0.82))'}}></div>
-            <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
-              {youtubeId ? (
-                <button onClick={()=>setPlaying(true)} title="Reproducir" style={{
-                  width:74,height:74,borderRadius:'50%',border:'none',padding:0,
-                  background:'linear-gradient(135deg,#FF6707,#FF8C3A)',
-                  display:'flex',alignItems:'center',justifyContent:'center',
-                  boxShadow:'0 0 0 10px rgba(255,103,7,0.18), 0 8px 28px rgba(255,103,7,0.45)',
-                  cursor:'pointer',
-                }}>
-                  <Icon name="play" style={{width:30,height:30,color:'white',marginLeft:3}} />
-                </button>
-              ) : video.externalUrl ? (
-                <a href={video.externalUrl} target="_blank" rel="noopener noreferrer" title="Ver contenido" style={{
-                  width:74,height:74,borderRadius:'50%',textDecoration:'none',
-                  background:'rgba(255,255,255,0.14)',border:'1.5px solid rgba(255,255,255,0.4)',
-                  display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',
-                }}>
-                  <Icon name="external-link" style={{width:26,height:26,color:'white'}} />
-                </a>
-              ) : (
-                <span style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.75)'}}>Sin video disponible</span>
-              )}
-            </div>
-            <span style={{position:'absolute',top:14,left:16,zIndex:2,fontSize:10.5,fontWeight:700,color:'white',background:cat.color,borderRadius:999,padding:'4px 11px',boxShadow:'0 2px 8px rgba(0,0,0,0.3)'}}>{cat.label}</span>
-          </React.Fragment>
-        )}
+      <div style={{position:'relative'}}>
+        <YouTubePlayer thumb={video.thumb} externalUrl={video.externalUrl} title={video.title} badge={cat} />
         <button onClick={onClose} style={{position:'absolute',top:12,right:12,zIndex:3,width:34,height:34,borderRadius:'50%',background:'rgba(0,0,0,0.45)',border:'1px solid rgba(255,255,255,0.2)',color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
           <Icon name="x" style={{width:17,height:17}} />
         </button>
@@ -139,124 +103,13 @@ function VideoCard({ v, catsById, onOpen }) {
   );
 }
 
-function VideoLibraryCard({ v, catsById, onOpen }) {
-  const cat = catsById[v.cat] || { color:'var(--navy-900)', label:'' };
-  const [hov, setHov] = React.useState(false);
-  return (
-    <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{
-      background:'#021847', borderRadius:14, overflow:'hidden',
-      border:'1px solid rgba(255,255,255,0.1)',
-      boxShadow: hov ? '0 10px 26px rgba(0,0,0,0.35)' : '0 2px 8px rgba(0,0,0,0.2)',
-      transform: hov ? 'translateY(-3px)' : 'none', transition:'box-shadow 200ms, transform 200ms',
-    }}>
-      <div onClick={()=>onOpen(v)} style={{position:'relative', aspectRatio:'16/10', overflow:'hidden', background:'#0b1a3a', cursor:'pointer'}}>
-        <img src={v.thumb} alt="" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',transform:hov?'scale(1.05)':'none',transition:'transform 320ms'}} />
-        <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(2,12,36,0) 40%,rgba(2,12,36,0.45))'}}></div>
-        <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <div style={{width:44,height:44,borderRadius:'50%',background:hov?'linear-gradient(135deg,#FF6707,#FF8C3A)':'rgba(2,12,36,0.55)',border:'1.5px solid rgba(255,255,255,0.6)',display:'flex',alignItems:'center',justifyContent:'center',transition:'background 200ms'}}>
-            <Icon name="play" style={{width:18,height:18,color:'white',marginLeft:2}} />
-          </div>
-        </div>
-        <span style={{position:'absolute',bottom:8,right:8,fontSize:10.5,fontWeight:700,color:'white',background:'rgba(2,12,36,0.7)',borderRadius:6,padding:'2px 7px',fontVariantNumeric:'tabular-nums'}}>{v.dur}</span>
-      </div>
-      <div style={{padding:'11px 12px 13px',display:'flex',flexDirection:'column',gap:9}}>
-        <div style={{fontSize:13,fontWeight:700,color:'white',lineHeight:1.32,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden',minHeight:'2.6em'}}>{v.title}</div>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
-          <span style={{fontSize:9.5,fontWeight:700,letterSpacing:'0.02em',color:cat.color,background:'white',borderRadius:999,padding:'2px 8px',boxShadow:'0 1px 3px rgba(0,0,0,0.12)'}}>{cat.label}</span>
-          <span style={{fontSize:11,color:'rgba(255,255,255,0.5)',display:'inline-flex',alignItems:'center',gap:4}}><Icon name="clock" style={{width:11,height:11}} />{v.dur}</span>
-        </div>
-        <button onClick={()=>onOpen(v)} style={{marginTop:2,display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'8px',borderRadius:8,border:'1px solid rgba(255,255,255,0.18)',background:'rgba(255,255,255,0.06)',color:'white',fontSize:12,fontWeight:700,cursor:'pointer'}}>
-          <Icon name="play" style={{width:13,height:13}} />Ver video
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// El buscador de texto filtra en el cliente sobre el set completo ya
-// cargado (en vez de re-consultar el servicio en cada tecla) para no
-// introducir el delay simulado del servicio en cada pulsación.
-function VideoLibraryModal({ allVideos, catsById, onClose }) {
-  const { status, data: libCats, error } = useAsyncData(() => contentService.getVideoLibraryCategories(), []);
-  const [q, setQ] = React.useState('');
-  const [filter, setFilter] = React.useState('all');
-  const [openVideo, setOpenVideo] = React.useState(null);
-
-  const items = allVideos.filter(v =>
-    (filter === 'all' || v.libCat === filter) &&
-    v.title.toLowerCase().includes(q.toLowerCase())
-  );
-
-  return (
-    <ModalShell onClose={onClose} maxWidth="85vw">
-      <div style={{position:'sticky',top:0,zIndex:2,background:'white',borderBottom:'1px solid var(--gray-200)',padding:'20px 26px 16px',borderRadius:'20px 20px 0 0'}}>
-        <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16}}>
-          <div>
-            <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'#0050C8',marginBottom:4}}>Videoteca completa</div>
-            <div style={{fontSize:19,fontWeight:700,color:'var(--navy-900)'}}>Todos los videos y webinars</div>
-          </div>
-          <button onClick={onClose} style={{background:'var(--gray-100)',border:'none',borderRadius:8,cursor:'pointer',color:'var(--gray-500)',padding:8,display:'flex',flexShrink:0}}>
-            <Icon name="x" style={{width:18,height:18}} />
-          </button>
-        </div>
-        <div style={{display:'flex',gap:12,marginTop:16,flexWrap:'wrap'}}>
-          <div style={{position:'relative',flex:'1 1 260px',minWidth:220}}>
-            <Icon name="search" style={{width:15,height:15,position:'absolute',left:13,top:'50%',transform:'translateY(-50%)',color:'var(--gray-400)'}} />
-            <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Buscar por título…" style={{width:'100%',fontFamily:'inherit',fontSize:13.5,padding:'10px 14px 10px 36px',borderRadius:10,border:'1px solid var(--gray-200)'}} />
-          </div>
-          <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-            {(libCats || []).map(c => {
-              const on = filter === c.id;
-              return (
-                <button key={c.id} onClick={()=>setFilter(c.id)} style={{
-                  fontSize:12, fontWeight:700, cursor:'pointer', borderRadius:999, padding:'8px 15px',
-                  border: on ? '1px solid #0050C8' : '1px solid var(--gray-200)',
-                  background: on ? '#0050C8' : 'white', color: on ? 'white' : 'var(--gray-600)',
-                  transition:'all 150ms', whiteSpace:'nowrap',
-                }}>{c.label}</button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      <div style={{padding:'22px 26px 8px'}}>
-        {status === 'loading' && <LoadingState label="Cargando categorías…" />}
-        {status === 'error' && <ErrorState label="No pudimos cargar los filtros de la videoteca." error={error} />}
-        {status === 'success' && (
-          items.length === 0 ? (
-            <div style={{textAlign:'center',color:'var(--gray-400)',padding:'40px 0',fontSize:13.5}}>No encontramos videos que coincidan con tu búsqueda.</div>
-          ) : (
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(230px, 1fr))',gap:16}}>
-              {items.map(v => <VideoLibraryCard key={v.id} v={v} catsById={catsById} onOpen={setOpenVideo} />)}
-            </div>
-          )
-        )}
-      </div>
-
-      <div style={{padding:'22px 26px 28px',display:'flex',justifyContent:'center'}}>
-        <a href="https://www.tibox.cl/eventos/" target="_blank" rel="noopener noreferrer" style={{
-          display:'inline-flex',alignItems:'center',gap:9,
-          background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',color:'white',
-          border:'none',borderRadius:12,padding:'13px 26px',fontWeight:700,fontSize:14,cursor:'pointer',
-          textDecoration:'none',boxShadow:'0 4px 16px rgba(255,103,7,0.32)',
-        }}>
-          Ver más contenido en TIBOX<Icon name="arrow-up-right" style={{width:16,height:16}} />
-        </a>
-      </div>
-
-      {openVideo && <VideoModal video={openVideo} catsById={catsById} onClose={()=>setOpenVideo(null)} />}
-    </ModalShell>
-  );
-}
-
 export function ExploraPanel() {
+  const navigate = useNavigate();
   const { data: categories } = useAsyncData(() => contentService.getVideoCategories(), []);
   const [filter, setFilter] = React.useState('all');
   const { status, data: items, error } = useAsyncData(() => contentService.getVideos({ category: filter }), [filter]);
   const { displayData: fadeItems, isInitialLoad, isRefreshing } = useFadeContent(status, items);
   const [openVideo, setOpenVideo] = React.useState(null);
-  const [showLibrary, setShowLibrary] = React.useState(false);
   const trackRef = React.useRef(null);
 
   const cats = categories || [];
@@ -276,7 +129,7 @@ export function ExploraPanel() {
           <div style={{fontSize:13,color:'var(--gray-500)',marginTop:4,maxWidth:560,lineHeight:1.5}}>Webinars, cápsulas, charlas y registros de eventos, reunidos en un solo lugar.</div>
         </div>
         <div style={{display:'flex',gap:10,flexShrink:0,paddingTop:4,alignItems:'center'}}>
-          <button onClick={()=>setShowLibrary(true)} style={{display:'inline-flex',alignItems:'center',gap:7,fontSize:12.5,fontWeight:700,cursor:'pointer',padding:'9px 15px',borderRadius:10,border:'1px solid var(--gray-200)',background:'white',color:'var(--gray-600)',whiteSpace:'nowrap'}}>
+          <button onClick={()=>navigate('/videoteca')} style={{display:'inline-flex',alignItems:'center',gap:7,fontSize:12.5,fontWeight:700,cursor:'pointer',padding:'9px 15px',borderRadius:10,border:'1px solid var(--gray-200)',background:'white',color:'var(--gray-600)',whiteSpace:'nowrap'}}>
             <Icon name="layout-grid" style={{width:14,height:14}} />Ver todos los videos
           </button>
           <button onClick={()=>scroll(-1)} aria-label="Anterior" style={navBtnStyle}>
@@ -327,7 +180,6 @@ export function ExploraPanel() {
       )}
 
       {openVideo && <VideoModal video={openVideo} catsById={catsById} onClose={()=>setOpenVideo(null)} />}
-      {showLibrary && <VideoLibraryModal allVideos={fadeItems || []} catsById={catsById} onClose={()=>setShowLibrary(false)} />}
     </div>
   );
 }

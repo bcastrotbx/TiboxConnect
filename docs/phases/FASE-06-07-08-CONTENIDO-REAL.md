@@ -432,6 +432,69 @@ Braulio empezó un trabajo de responsividad en varios bloques — este es el pri
 
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
+## Ajuste posterior — Videoteca en páginas propias (de popup a rutas con URL)
+
+Cambio grande de UX pedido tras revisión con gerencia: el botón "Ver todos los videos" del bloque Videoteca en la home dejó de abrir un popup grande (`VideoLibraryModal`) y ahora navega a páginas completas con URL propia, dentro del mismo router y `PortalLayout` que ya usa el resto del portal (header siempre visible). **El popup del reproductor que se abre al hacer clic en una tarjeta dentro del bloque corto de la home no se tocó** — sigue siendo el mismo `VideoModal` de siempre.
+
+### Rutas nuevas
+
+- **`/videoteca`** (`src/pages/VideotecaPage.jsx`) — listado combinado con filtros, orden, grilla paginada.
+- **`/videoteca/:slug`** (`src/pages/VideotecaDetailPage.jsx`) — detalle de un video real o un evento ya realizado (el `slug` puede pertenecer a `content_items` o a `events`; la página prueba ambas tablas).
+
+Ambas registradas como hijas de la ruta `/` (`PortalLayout`) en `AppRouter.jsx`, junto a `HomePage`.
+
+### Contenido combinado y decisión "categoría oculta eventos"
+
+`/videoteca` muestra en un solo listado paginado (12 por página, 3×4 en escritorio) **todos** los videos publicados (`content_items` tipo `video`) **y todos** los eventos (`published`/próximos y `completed`/realizados) — combinados y ordenados por fecha en `videotecaService.getVideotecaItems()`. Los eventos que todavía no ocurrieron muestran una etiqueta "PRÓXIMAMENTE" en la tarjeta.
+
+`events` no tiene columna `category_id` (confirmado en `20260727100500_events.sql`), así que filtrar por una categoría específica (Ciberseguridad, Cloud & Infraestructura, etc.) **oculta todos los eventos** en vez de mostrarlos sin filtrar — mostrar eventos "de cualquier categoría" mezclados con videos de una categoría específica habría sido confuso. Cuando el filtro "Mostrar" está en "Solo eventos realizados" o "Solo próximos eventos" (ver abajo), los chips de categoría no tendrían ningún efecto sobre el resultado, así que se atenúan visualmente (`opacity:0.4`) y se deshabilitan (`pointer-events:none`) en vez de quedar interactivos sin dar ninguna señal.
+
+### Ordenar por / Mostrar: dos selects, no uno combinado
+
+Se pidió un control con 4 opciones (recientes primero, más antiguo primero, solo eventos realizados, solo próximos eventos) y se dejó a criterio de diseño. Se optó por **dos `<select>` independientes** en vez de un único selector de 4 opciones mezcladas:
+
+- **"Ordenar por"** (`recent` / `oldest`) — orden cronológico.
+- **"Mostrar"** (`all` / `completed` / `upcoming`) — qué subconjunto de contenido.
+
+Motivo: son conceptualmente independientes — por ejemplo, "solo eventos realizados" ordenados de más antiguo a más reciente es una combinación válida y razonable que un único selector de 4 opciones fijas no podría expresar sin volverse una lista de 6+ combinaciones. Documentado también como comentario en `VideotecaPage.jsx`.
+
+### Detalle de video/evento (70/30) y reutilización de componentes
+
+Al hacer clic en una tarjeta de video real o de evento ya realizado, navega a `/videoteca/:slug`. Layout `.videoteca-detail-grid` (70/30 en escritorio vía `grid-template-columns: 7fr 3fr`, apilado a 1 columna bajo 860px):
+
+- **Izquierda (70%):** reproductor (`YouTubePlayer`, el mismo componente extraído de `VideoModal` — no se duplicó la lógica de `extractYouTubeVideoId`), título, categoría (solo videos, `events` no tiene categoría), fecha, duración (solo videos), descripción.
+- **Derecha (30%, "Mira también"):** hasta 6 próximos eventos (`status='published'`, fecha futura), cada uno abre el mismo `EventDetailModal` que ya usa la sección Eventos (se cambió a `export function EventDetailModal` en `Events.jsx` para poder importarlo desde acá — antes era local al archivo).
+
+Las tarjetas "PRÓXIMAMENTE" (evento que todavía no ocurrió) **no navegan** a esta página de detalle — abren directamente el mismo `EventDetailModal` (fecha, hora, modalidad, lugar, botón "Inscríbete aquí") sobre `/videoteca`, igual que en la sección Eventos.
+
+**Limitación de modelo de datos encontrada y documentada:** `events` no tiene ninguna columna de URL de video (a diferencia de `content_items.external_url`), así que un evento `completed` nunca tiene un video de YouTube que reproducir — `YouTubePlayer` cae en su estado de respaldo "Sin video disponible", y se agregó una nota adicional bajo la descripción para ese caso ("Este evento todavía no tiene una grabación en video disponible"). Se reutilizó el mismo componente en vez de crear una variante "sin reproductor" para que, si en el futuro se agrega una columna de grabación a `events`, esta página funcione sin cambios.
+
+**Estado "no encontrado":** si el slug no corresponde a ningún video publicado ni evento, se muestra un `EmptyState` con un link "Volver a la videoteca" — se prefirió esto a un redirect automático porque es más informativo (el usuario entiende qué pasó) y evita el parpadeo/salto de una redirección silenciosa.
+
+### Componentes compartidos extraídos (reutilización, no duplicación)
+
+- **`src/components/shared/Pagination.jsx`** — extraído del `Pagination` local de `AdminWidgets.jsx` (mismo patrón numerado tipo WordPress que ya usaban las tablas del panel admin). Se le agregó un prop `bordered` (default `false`) para el borde superior que solo quería el contexto admin; `/videoteca` lo usa sin ese borde.
+- **`src/components/shared/YouTubePlayer.jsx`** — extraído del poster/botón de play/iframe que antes vivía inline dentro de `VideoModal` (`Media.jsx`). `VideoModal` ahora delegan en él; la página de detalle lo usa igual, sin duplicar la lógica de extracción del ID de YouTube (`src/lib/youtube.js`).
+- **`EventDetailModal`** (`Events.jsx`) — pasó de función local a `export`, sin cambios de comportamiento, para poder reutilizarse desde `/videoteca` y `/videoteca/:slug`.
+
+Con esto, `VideoLibraryCard` y `VideoLibraryModal` (el popup grande anterior) se eliminaron por completo de `Media.jsx` — ya no tenían ningún punto de uso.
+
+### Verificado en el navegador
+
+Con un servidor de desarrollo temporal en un puerto libre (5173 estaba ocupado por otro proceso; se cerró al terminar):
+
+- `/videoteca` carga con el header del portal siempre visible, título, reseña, chips de categoría, selects de orden/mostrar y grilla de 12 elementos (video + eventos combinados, con badges "PRÓXIMAMENTE" en los eventos futuros).
+- Filtrar por categoría ("Ciberseguridad") deja solo videos de esa categoría, sin eventos — comportamiento esperado.
+- Cambiar "Mostrar" a "Solo próximos eventos" con una categoría específica activa atenúa y deshabilita los chips (confirmado `opacity:0.4` y `pointer-events:none` vía `getComputedStyle`); al volver "Mostrar" a "Todo el contenido" el chip de categoría se reactiva y conserva la selección.
+- Paginación numerada funciona (2 páginas con el contenido de seed actual).
+- Clic en una tarjeta de video real navega a `/videoteca/<slug>` con URL limpia; el reproductor inserta el iframe de YouTube correctamente (`src` con el ID esperado); "Mira también" lista próximos eventos.
+- Clic en una tarjeta "PRÓXIMAMENTE" abre el `EventDetailModal` (fecha, hora, modalidad, lugar, "Inscríbete aquí") sin navegar — la URL se mantiene en `/videoteca`.
+- Recarga directa de `/videoteca/<slug>` (no solo navegación interna) confirmada — la página carga igual desde cero.
+- Responsive: a 375px, `.videoteca-grid` baja a 1 columna; en la página de detalle, `.videoteca-detail-grid` pasa de 70/30 a apilado vertical (reproductor y datos arriba, "Mira también" debajo).
+- `npm run lint` y `npm run build` sin errores.
+
+**Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
+
 ## Pendiente
 
 - **Braulio debe ejecutar la migración `20260731100000_events_sort_order.sql`** (agrega `sort_order` a `events`) en el SQL Editor de Supabase — hasta entonces, la sección Eventos del panel admin y "Próximos Eventos" del portal fallarán al cargar (columna inexistente). Contenido completo de la migración:

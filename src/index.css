@@ -79,6 +79,25 @@ html, body { margin: 0; height: 100%; background: #F0F2F6; font-family: var(--fo
 @media (max-width: 560px) {
   .category-grid { grid-template-columns: 1fr; }
 }
+/* Página /videoteca (ver ajuste posterior "Videoteca en páginas propias" en
+   FASE-06-07-08-CONTENIDO-REAL.md): 4 columnas en escritorio (3 filas de 4
+   = 12 por página), bajando a 3/2/1 según el ancho. */
+.videoteca-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+@media (max-width: 980px) {
+  .videoteca-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 700px) {
+  .videoteca-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .videoteca-grid { grid-template-columns: 1fr; }
+}
+/* Página /videoteca/:slug: 70/30 (contenido + "Mira también") en escritorio,
+   apilado en pantallas angostas. */
+.videoteca-detail-grid { display: grid; grid-template-columns: 7fr 3fr; gap: 28px; align-items: start; }
+@media (max-width: 860px) {
+  .videoteca-detail-grid { grid-template-columns: 1fr; }
+}
 /* Responsividad, Bloque 1 (ver FASE-06-07-08-CONTENIDO-REAL.md): el hero
    nunca tuvo un punto de quiebre — a 375px, la columna fija de 220px para
    el contador/flechas (`.hero-grid`, `grid-template-columns:1fr 220px` por
