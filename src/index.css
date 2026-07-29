@@ -35,6 +35,16 @@ html, body { margin: 0; height: 100%; background: #F0F2F6; font-family: var(--fo
   .contact-grid { grid-template-columns: 1fr; }
   .contact-grid > .contact-col-form { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.14); }
 }
+/* Bloques de categoría bajo el hero (ver ajuste posterior en
+   FASE-06-07-08-CONTENIDO-REAL.md): 5 bloques — una fila en escritorio
+   ancho, 3+2 en pantallas medianas, apilados en móvil. */
+.category-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+@media (max-width: 980px) {
+  .category-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 560px) {
+  .category-grid { grid-template-columns: 1fr; }
+}
 .section-card {
   background: white; border-radius: 16px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.07);

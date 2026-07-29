@@ -377,6 +377,32 @@ Dos correcciones sobre el ajuste anterior, pedidas por Braulio.
 
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
+## Ajuste posterior — bloques de categoría: de 4 a 5, con Contacto agregado
+
+Braulio pidió cambiar los bloques de categoría bajo el hero: de 4 a 5, con contenido, orden y colores nuevos.
+
+**Contenido y orden** (`CATS` en `src/data/seed/homeSeed.js`, `scrollTarget` apunta a los `id="section-*"` ya existentes en el DOM):
+1. Videos y Webinars → `videos` → "Charlas, demos y webinars grabados"
+2. Infografías → `infographics` → "Contenido visual fácil de compartir"
+3. Tendencias → `news` (la sección sigue siendo "Tendencias de la industria" / noticias) → "Lo último del sector tecnológico"
+4. Eventos → `events` → "Agenda y actividades de TIBOX"
+5. Contacto (nuevo) → `contact` → "Cuéntanos tu proyecto"
+
+"Tu Opinión" deja de tener su propio bloque — ya no correspondía tener un bloque separado apuntando a Feedback ahora que esa sección vive integrada dentro de Contacto (ver ajuste anterior), así que se reemplazó por un bloque "Contacto" que apunta al bloque combinado completo.
+
+**Colores** (`CAT_GRADIENTS` en `Hero.jsx`): los 4 tonos existentes (morado/Webinars, naranja-rojo/Ciberseguridad, azul/Cloud, verde/Transformación Digital) se reasignaron a Videos, Infografías, Tendencias y Eventos respectivamente — mismos tonos de la paleta real de categorías, sin inventar nada nuevo para esos 4. Para Contacto (el 5to bloque) se agregó un tono cian/turquesa nuevo, ligado a `var(--brand-cyan)` (el acento cian que ya se usa en eyebrows, badges y separadores en todo el sitio) — no repite ninguno de los otros 4.
+
+**Layout responsive** (`.category-grid` en `index.css`, reemplaza el `gridTemplateColumns:'repeat(4,1fr)'` inline anterior): fila de 5 columnas iguales en escritorio ancho, `repeat(3,1fr)` (3+2) por debajo de 980px, y una sola columna apilada por debajo de 560px.
+
+Cada bloque sigue usando el mismo mecanismo de scroll (`window.scrollToSection`) que ya usaban los 4 anteriores — no se agregó ninguna navegación nueva, solo se actualizaron los `scrollTarget` para que apunten a las 5 secciones correctas.
+
+**Verificado en el navegador:**
+- Escritorio (1300px): los 5 bloques se ven en una sola fila, en el orden pedido, cada uno con su color, ícono, título y descripción. Se confirmó que `document.getElementById('section-videos'|'section-infographics'|'section-news'|'section-events'|'section-contact')` existen los 5, y se disparó el clic de cada bloque directamente sobre el DOM: los 5 mueven `portal-content.scrollTop` a una posición distinta y creciente en el orden esperado (540 → 1046 → 1634 → 2319 → 2609), confirmando que cada uno navega a su sección correspondiente y no a otra.
+- Pantalla mediana (850px): los bloques se acomodan 3+2, sin verse forzados.
+- Móvil (390px): los 5 bloques se apilan verticalmente a ancho completo, en el mismo orden, con sus colores y contenido correctos.
+
+**Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
+
 ## Pendiente
 
 - **Braulio debe ejecutar la migración `20260731100000_events_sort_order.sql`** (agrega `sort_order` a `events`) en el SQL Editor de Supabase — hasta entonces, la sección Eventos del panel admin y "Próximos Eventos" del portal fallarán al cargar (columna inexistente). Contenido completo de la migración:

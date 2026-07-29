@@ -135,26 +135,33 @@ const heroArrow = {
    seed.sql: ciberseguridad #F2542D, cloud-infraestructura #2D6CF2,
    transformacion-digital #2DBE60, webinars #6a3ed0) — no son colores nuevos
    inventados, son variantes (oscuro → color → claro) de tonos que ya
-   existen en la app, para que se sientan parte de la misma paleta. */
+   existen en la app, para que se sientan parte de la misma paleta.
+   Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): de 4 a 5 bloques
+   — se agrega "contacto" con un quinto tono cian/turquesa, ligado a
+   var(--brand-cyan) (el acento cian que ya se usa en eyebrows, badges y
+   separadores en todo el sitio), y no repite ninguno de los otros 4. */
 const CAT_GRADIENTS = {
-  explora:  'linear-gradient(135deg, #2c1a5e 0%, #6a3ed0 60%, #b39ddb 100%)', // morado — mismo tono que la categoría "Webinars"
-  noticias: 'linear-gradient(135deg, #06246a 0%, #2D6CF2 58%, #7db2ff 100%)', // azul — mismo tono que "Cloud & Infraestructura"
-  eventos:  'linear-gradient(135deg, #0b3d24 0%, #2DBE60 58%, #7fe0a3 100%)', // verde — mismo tono que "Transformación Digital"
-  opinion:  'linear-gradient(135deg, #7a1f10 0%, #F2542D 58%, #ff9a7d 100%)', // naranja/rojo — mismo tono que "Ciberseguridad"
+  videos:      'linear-gradient(135deg, #2c1a5e 0%, #6a3ed0 60%, #b39ddb 100%)', // morado — mismo tono que la categoría "Webinars"
+  infografias: 'linear-gradient(135deg, #7a1f10 0%, #F2542D 58%, #ff9a7d 100%)', // naranja/rojo — mismo tono que "Ciberseguridad"
+  tendencias:  'linear-gradient(135deg, #06246a 0%, #2D6CF2 58%, #7db2ff 100%)', // azul — mismo tono que "Cloud & Infraestructura"
+  eventos:     'linear-gradient(135deg, #0b3d24 0%, #2DBE60 58%, #7fe0a3 100%)', // verde — mismo tono que "Transformación Digital"
+  contacto:    'linear-gradient(135deg, #033c42 0%, #0eb8c9 58%, #8fe9ef 100%)', // cian/turquesa — nuevo, ligado a var(--brand-cyan)
 };
-const CAT_BLUE = CAT_GRADIENTS.noticias; // fallback si aparece un bloque nuevo sin color asignado
+const CAT_BLUE = CAT_GRADIENTS.tendencias; // fallback si aparece un bloque nuevo sin color asignado
 
 // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): se eliminó el
 // bloque blanco inferior (título + descripción + dato estadístico) — ahora
 // todo (ícono, título y descripción) vive dentro del mismo recuadro de
 // color. `c.count` (el dato estadístico, ej. "8 próximos") ya no se
-// muestra en ningún lado de este componente.
+// muestra en ningún lado de este componente. El layout de 5 bloques usa
+// .category-grid (index.css): una fila de 5 en escritorio ancho, 3+2 en
+// pantallas medianas y apilado en móvil.
 export function CategoryBlocks() {
   const { status, data: cats } = useAsyncData(() => homeService.getCategoryBlocks(), []);
   const [hov, setHov] = React.useState(null);
   if (status !== 'success') return null;
   return (
-    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16}}>
+    <div className="category-grid">
       {cats.map(c=>(
         <div key={c.id}
           onMouseEnter={()=>setHov(c.id)} onMouseLeave={()=>setHov(null)}
