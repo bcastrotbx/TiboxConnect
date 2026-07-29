@@ -83,15 +83,22 @@ function SoporteModal({ onClose }) {
 export function PortalLayout() {
   const [showSoporte, setShowSoporte] = React.useState(false);
 
+  // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): scroll suave en
+  // vez del salto instantáneo anterior. `.portal-header` es un hermano de
+  // `.portal-content` dentro de un flex column (no vive "encima"/superpuesto
+  // al contenido, así que no tapa nada por sí solo), pero igual se le da a
+  // cada sección un `scroll-margin-top` (ver `[id^="section-"]` en
+  // index.css) del alto del header + un margen de aire, para que quede
+  // correcto también si el layout cambia más adelante. `scrollIntoView`
+  // anima sobre el contenedor real que hace scroll (`.portal-content`), sin
+  // necesidad de calcular manualmente el offset entre elementos.
   const scrollToSection = React.useCallback((id) => {
     const content = document.querySelector('.portal-content');
     if (!content) return;
-    if (id === 'hero') { content.scrollTop = 0; return; }
+    if (id === 'hero') { content.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     const el = document.getElementById('section-' + id);
     if (!el) return;
-    const contentTop = content.getBoundingClientRect().top;
-    const elTop = el.getBoundingClientRect().top;
-    content.scrollTop += (elTop - contentTop) - 16;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
   React.useEffect(() => { window.scrollToSection = scrollToSection; }, [scrollToSection]);

@@ -15,8 +15,16 @@ html, body { margin: 0; height: 100%; background: #F0F2F6; font-family: var(--fo
   flex: 1; overflow-y: auto; overflow-x: hidden;
   background: #F0F2F6;
   scrollbar-width: thin; scrollbar-color: var(--gray-300) transparent;
+  scroll-behavior: smooth;
 }
 .content-wrap { padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+/* Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): scroll suave al
+   navegar desde el menú del header o los bloques de categoría
+   (PortalLayout.jsx usa scrollIntoView({behavior:'smooth'})). El
+   scroll-margin-top deja aire equivalente al alto del header (62px) + un
+   margen, para que la sección de destino no quede pegada/tapada bajo la
+   barra superior al terminar el desplazamiento. */
+[id^="section-"] { scroll-margin-top: 78px; }
 /* Bloque de Contacto + Feedback (ver ajuste posterior en
    FASE-06-07-08-CONTENIDO-REAL.md): 60/40 en escritorio, apiladas en
    pantallas angostas — no existía ningún @media en el proyecto todavía, así

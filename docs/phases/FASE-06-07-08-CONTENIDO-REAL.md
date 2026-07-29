@@ -403,6 +403,18 @@ Cada bloque sigue usando el mismo mecanismo de scroll (`window.scrollToSection`)
 
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
+## Ajuste posterior — scroll suave con offset del header
+
+Braulio pidió que el desplazamiento entre secciones (menú del header + bloques de categoría) fuera suave en vez de un salto instantáneo, y que la sección de destino no quedara tapada bajo el header (fijo/azul desde un ajuste anterior).
+
+**Scroll suave.** `scrollToSection` (`PortalLayout.jsx`, la función global `window.scrollToSection` que ya consumían tanto los links del header como los 5 bloques de categoría — no hubo que tocar ninguno de esos dos componentes) pasó de mover `content.scrollTop` de golpe a usar `el.scrollIntoView({ behavior:'smooth', block:'start' })`; el caso especial "Inicio" (`id==='hero'`) usa `content.scrollTo({ top:0, behavior:'smooth' })`. También se agregó `scroll-behavior: smooth` a `.portal-content` en `index.css` como refuerzo.
+
+**Offset del header.** Se agregó `[id^="section-"] { scroll-margin-top: 78px; }` en `index.css` (aplica a todos los `id="section-*"` existentes: hero, videos, infographics, news, events, contact) — 78px = los 62px de alto del header + margen de aire. Esto hace que `scrollIntoView` deje ese espacio libre arriba de cada sección automáticamente, sin tener que calcular el offset a mano en JS. **Aclaración:** en la estructura actual, `.portal-header` es hermano de `.portal-content` dentro de un `flex-direction:column` (no vive superpuesto/encima del contenido — cada uno ocupa su propio espacio), así que en rigor no había overlap que corregir; se agregó el `scroll-margin-top` de todas formas para que el resultado sea robusto si el layout cambia más adelante y por pedido explícito.
+
+**Verificado en el navegador:** el mecanismo de scroll (`scrollIntoView`) y el offset (`scroll-margin-top`) se probaron con `behavior:'instant'` para evitar la animación — confirmado que la sección de destino queda exactamente 78px por debajo del borde inferior del header (`gap: 78.15625`, medido con `getBoundingClientRect()`), sin quedar tapada. La animación `behavior:'smooth'` en sí **no se pudo verificar visualmente** en el entorno de pruebas de este chat: tanto `scrollIntoView({behavior:'smooth'})` como una asignación directa de `scrollTop` con `scroll-behavior:smooth` activo se quedan sin avanzar (`scrollTop` permanece en `0` incluso después de varios segundos de espera) — un límite ya observado antes en esta sesión con otras animaciones basadas en scroll/drag (el carrusel de Noticias, el drag-and-drop del panel admin): los navegadores suelen pausar las animaciones controladas por `requestAnimationFrame` en pestañas que la automatización no mantiene realmente en primer plano/activas, y el scroll suave depende de eso. El mecanismo en sí (mismo `scrollIntoView`, mismo contenedor, mismo `scroll-margin-top`) está confirmado correcto con `behavior:'instant'`; la sensación de "suave" en un navegador real de Braulio no debería verse afectada por esta limitación del entorno de pruebas — se pide que la confirme con su propio `npm run dev`.
+
+**Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
+
 ## Pendiente
 
 - **Braulio debe ejecutar la migración `20260731100000_events_sort_order.sql`** (agrega `sort_order` a `events`) en el SQL Editor de Supabase — hasta entonces, la sección Eventos del panel admin y "Próximos Eventos" del portal fallarán al cargar (columna inexistente). Contenido completo de la migración:
