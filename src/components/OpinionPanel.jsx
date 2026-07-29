@@ -32,7 +32,7 @@ export function OpinionPanel() {
       <div style={{position:'relative'}}>
         <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.16em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:8}}>Feedback</div>
         <h2 style={{fontSize:'clamp(1.4rem,2.2vw,2rem)',fontWeight:700,color:'white',lineHeight:1.2,margin:'0 0 8px',letterSpacing:'-0.01em'}}>
-          Tu <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>Opinión</span> nos ayuda a mejorar
+          <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>Tu Opinión</span> nos ayuda a mejorar
         </h2>
         <p style={{fontSize:14,color:'rgba(255,255,255,0.65)',lineHeight:1.55,margin:'0 0 18px'}}>
           Cuéntanos qué te parece el portal Tibox Connect. Tu feedback orienta el contenido y la experiencia que construimos para tu empresa.

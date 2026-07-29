@@ -2,9 +2,12 @@
 html, body { margin: 0; height: 100%; background: #F0F2F6; font-family: var(--font-sans); }
 #root { display: flex; height: 100vh; overflow: hidden; }
 .portal-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+/* Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): mismo azul que ya
+   usan Infografías y Contacto (var(--grad-corporate), sin inventar un tono
+   nuevo) en vez de blanco. */
 .portal-header {
   height: 62px; min-height: 62px;
-  background: var(--white); border-bottom: 1px solid var(--gray-200);
+  background: var(--grad-corporate); border-bottom: 1px solid rgba(255,255,255,0.1);
   display: flex; align-items: center; padding: 0 24px; gap: 12px;
   position: sticky; top: 0; z-index: 50;
 }

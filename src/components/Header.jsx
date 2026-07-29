@@ -55,15 +55,19 @@ export function Header({ onSoporte }) {
       {/* Navegación por secciones — reemplaza los ítems del Sidebar
           eliminado. Mismo mecanismo de scroll (window.scrollToSection) que
           ya usaban los bloques de categoría bajo el hero. */}
+      {/* Fondo oscuro (ver ajuste posterior): texto en blanco y peso más
+          liviano (var(--fw-regular), token ya existente en
+          tokens/typography.css) en vez del semibold que tenía sobre fondo
+          blanco. */}
       <nav style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 18 }}>
         {NAV_LINKS.map(link => (
           <button key={link.scrollTarget} onClick={() => window.scrollToSection && window.scrollToSection(link.scrollTarget)} style={{
             background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
-            fontSize: 13, fontWeight: 600, color: 'var(--gray-600)',
-            padding: '7px 10px', borderRadius: 8, transition: 'background 150ms, color 150ms',
+            fontSize: 13, fontWeight: 'var(--fw-regular)', color: 'white',
+            padding: '7px 10px', borderRadius: 8, transition: 'background 150ms, opacity 150ms',
           }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--gray-50)'; e.currentTarget.style.color = 'var(--navy-900)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--gray-600)'; }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
           >
             {link.label}
           </button>
@@ -71,11 +75,11 @@ export function Header({ onSoporte }) {
         {onSoporte && (
           <button onClick={onSoporte} style={{
             background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
-            fontSize: 13, fontWeight: 600, color: 'var(--gray-600)',
-            padding: '7px 10px', borderRadius: 8, transition: 'background 150ms, color 150ms',
+            fontSize: 13, fontWeight: 'var(--fw-regular)', color: 'white',
+            padding: '7px 10px', borderRadius: 8, transition: 'background 150ms, opacity 150ms',
           }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--gray-50)'; e.currentTarget.style.color = 'var(--navy-900)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--gray-600)'; }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
           >
             Soporte
           </button>
@@ -124,7 +128,7 @@ export function Header({ onSoporte }) {
         </a>
       </div>
 
-      <div style={{ width: 1, height: 24, background: 'var(--gray-200)', margin: '0 6px' }}></div>
+      <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.15)', margin: '0 6px' }}></div>
 
       {/* Icons — ocultos a pedido de Braulio (ver FASE-06-07-08-CONTENIDO-REAL.md);
           se deja el código intacto (solo display:'none') por si se reactivan más
@@ -194,22 +198,22 @@ export function Header({ onSoporte }) {
           forma de volver a /admin o cerrar sesión sin salir del portal. */}
       {isAdmin && (
         <React.Fragment>
-          <div style={{ width: 1, height: 24, background: 'var(--gray-200)', margin: '0 4px' }}></div>
+          <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.15)', margin: '0 4px' }}></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div title={profile?.full_name || 'Administrador'} style={{
               width: 34, height: 34, borderRadius: '50%', background: 'var(--grad-title)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 12, fontWeight: 700, color: 'white', cursor: 'default',
-              border: '2px solid var(--gray-200)', flexShrink: 0,
+              border: '2px solid rgba(255,255,255,0.25)', flexShrink: 0,
             }}>{initialsFor(profile)}</div>
             <button onClick={handleSignOut} title="Cerrar sesión" style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
               background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px',
-              fontSize: 12.5, fontWeight: 600, color: 'var(--gray-500)', whiteSpace: 'nowrap',
+              fontSize: 12.5, fontWeight: 600, color: 'rgba(255,255,255,0.7)', whiteSpace: 'nowrap',
               borderRadius: 8, transition: 'color 150ms, background 150ms',
             }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#FF6707'; e.currentTarget.style.background = 'var(--gray-50)'; }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'var(--gray-500)'; e.currentTarget.style.background = 'none'; }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#FF8C3A'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; e.currentTarget.style.background = 'none'; }}
             >
               <Icon name="log-out" style={{ width: 14, height: 14 }} />
               Cerrar sesión
