@@ -363,6 +363,20 @@ Tres ajustes visuales independientes pedidos por Braulio.
 
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
+## Ajuste posterior — revertir carrusel de Noticias a lista vertical, subir peso del menú del header
+
+Dos correcciones sobre el ajuste anterior, pedidas por Braulio.
+
+**1. Noticias vuelve a lista vertical.** El carrusel horizontal con flechas que se agregó en el ajuste anterior no era lo pedido — se revirtió `NoticiasPanel` a su formato original: una noticia debajo de otra, con scroll vertical propio dentro de la columna (`maxHeight:450, overflowY:'auto'`, con el degradado de desvanecimiento al fondo) cuando el contenido no cabe. Se eliminaron por completo `NewsListCard`, `newsNavBtnStyle`, `trackRef` y la función `scroll()` que se habían agregado para el carrusel — ya no queda código muerto de ese intento.
+
+**2. Peso del texto del menú.** `var(--fw-regular)` (400) se leía demasiado delgado sobre el fondo azul del header. Se subió a `var(--fw-semibold)` (600) — el mismo peso que el menú ya tenía originalmente sobre fondo blanco, y el punto intermedio real que existe en `tokens/typography.css` entre `--fw-regular` (400) y `--fw-bold` (700); no hay un token "medium" (500) en el sistema de diseño.
+
+**Verificado en el navegador:**
+- La lista de noticias hace scroll vertical correctamente (`scrollTop` se mueve de 0 a 200 con `scrollHeight:709` vs `clientHeight:450`, confirmando que hay contenido de sobra para scrollear) y no quedan botones con `aria-label="Anterior"`/`"Siguiente"` en la sección.
+- El texto del menú mide `font-weight: 600` (`getComputedStyle`) y se lee con buen contraste sobre el azul del header.
+
+**Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
+
 ## Pendiente
 
 - **Braulio debe ejecutar la migración `20260731100000_events_sort_order.sql`** (agrega `sort_order` a `events`) en el SQL Editor de Supabase — hasta entonces, la sección Eventos del panel admin y "Próximos Eventos" del portal fallarán al cargar (columna inexistente). Contenido completo de la migración:

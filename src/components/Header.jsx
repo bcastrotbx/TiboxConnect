@@ -55,15 +55,17 @@ export function Header({ onSoporte }) {
       {/* Navegación por secciones — reemplaza los ítems del Sidebar
           eliminado. Mismo mecanismo de scroll (window.scrollToSection) que
           ya usaban los bloques de categoría bajo el hero. */}
-      {/* Fondo oscuro (ver ajuste posterior): texto en blanco y peso más
-          liviano (var(--fw-regular), token ya existente en
-          tokens/typography.css) en vez del semibold que tenía sobre fondo
-          blanco. */}
+      {/* Fondo oscuro (ver ajuste posterior): texto en blanco. Peso
+          var(--fw-semibold) — se probó var(--fw-regular) primero pero se
+          leía demasiado delgado sobre el azul; semibold (600, el mismo peso
+          que ya tenía sobre fondo blanco) es el punto intermedio que existe
+          en tokens/typography.css entre regular (400) y bold (700) — no hay
+          un token "medium" (500) en el sistema. */}
       <nav style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 18 }}>
         {NAV_LINKS.map(link => (
           <button key={link.scrollTarget} onClick={() => window.scrollToSection && window.scrollToSection(link.scrollTarget)} style={{
             background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
-            fontSize: 13, fontWeight: 'var(--fw-regular)', color: 'white',
+            fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'white',
             padding: '7px 10px', borderRadius: 8, transition: 'background 150ms, opacity 150ms',
           }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
@@ -75,7 +77,7 @@ export function Header({ onSoporte }) {
         {onSoporte && (
           <button onClick={onSoporte} style={{
             background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
-            fontSize: 13, fontWeight: 'var(--fw-regular)', color: 'white',
+            fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'white',
             padding: '7px 10px', borderRadius: 8, transition: 'background 150ms, opacity 150ms',
           }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}

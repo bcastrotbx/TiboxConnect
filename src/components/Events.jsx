@@ -575,46 +575,6 @@ function NoticiaModal({ noticia, onClose }) {
   );
 }
 
-// Tarjeta de la lista de noticias — antes eran filas de una lista vertical
-// con scroll propio; ahora son tarjetas de ancho fijo en un carrusel
-// horizontal (mismo patrón que VideoCard/InfoCard en Media.jsx), para que
-// las noticias que no caben se deslicen en vez de cortarse o dejar espacio
-// vacío (ver ajuste posterior en FASE-06-07-08-CONTENIDO-REAL.md).
-function NewsListCard({ n, c, onOpen }) {
-  const [hov, setHov] = React.useState(false);
-  return (
-    <div
-      onClick={() => onOpen({ title:n.title, img:n.img, body:n.body, catLabel:c.label, catColor:c.color })}
-      onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{
-        flex:'0 0 230px', minWidth:0, scrollSnapAlign:'start', cursor:'pointer',
-        background:'white', border:'1px solid var(--gray-200)', borderTop:`3px solid ${c.color||'var(--gray-300)'}`,
-        borderRadius:12, padding:'14px 15px',
-        boxShadow: hov ? '0 8px 20px rgba(2,18,55,0.12)' : '0 1px 3px rgba(2,18,55,0.06)',
-        transform: hov ? 'translateY(-3px)' : 'none',
-        transition:'box-shadow 200ms, transform 200ms',
-      }}
-    >
-      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8,flexWrap:'wrap'}}>
-        <span style={{fontSize:10,fontWeight:700,color:c.color,textTransform:'uppercase',letterSpacing:'0.04em'}}>{c.label}</span>
-        <span style={{fontSize:10.5,color:'var(--gray-400)'}}>·</span>
-        <span style={{fontSize:10.5,color:'var(--gray-400)'}}>{n.source}</span>
-      </div>
-      <div style={{fontSize:13,fontWeight:600,color:'var(--navy-900)',lineHeight:1.4,display:'-webkit-box',WebkitLineClamp:3,WebkitBoxOrient:'vertical',overflow:'hidden',minHeight:'3.9em'}}>{n.title}</div>
-      <div style={{fontSize:10.5,color:'var(--gray-400)',marginTop:10,display:'flex',alignItems:'center',gap:4}}>
-        <Icon name="clock" style={{width:11,height:11}} />{n.date}
-      </div>
-    </div>
-  );
-}
-const newsNavBtnStyle = {
-  width:32, height:32, borderRadius:'50%', flexShrink:0,
-  background:'white', border:'1px solid var(--gray-200)',
-  color:'var(--navy-900)', cursor:'pointer',
-  display:'flex', alignItems:'center', justifyContent:'center',
-  boxShadow:'0 1px 3px rgba(0,0,0,0.06)', transition:'background 150ms',
-};
-
 export function NoticiasPanel() {
   const { data: allCats } = useAsyncData(() => newsService.getNewsCategories(), []);
   const { data: featuredNews } = useAsyncData(() => newsService.getFeaturedNews(), []);
@@ -622,15 +582,10 @@ export function NoticiasPanel() {
   const { status, data: items, error } = useAsyncData(() => newsService.getNews({ category: filter }), [filter]);
   const { displayData: fadeItems, isInitialLoad, isRefreshing } = useFadeContent(status, items);
   const [openNews, setOpenNews] = React.useState(null);
-  const trackRef = React.useRef(null);
 
   const cats = allCats || [];
   const catsById = React.useMemo(() => Object.fromEntries((allCats || []).map(c => [c.id, c])), [allCats]);
   const fc = featuredNews ? catsById[featuredNews.cat] : null;
-  const scroll = (dir) => {
-    const el = trackRef.current; if (!el) return;
-    el.scrollBy({ left: dir * (el.clientWidth * 0.9), behavior:'smooth' });
-  };
 
   return (
     <div className="section-card">
@@ -641,7 +596,7 @@ export function NoticiasPanel() {
 
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:0,marginTop:16,borderTop:'1px solid var(--gray-100)'}}>
         {/* Left: categories + news list */}
-        <div style={{padding:'18px 22px',borderRight:'1px solid var(--gray-100)',minWidth:0}}>
+        <div style={{padding:'18px 22px',borderRight:'1px solid var(--gray-100)'}}>
           {/* Category filter */}
           <div style={{display:'flex',gap:7,flexWrap:'wrap',marginBottom:16}}>
             {cats.map(c => {
@@ -658,27 +613,42 @@ export function NoticiasPanel() {
               );
             })}
           </div>
-          {/* News list — carrusel horizontal (mismo patrón que Videoteca/
-              Infografías) en vez de una lista vertical con scroll propio, y
-              mismo criterio de crossfade que ExploraPanel/InfographicsPanel
-              al cambiar de categoría (ver useFadeContent). */}
+          {/* News list — lista vertical con scroll propio dentro de la
+              columna (no un carrusel horizontal, ver ajuste posterior en
+              FASE-06-07-08-CONTENIDO-REAL.md) y mismo criterio de crossfade
+              que ExploraPanel/InfographicsPanel al cambiar de categoría (ver
+              useFadeContent). */}
           {isInitialLoad && <LoadingState label="Cargando noticias…" />}
           {status === 'error' && <ErrorState label="No pudimos cargar las noticias." error={error} />}
           {!isInitialLoad && status !== 'error' && (fadeItems || []).length === 0 && <EmptyState label="No hay noticias en esta categoría todavía." icon="rss" />}
           {!isInitialLoad && status !== 'error' && (fadeItems || []).length > 0 && (
-            <div style={{display:'flex',alignItems:'center',gap:8,minWidth:0,opacity:isRefreshing?0.35:1,transition:'opacity 220ms ease'}}>
-              <button onClick={()=>scroll(-1)} aria-label="Anterior" style={newsNavBtnStyle}>
-                <Icon name="chevron-left" style={{width:15,height:15}} />
-              </button>
-              <div ref={trackRef} style={{
-                flex:1, minWidth:0, display:'flex', gap:12,
-                overflowX:'auto', scrollSnapType:'x mandatory', scrollbarWidth:'none',
-              }} className="hide-scroll">
-                {fadeItems.map(n => <NewsListCard key={n.id} n={n} c={catsById[n.cat] || {}} onOpen={setOpenNews} />)}
+            <div style={{position:'relative'}}>
+              <div style={{display:'flex',flexDirection:'column',maxHeight:450,overflowY:'auto',scrollbarWidth:'thin',scrollbarColor:'var(--gray-300) transparent',paddingRight:4,opacity:isRefreshing?0.35:1,transition:'opacity 220ms ease'}}>
+                {fadeItems.map((n,idx) => {
+                  const c = catsById[n.cat] || {};
+                  return (
+                    <div key={n.id} onClick={() => setOpenNews({ title:n.title, img:n.img, body:n.body, catLabel:c.label, catColor:c.color })}
+                      style={{display:'flex',gap:13,padding:'13px 0',borderTop: idx===0?'none':'1px solid var(--gray-100)',cursor:'pointer'}}
+                      onMouseEnter={e=>e.currentTarget.style.opacity='0.72'}
+                      onMouseLeave={e=>e.currentTarget.style.opacity='1'}
+                    >
+                      <div style={{width:4,borderRadius:999,background:c.color,flexShrink:0,alignSelf:'stretch'}}></div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:5}}>
+                          <span style={{fontSize:10,fontWeight:700,color:c.color,textTransform:'uppercase',letterSpacing:'0.04em'}}>{c.label}</span>
+                          <span style={{fontSize:10.5,color:'var(--gray-400)'}}>·</span>
+                          <span style={{fontSize:10.5,color:'var(--gray-400)'}}>{n.source}</span>
+                        </div>
+                        <div style={{fontSize:13,fontWeight:600,color:'var(--navy-900)',lineHeight:1.4}}>{n.title}</div>
+                        <div style={{fontSize:10.5,color:'var(--gray-400)',marginTop:5,display:'flex',alignItems:'center',gap:4}}>
+                          <Icon name="clock" style={{width:11,height:11}} />{n.date}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <button onClick={()=>scroll(1)} aria-label="Siguiente" style={newsNavBtnStyle}>
-                <Icon name="chevron-right" style={{width:15,height:15}} />
-              </button>
+              <div style={{position:'absolute',bottom:0,left:0,right:4,height:60,background:'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.97) 100%)',pointerEvents:'none'}}></div>
             </div>
           )}
         </div>
