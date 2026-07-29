@@ -311,6 +311,24 @@ Ajustes de detalle sobre el bloque de Contacto/Feedback del ajuste anterior, ped
 
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
+## Ajuste posterior — Contacto y Feedback en un solo contenedor (patrón de "Tendencias de la industria")
+
+Braulio pidió unificar Contacto y Feedback en un único bloque, en vez de las dos tarjetas independientes del ajuste anterior — el mismo patrón visual que ya usa `NoticiasPanel` ("Tendencias de la industria"): un contenedor con fondo compartido, dividido internamente por una línea sutil, no dos tarjetas con bordes/sombras propios.
+
+**Contenedor único.** `ContactFormSection` (`Services.jsx`) ahora renderiza un solo `<div>` con el fondo `var(--grad-corporate)`, radio 16px y sombra — antes cada columna tenía su propio fondo/radio/sombra. El `CosmicBg` y el overlay degradado, que antes se duplicaban (uno en Contacto, otro en `OpinionPanel`), ahora son compartidos por todo el bloque. `OpinionPanel.jsx` perdió su propia tarjeta (fondo, radio, `CosmicBg`) — ahora solo aporta contenido y su propio padding (`32px 36px`, igual al de Contacto, para que ambas columnas se vean consistentes); el contenedor padre es quien pone el fondo. La línea divisoria interna vive en una clase CSS nueva, `.contact-col-form` (`index.css`): borde derecho de `rgba(255,255,255,0.14)` en escritorio, borde inferior al apilarse en móvil — mismo mecanismo que el `borderRight` que ya separaba la lista de noticias de la destacada en `NoticiasPanel`.
+
+**Logo eliminado.** Se quitó el `<img>` del logo TIBOX que aparecía arriba de "Cuéntanos tu idea" — ya está en el encabezado del sitio (ver ajuste posterior anterior, cuando se movió el logo del sidebar eliminado al `Header`), así que quedaba duplicado.
+
+**Proporción 60/40 mantenida.** La columna de Contacto (formulario, con más campos) sigue ocupando el 60% del ancho y Feedback el 40%, vía `.contact-grid` (`grid-template-columns: 3fr 2fr`) — mismo mecanismo de proporción asimétrica que ya usa `NoticiasPanel` entre sus columnas (ahí es 1fr/1fr porque el contenido es más parecido en tamaño; acá se mantuvo 3fr/2fr porque Contacto tiene notoriamente más campos).
+
+**Compactación conservada.** Los ajustes de aire del turno anterior (textarea de Mensaje en `rows={2}` con `minHeight:56`, gaps reducidos entre título/texto/campos, checkbox y botón "Enviar mensaje" acercados al resto del formulario) se mantuvieron intactos en esta reestructuración — no hubo que tocarlos de nuevo, solo se preservaron al mover el JSX al nuevo contenedor.
+
+**Verificado en el navegador:**
+- Escritorio (1300px): un solo bloque con fondo azul compartido y una línea vertical sutil entre las columnas (`getComputedStyle` confirma `border-right: 1px solid rgba(255, 255, 255, 0.14)` en `.contact-col-form`); proporción exacta 744.6px/496.4px = 60.0%/40.0% (`getBoundingClientRect()`); no hay ningún `<img alt="TIBOX">` dentro de `.contact-grid`; `document.body.innerText` no contiene "Santiago", "Curicó" ni "Lima" en ningún punto de la página.
+- Móvil (390px): las columnas se apilan verticalmente (Contacto arriba, Feedback abajo) sobre el mismo fondo compartido, con una línea horizontal sutil entre ambas (la regla `@media (max-width: 760px)` de `.contact-col-form` cambia el borde de derecho a inferior) — confirmado por captura de pantalla.
+
+**Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
+
 ## Pendiente
 
 - **Braulio debe ejecutar la migración `20260731100000_events_sort_order.sql`** (agrega `sort_order` a `events`) en el SQL Editor de Supabase — hasta entonces, la sección Eventos del panel admin y "Próximos Eventos" del portal fallarán al cargar (columna inexistente). Contenido completo de la migración:

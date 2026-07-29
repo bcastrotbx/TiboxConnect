@@ -19,9 +19,18 @@ html, body { margin: 0; height: 100%; background: #F0F2F6; font-family: var(--fo
    pantallas angostas — no existía ningún @media en el proyecto todavía, así
    que esta es la primera regla responsive real (antes todo el layout era de
    ancho fijo de escritorio). */
-.contact-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 20px; }
+/* Ajuste posterior: Contacto y Feedback pasaron de dos tarjetas separadas a
+   un solo contenedor con fondo compartido, replicando el patrón de
+   "Tendencias de la industria" (NoticiasPanel: contenedor único + línea
+   divisoria interna en vez de bordes/sombras propios por columna). La línea
+   divisoria vive en `.contact-col-form` (borde derecho en escritorio, borde
+   inferior al apilarse en móvil) en vez de un `gap`, igual que el borderRight
+   entre la lista de noticias y la destacada. */
+.contact-grid { display: grid; grid-template-columns: 3fr 2fr; }
+.contact-grid > .contact-col-form { border-right: 1px solid rgba(255,255,255,0.14); }
 @media (max-width: 760px) {
   .contact-grid { grid-template-columns: 1fr; }
+  .contact-grid > .contact-col-form { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.14); }
 }
 .section-card {
   background: white; border-radius: 16px;

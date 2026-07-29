@@ -1,14 +1,17 @@
 import React from 'react';
 import { Icon } from './shared/Icon.jsx';
-import { CosmicBg } from './shared/CosmicBg.jsx';
 import * as formService from '../services/formService.js';
 
 // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): este panel ya no
-// vive como su propia sección de la página — ahora es la columna derecha del
-// bloque de Contacto (renderizado por ContactFormSection en Services.jsx),
-// por eso el layout es de una sola columna angosta en vez del bloque ancho
-// de antes. Las estrellas de calificación se movieron del bloque principal
-// al popup: de entrada solo se ve título, texto y el botón.
+// tiene su propia tarjeta (fondo/radio/CosmicBg) — ahora es la columna
+// derecha de un único contenedor compartido con Contacto
+// (ContactFormSection en Services.jsx), replicando el patrón de "Tendencias
+// de la industria" (un solo bloque con fondo común, dividido por una línea
+// sutil, no dos tarjetas independientes). El fondo lo pone el contenedor
+// padre; este componente aporta su propio padding (para que coincida con el
+// de la columna de Contacto) y contenido. Las estrellas de calificación se
+// movieron del bloque principal al popup: de entrada solo se ve título,
+// texto y el botón.
 export function OpinionPanel() {
   const [rating, setRating] = React.useState(0);
   const [hover, setHover] = React.useState(0);
@@ -25,10 +28,7 @@ export function OpinionPanel() {
   };
 
   return (
-    <div id="section-opinion" style={{position:'relative',overflow:'hidden',background:'var(--grad-corporate)',borderRadius:16,boxShadow:'0 1px 4px rgba(0,0,0,0.06)',padding:'32px 36px',height:'100%',display:'flex',flexDirection:'column',justifyContent:'center'}}>
-      <CosmicBg variant={0} />
-      <div style={{position:'absolute',inset:0,background:'linear-gradient(120deg, rgba(2,16,46,0.82), rgba(5,24,72,0.55))',pointerEvents:'none'}}></div>
-
+    <div id="section-opinion" style={{position:'relative',height:'100%',display:'flex',flexDirection:'column',justifyContent:'center',padding:'32px 36px'}}>
       <div style={{position:'relative'}}>
         <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.16em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:8}}>Feedback</div>
         <h2 style={{fontSize:'clamp(1.4rem,2.2vw,2rem)',fontWeight:700,color:'white',lineHeight:1.2,margin:'0 0 8px',letterSpacing:'-0.01em'}}>

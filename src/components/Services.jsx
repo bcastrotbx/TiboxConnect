@@ -171,27 +171,29 @@ export function ContactFormSection() {
   };
 
   return (
-    <div style={{ marginBottom:8 }}>
-      {/* Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): cada columna
-          es ahora su propia tarjeta redondeada (16px, el mismo radio que
-          .section-card) en vez de un único rectángulo con overflow:hidden —
-          por eso ya no usan la clase section-card ni comparten un borde
-          exterior. La proporción 60/40 y el apilado en móvil viven en
-          .contact-grid (index.css). */}
-      <div className="contact-grid">
-        {/* Left: promo + form (dark) — 60% */}
-        <div style={{
-          background:'var(--grad-corporate)', padding:'32px 36px',
+    <div style={{
+      marginBottom:8, position:'relative', overflow:'hidden', borderRadius:16,
+      background:'var(--grad-corporate)', boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
+    }}>
+      {/* Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): Contacto y
+          Feedback pasaron de ser dos tarjetas independientes a un solo
+          contenedor con fondo compartido, replicando el patrón de
+          "Tendencias de la industria" (NoticiasPanel): un único bloque,
+          dividido internamente por una línea sutil (.contact-col-form en
+          index.css) en vez de bordes/sombras propios por columna. El
+          CosmicBg y el overlay ahora son compartidos por ambas columnas en
+          vez de duplicarse. La proporción 60/40 y el apilado en móvil viven
+          en .contact-grid (index.css). */}
+      <CosmicBg variant={0} />
+      <div style={{position:'absolute',inset:0,background:'linear-gradient(120deg, rgba(2,16,46,0.82), rgba(5,24,72,0.55))',pointerEvents:'none'}}></div>
+      <div className="contact-grid" style={{ position:'relative' }}>
+        {/* Left: formulario — 60% */}
+        <div className="contact-col-form" style={{
+          padding:'32px 36px',
           display:'flex', flexDirection:'column', justifyContent:'center', gap:16,
-          position:'relative', overflow:'hidden', borderRadius:16,
-          boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
+          position:'relative',
         }}>
-          {/* Nebula */}
-          <div style={{ position:'absolute', top:-60, right:-40, width:240, height:240, borderRadius:'50%', background:'radial-gradient(circle, rgba(0,80,200,0.3) 0%, transparent 70%)', pointerEvents:'none' }}></div>
-          <div style={{ position:'absolute', bottom:-40, left:20, width:160, height:160, borderRadius:'50%', background:'radial-gradient(circle, rgba(100,20,200,0.2) 0%, transparent 70%)', pointerEvents:'none' }}></div>
-
           <div style={{ position:'relative' }}>
-            <img src="/assets/logo-tibox.png" alt="TIBOX" style={{ height:22, marginBottom:16 }} />
             <div style={{ fontSize:11, fontWeight:700, letterSpacing:'0.16em', textTransform:'uppercase', color:'var(--brand-cyan)', marginBottom:8 }}>Cuéntanos tu idea</div>
             <h2 style={{ fontSize:'clamp(1.4rem,2.2vw,2rem)', fontWeight:700, color:'white', lineHeight:1.2, margin:'0 0 8px', letterSpacing:'-0.01em' }}>
               ¿Tienes algún <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>proyecto en mente</span>?
