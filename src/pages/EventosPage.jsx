@@ -45,7 +45,7 @@ export function EventosPage() {
     <div className="section-card" style={{ padding: '28px 28px 4px' }}>
       <div style={{ marginBottom: 20 }}>
         <Breadcrumb items={[{ label: 'Inicio', to: '/' }, { label: 'Eventos' }]} />
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--brand-cyan)', marginBottom: 6 }}>Agenda</div>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--brand-cyan)', marginBottom: 6 }}>Eventos</div>
         <h1 style={{ fontSize: 'clamp(1.5rem,2.4vw,2rem)', fontWeight: 700, color: 'var(--navy-900)', margin: '0 0 8px' }}>
           Agenda y <span style={{ background: 'var(--grad-title)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>Eventos TIBOX</span>
         </h1>

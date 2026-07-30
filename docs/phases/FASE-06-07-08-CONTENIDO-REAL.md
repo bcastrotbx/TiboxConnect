@@ -610,8 +610,41 @@ Pendiente arrastrado desde la Fase 1.5 (documentado en `FASE-01B-AJUSTES-VISUALE
 
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
+## Ajuste posterior — ocultar webinars sin realizar, nombres de sección, e imágenes de infografías duplicadas
+
+Cuatro ajustes puntuales pedidos por Braulio.
+
+**1. Videos con fecha futura ocultos.** Un video es la grabación de un webinar ya realizado — si todavía no llegó su fecha efectiva (`published_at`, o `created_at` si no tiene), no hay nada real que reproducir. `contentService.getVideos()` ahora filtra esos casos (`dateRaw <= ahora`) antes de devolver la lista, así que tanto "Explora Videos y Webinars" (inicio) como `/videoteca` (que reutiliza la misma función) dejan de mostrarlos. **Verificado en el navegador:** con los datos actuales del seed no hay ningún video con fecha futura (los 9 videos publicados tienen fecha hasta hoy, 30 Jul 2026), así que hoy no se oculta nada — se confirmó comparando el listado del admin (9 filas) contra el del portal (9 tarjetas, mismos títulos) para asegurar que el filtro no esté ocultando de más. El filtro queda listo para cuando exista un video con fecha posterior a hoy.
+
+**2. Imágenes de infografías duplicadas — corrección pendiente vía migración.** Se detectaron 2 pares de infografías compartiendo la misma imagen (`thumbnail_url` idéntico): "5 señales de que tu empresa necesita migrar a la nube" / "Los 5 pilares de la transformación digital empresarial", y "Checklist de respaldo 3-2-1: protege tu información" / "Automatización de procesos: por dónde empezar". Esto es un problema de datos, no de código — se agregó la migración `20260731100100_fix_infographic_thumbnail_duplicates.sql`, que reasigna una imagen nueva (misma fuente, Unsplash, ya usada en el resto del seed) a la segunda infografía de cada par. **No se pudo aplicar en vivo durante esta sesión:** se intentó editar una de las dos infografías desde el panel admin (cambiar la imagen a la nueva URL y guardar) para verificar el fix de punta a punta, pero el guardado no persistió el cambio pese a que el modal cerró sin error visible — no se investigó más a fondo para no arriesgar una operación destructiva accidental sobre datos reales (en el intento de reabrir el menú de acciones se estuvo a punto de confirmar "Eliminar publicación" sobre esa misma infografía; se canceló a tiempo y se confirmó que las 6 infografías siguen intactas). Braulio debe ejecutar la migración manualmente en el SQL Editor de Supabase — ver sección Pendiente más abajo.
+
+**3. "Videoteca" → "Videos y Webinars".** Ambas etiquetas pequeñas que decían "Videoteca" (el eyebrow de "Explora Videos y Webinars" en el inicio, y el eyebrow + miga de pan de `/videoteca`) ahora dicen "Videos y Webinars", igual que la categoría del menú admin y que el ítem del menú superior del portal — no quedaba ningún otro lugar visible con el nombre viejo.
+
+**4. Renombre de etiquetas pequeñas (eyebrows).** Se actualizaron en los 2 lugares donde vive cada una (el bloque del inicio y su página dedicada):
+   - "Al día" → **"Tendencias"** (`NoticiasPanel` en Events.jsx, y `TendenciasPage.jsx`).
+   - "Agenda" → **"Eventos"** (`EventosPanel` en Events.jsx, y `EventosPage.jsx`).
+   - "Cuéntanos tu idea" → **"Contacto"** (`ContactFormSection` en Services.jsx).
+   
+   En los tres casos solo se tocó la etiqueta pequeña en mayúsculas (el eyebrow) — los títulos grandes debajo ("Agenda y Eventos TIBOX", "Tendencias de la industria", "¿Tienes algún proyecto en mente?") no se pidieron cambiar y se dejaron igual.
+
+**Verificado en el navegador:** los 4 lugares con "Videos y Webinars" (inicio + `/videoteca`, breadcrumb incluido), "Tendencias" (inicio + `/tendencias`), "Eventos" (inicio + `/eventos`) y "Contacto" (inicio) muestran el texto nuevo. `npm run lint` y `npm run build` sin errores.
+
+**Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
+
 ## Pendiente
 
+- **Braulio debe ejecutar la migración `20260731100100_fix_infographic_thumbnail_duplicates.sql`** (reasigna imágenes únicas a 2 infografías que hoy comparten thumbnail con otras) en el SQL Editor de Supabase. Contenido completo de la migración:
+  ```sql
+  update public.content_items
+  set thumbnail_url = 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=450&fit=crop'
+  where type = 'infographic'
+    and title = 'Los 5 pilares de la transformación digital empresarial';
+
+  update public.content_items
+  set thumbnail_url = 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&h=450&fit=crop'
+  where type = 'infographic'
+    and title = 'Automatización de procesos: por dónde empezar';
+  ```
 - **Braulio debe ejecutar la migración `20260731100000_events_sort_order.sql`** (agrega `sort_order` a `events`) en el SQL Editor de Supabase — hasta entonces, la sección Eventos del panel admin y "Próximos Eventos" del portal fallarán al cargar (columna inexistente). Contenido completo de la migración:
   ```sql
   alter table public.events

@@ -131,8 +131,8 @@ export function VideotecaPage() {
   return (
     <div className="section-card" style={{ padding: '28px 28px 4px' }}>
       <div style={{ marginBottom: 20 }}>
-        <Breadcrumb items={[{ label: 'Inicio', to: '/' }, { label: 'Videoteca' }]} />
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#0050C8', marginBottom: 6 }}>Videoteca</div>
+        <Breadcrumb items={[{ label: 'Inicio', to: '/' }, { label: 'Videos y Webinars' }]} />
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#0050C8', marginBottom: 6 }}>Videos y Webinars</div>
         <h1 style={{ fontSize: 'clamp(1.5rem,2.4vw,2rem)', fontWeight: 700, color: 'var(--navy-900)', margin: '0 0 8px' }}>
           Explora <span style={{ background: 'var(--grad-title)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>Videos y Webinars</span>
         </h1>

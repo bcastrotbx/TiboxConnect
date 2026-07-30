@@ -52,9 +52,16 @@ async function fetchPublished(type) {
   return data || [];
 }
 
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): un video es la
+// grabación de un webinar ya realizado — si `dateRaw` (published_at o, en
+// su defecto, created_at) todavía no llegó, no hay nada que reproducir
+// todavía, así que se oculta de "Explora Videos y Webinars" (y de
+// /videoteca, que reutiliza esta misma función) en vez de mostrar una
+// tarjeta sin contenido real detrás.
 export async function getVideos({ category } = {}) {
   const rows = await fetchPublished('video');
-  const items = rows.map(mapContentRow);
+  const now = Date.now();
+  const items = rows.map(mapContentRow).filter((v) => !v.dateRaw || new Date(v.dateRaw).getTime() <= now);
   return category && category !== 'all' ? items.filter((v) => v.cat === category) : items;
 }
 

@@ -194,7 +194,7 @@ export function ContactFormSection() {
           position:'relative',
         }}>
           <div style={{ position:'relative' }}>
-            <div style={{ fontSize:11, fontWeight:700, letterSpacing:'0.16em', textTransform:'uppercase', color:'var(--brand-cyan)', marginBottom:8 }}>Cuéntanos tu idea</div>
+            <div style={{ fontSize:11, fontWeight:700, letterSpacing:'0.16em', textTransform:'uppercase', color:'var(--brand-cyan)', marginBottom:8 }}>Contacto</div>
             <h2 style={{ fontSize:'clamp(1.4rem,2.2vw,2rem)', fontWeight:700, color:'white', lineHeight:1.2, margin:'0 0 8px', letterSpacing:'-0.01em' }}>
               ¿Tienes algún <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>proyecto en mente</span>?
             </h2>
