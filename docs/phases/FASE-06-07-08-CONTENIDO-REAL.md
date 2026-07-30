@@ -546,6 +546,22 @@ Con un servidor de desarrollo temporal en un puerto libre (se cerró al terminar
 
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
+## Ajuste posterior — orden de botones, thumbnail en tarjetas de Eventos y fix de navegación del menú superior
+
+Tres ajustes puntuales al bloque de Eventos del inicio y al Header, tras revisión del ajuste anterior.
+
+**1. Orden de botones.** En el panel "Agenda y Eventos TIBOX" del inicio, "Ver todos los eventos" se movió al header del panel, a la izquierda de "Ver calendario" (antes vivía suelto debajo del carrusel, como único botón centrado).
+
+**2. Thumbnail en las tarjetas de Eventos.** `EventCard` (`Events.jsx`) ganó una imagen destacada (`ev.img`, es decir `thumbnail_url`) arriba de la tarjeta, mismo patrón visual que `InfoCard` (Media.jsx): imagen con `aspectRatio:'16/9'` seguida del contenido. Se aplica tanto en el carrusel del inicio como en la grilla de `/eventos`, ya que ambos reutilizan el mismo componente.
+
+**3. Bug de navegación del menú superior — corregido con una simplificación.** El Header usaba `window.scrollToSection`, un mecanismo global (definido en `PortalLayout.jsx`) que hacía scroll suave a anclas `section-*` que solo existen en `HomePage` — al entrar directo a `/videoteca`, `/infografias`, `/tendencias` o `/eventos`, esas anclas no existen y el menú quedaba sin efecto. Con Videos, Infografías, Tendencias y Eventos ya convertidos en páginas propias (ver ajuste anterior), la solución fue **simplificar, no parchear**: el Header ahora navega directo a cada ruta (`Link to="/videoteca"`, etc.) en vez de hacer scroll, consistente en todas las páginas del sitio. Se eliminó por completo `window.scrollToSection` de `PortalLayout.jsx` — quedó sin ningún punto de uso una vez que el Header dejó de necesitarlo.
+
+El único caso que seguía necesitando scroll — el bloque de categoría "Contacto" en el inicio, que no tiene ruta propia — se resolvió con un `scrollIntoView` local dentro de `CategoryBlocks` (Hero.jsx), sin depender de ningún global. Los otros 4 bloques de categoría (Videos, Infografías, Tendencias, Eventos) pasaron del mismo `scrollTarget` a `to` (navegación real) en `CATS` (`src/data/seed/homeSeed.js`).
+
+**Verificado en el navegador:** desde cada una de las 4 páginas nuevas, los 5 ítems del menú superior (Inicio, Videos y Webinars, Infografías, Noticias, Eventos) navegan a su ruta correcta — confirmado con `location.pathname` tras cada clic, en escritorio y en el menú hamburguesa móvil. El bloque de categoría "Contacto" en el inicio sigue sin navegar (se queda en `/`), y los otros 4 bloques navegan a sus páginas. El panel de Eventos del inicio muestra "Ver todos los eventos" a la izquierda de "Ver calendario", y cada tarjeta (inicio y `/eventos`) muestra su imagen destacada. `npm run lint` y `npm run build` sin errores.
+
+**Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
+
 ## Pendiente
 
 - **Braulio debe ejecutar la migración `20260731100000_events_sort_order.sql`** (agrega `sort_order` a `events`) en el SQL Editor de Supabase — hasta entonces, la sección Eventos del panel admin y "Próximos Eventos" del portal fallarán al cargar (columna inexistente). Contenido completo de la migración:

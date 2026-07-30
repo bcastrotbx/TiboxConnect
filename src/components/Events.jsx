@@ -139,59 +139,70 @@ export function EventCard({ ev, modalidadById, partnersById, onVerDetalle }) {
     <div
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{
-        border:'1px solid var(--gray-200)', borderRadius:14, padding:'14px 16px',
-        display:'flex', flexDirection:'column', gap:10, flex:1, justifyContent:'space-between',
+        border:'1px solid var(--gray-200)', borderRadius:14, overflow:'hidden',
+        display:'flex', flexDirection:'column', flex:1,
         background: hov ? 'white' : 'rgba(255,255,255,0.95)',
         boxShadow: hov ? '0 6px 18px rgba(0,0,0,0.18)' : '0 1px 4px rgba(0,0,0,0.08)',
         borderColor: hov ? 'var(--gray-300)' : 'var(--gray-200)',
         transition:'box-shadow 180ms, border-color 180ms, background 180ms',
       }}
     >
-      <div style={{display:'flex',alignItems:'flex-start',gap:12}}>
-        <div style={{minWidth:48,textAlign:'center',background:'var(--navy-900)',borderRadius:9,padding:'7px 6px',display:'flex',flexDirection:'column',alignItems:'center',flexShrink:0}}>
-          <div style={{fontSize:8,fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--brand-cyan)',lineHeight:1.2}}>{ev.month}</div>
-          <div style={{fontSize:19,fontWeight:700,color:'white',lineHeight:1}}>{ev.day}</div>
+      {/* Imagen destacada (thumbnail_url) — ajuste posterior (ver nota
+          corta en FASE-06-07-08-CONTENIDO-REAL.md): mismo patrón visual que
+          InfoCard (Media.jsx), imagen arriba, contenido debajo. */}
+      {ev.img && (
+        <div style={{position:'relative', aspectRatio:'16/9', overflow:'hidden', background:'#0b1a3a', flexShrink:0}}>
+          <img src={ev.img} alt="" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',transform:hov?'scale(1.04)':'none',transition:'transform 340ms'}} />
         </div>
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:5,flexWrap:'wrap'}}>
-            {isUpcoming && (
-              <span style={{fontSize:9.5,fontWeight:700,letterSpacing:'0.04em',textTransform:'uppercase',color:'white',background:'#FF6707',borderRadius:999,padding:'2px 9px'}}>
-                Próximamente
-              </span>
-            )}
-            <span style={{fontSize:10,fontWeight:700,borderRadius:999,padding:'2px 9px',background:`${m.color}15`,color:m.color,display:'inline-flex',alignItems:'center',gap:4}}>
-              <Icon name={m.icon} style={{width:11,height:11}} />{ev.modalidad}
-            </span>
-            <span style={{fontSize:10.5,color:'var(--gray-400)',display:'inline-flex',alignItems:'center',gap:4}}>
-              <Icon name="clock" style={{width:11,height:11}} />{ev.time} hrs
-            </span>
+      )}
+
+      <div style={{padding:'14px 16px', display:'flex', flexDirection:'column', gap:10, flex:1, justifyContent:'space-between'}}>
+        <div style={{display:'flex',alignItems:'flex-start',gap:12}}>
+          <div style={{minWidth:48,textAlign:'center',background:'var(--navy-900)',borderRadius:9,padding:'7px 6px',display:'flex',flexDirection:'column',alignItems:'center',flexShrink:0}}>
+            <div style={{fontSize:8,fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--brand-cyan)',lineHeight:1.2}}>{ev.month}</div>
+            <div style={{fontSize:19,fontWeight:700,color:'white',lineHeight:1}}>{ev.day}</div>
           </div>
-          <div style={{fontSize:13.5,fontWeight:700,color:'var(--navy-900)',lineHeight:1.3}}>{ev.title}</div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:5,flexWrap:'wrap'}}>
+              {isUpcoming && (
+                <span style={{fontSize:9.5,fontWeight:700,letterSpacing:'0.04em',textTransform:'uppercase',color:'white',background:'#FF6707',borderRadius:999,padding:'2px 9px'}}>
+                  Próximamente
+                </span>
+              )}
+              <span style={{fontSize:10,fontWeight:700,borderRadius:999,padding:'2px 9px',background:`${m.color}15`,color:m.color,display:'inline-flex',alignItems:'center',gap:4}}>
+                <Icon name={m.icon} style={{width:11,height:11}} />{ev.modalidad}
+              </span>
+              <span style={{fontSize:10.5,color:'var(--gray-400)',display:'inline-flex',alignItems:'center',gap:4}}>
+                <Icon name="clock" style={{width:11,height:11}} />{ev.time} hrs
+              </span>
+            </div>
+            <div style={{fontSize:13.5,fontWeight:700,color:'var(--navy-900)',lineHeight:1.3}}>{ev.title}</div>
+          </div>
         </div>
-      </div>
 
-      <p style={{fontSize:12,color:'var(--gray-600)',lineHeight:1.5,margin:0,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{ev.desc}</p>
+        <p style={{fontSize:12,color:'var(--gray-600)',lineHeight:1.5,margin:0,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{ev.desc}</p>
 
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,paddingTop:2}}>
-        {(partner.logo || ev.partnerName) && (
-        <div style={{display:'flex',alignItems:'center',gap:8,minWidth:0}}>
-          <span style={{fontSize:9.5,fontWeight:700,letterSpacing:'0.06em',textTransform:'uppercase',color:'var(--gray-400)'}}>Colaborador</span>
-          {partner.logo ? (
-            <img src={partner.logo} alt={partner.name} title={partner.name} style={{height:17,maxWidth:96,objectFit:'contain'}} />
-          ) : (
-            <span style={{fontSize:12,fontWeight:700,color:'var(--navy-900)'}}>{ev.partnerName}</span>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,paddingTop:2}}>
+          {(partner.logo || ev.partnerName) && (
+          <div style={{display:'flex',alignItems:'center',gap:8,minWidth:0}}>
+            <span style={{fontSize:9.5,fontWeight:700,letterSpacing:'0.06em',textTransform:'uppercase',color:'var(--gray-400)'}}>Colaborador</span>
+            {partner.logo ? (
+              <img src={partner.logo} alt={partner.name} title={partner.name} style={{height:17,maxWidth:96,objectFit:'contain'}} />
+            ) : (
+              <span style={{fontSize:12,fontWeight:700,color:'var(--navy-900)'}}>{ev.partnerName}</span>
+            )}
+          </div>
           )}
+          <button onClick={()=>onVerDetalle(ev)} style={{
+            fontSize:12,fontWeight:700,color:'white',
+            background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',border:'none',borderRadius:9,
+            padding:'8px 16px',cursor:'pointer',flexShrink:0,whiteSpace:'nowrap',
+            boxShadow:'0 2px 10px rgba(255,103,7,0.32)',transition:'transform 150ms',
+          }}
+            onMouseEnter={e=>e.currentTarget.style.transform='translateY(-1px)'}
+            onMouseLeave={e=>e.currentTarget.style.transform='none'}
+          >Ver detalles</button>
         </div>
-        )}
-        <button onClick={()=>onVerDetalle(ev)} style={{
-          fontSize:12,fontWeight:700,color:'white',
-          background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',border:'none',borderRadius:9,
-          padding:'8px 16px',cursor:'pointer',flexShrink:0,whiteSpace:'nowrap',
-          boxShadow:'0 2px 10px rgba(255,103,7,0.32)',transition:'transform 150ms',
-        }}
-          onMouseEnter={e=>e.currentTarget.style.transform='translateY(-1px)'}
-          onMouseLeave={e=>e.currentTarget.style.transform='none'}
-        >Ver detalles</button>
       </div>
     </div>
   );
@@ -251,8 +262,12 @@ export function EventosPanel() {
               <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:6}}>Agenda</div>
               <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'white'}}>Agenda y <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>Eventos TIBOX</span></div>
             </div>
-            {status === 'success' && upcomingEvents.length > 0 && (
-              <button onClick={()=>setShowCal(true)} style={{
+            {/* Ajuste posterior (ver nota corta en
+                FASE-06-07-08-CONTENIDO-REAL.md): "Ver todos los eventos" se
+                movió acá, a la izquierda de "Ver calendario" — antes vivía
+                suelto debajo del panel. */}
+            <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+              <button onClick={()=>navigate('/eventos')} style={{
                 fontSize:12,fontWeight:700,color:'white',
                 background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.22)',borderRadius:9,
                 padding:'9px 15px',cursor:'pointer',display:'inline-flex',alignItems:'center',gap:7,whiteSpace:'nowrap',
@@ -261,9 +276,22 @@ export function EventosPanel() {
                 onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-1px)';e.currentTarget.style.background='rgba(255,255,255,0.22)';}}
                 onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.background='rgba(255,255,255,0.12)';}}
               >
-                <Icon name="calendar-days" style={{width:14,height:14}} />Ver calendario
+                <Icon name="layout-grid" style={{width:14,height:14}} />Ver todos los eventos
               </button>
-            )}
+              {status === 'success' && upcomingEvents.length > 0 && (
+                <button onClick={()=>setShowCal(true)} style={{
+                  fontSize:12,fontWeight:700,color:'white',
+                  background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.22)',borderRadius:9,
+                  padding:'9px 15px',cursor:'pointer',display:'inline-flex',alignItems:'center',gap:7,whiteSpace:'nowrap',
+                  transition:'transform 150ms,background 150ms',
+                }}
+                  onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-1px)';e.currentTarget.style.background='rgba(255,255,255,0.22)';}}
+                  onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.background='rgba(255,255,255,0.12)';}}
+                >
+                  <Icon name="calendar-days" style={{width:14,height:14}} />Ver calendario
+                </button>
+              )}
+            </div>
           </div>
 
           {status === 'loading' && <LoadingState label="Cargando eventos…" tone="dark" />}
@@ -294,12 +322,6 @@ export function EventosPanel() {
           {openPastEvent && <VistaModal event={openPastEvent} onClose={()=>setOpenPastEvent(null)} />}
           {showCal && <CalendarModal events={upcomingEvents} modalidadById={modalidadById} onClose={()=>setShowCal(false)} />}
         </div>
-      </div>
-
-      <div style={{display:'flex',justifyContent:'center',marginTop:16}}>
-        <button onClick={()=>navigate('/eventos')} style={{display:'inline-flex',alignItems:'center',gap:7,fontSize:12.5,fontWeight:700,cursor:'pointer',padding:'10px 18px',borderRadius:10,border:'1px solid var(--gray-200)',background:'white',color:'var(--gray-600)',whiteSpace:'nowrap'}}>
-          <Icon name="calendar-days" style={{width:14,height:14}} />Ver todos los eventos
-        </button>
       </div>
     </div>
   );

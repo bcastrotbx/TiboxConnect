@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Icon } from './shared/Icon.jsx';
 import { LoadingState } from './shared/AsyncState.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
@@ -156,15 +157,26 @@ const CAT_BLUE = CAT_GRADIENTS.tendencias; // fallback si aparece un bloque nuev
 // .category-grid (index.css): una fila de 5 en escritorio ancho, 3+2 en
 // pantallas medianas y apilado en móvil.
 export function CategoryBlocks() {
+  const navigate = useNavigate();
   const { status, data: cats } = useAsyncData(() => homeService.getCategoryBlocks(), []);
   const [hov, setHov] = React.useState(null);
   if (status !== 'success') return null;
+  // "Contacto" (único bloque sin ruta propia, ver ajuste posterior en
+  // FASE-06-07-08-CONTENIDO-REAL.md) resuelve su scroll localmente en vez de
+  // depender de un global — solo tiene sentido dentro de HomePage, que es
+  // donde este componente siempre se renderiza.
+  const handleClick = (c) => {
+    if (c.to) { navigate(c.to); return; }
+    if (c.scrollTarget) {
+      document.getElementById('section-' + c.scrollTarget)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
   return (
     <div className="category-grid">
       {cats.map(c=>(
         <div key={c.id}
           onMouseEnter={()=>setHov(c.id)} onMouseLeave={()=>setHov(null)}
-          onClick={()=>window.scrollToSection&&window.scrollToSection(c.scrollTarget)}
+          onClick={()=>handleClick(c)}
           style={{
             borderRadius:14,overflow:'hidden',cursor:'pointer',position:'relative',
             background:CAT_GRADIENTS[c.id] || CAT_BLUE,

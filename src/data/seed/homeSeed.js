@@ -51,13 +51,20 @@ export const SLIDES = [
 // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): pasan de 4 a 5
 // bloques — se agrega "Contacto" y "Tu Opinión" deja de tener su propio
 // bloque (la sección de Opinión ya vive integrada dentro de Contacto, ver
-// ajuste anterior). Orden, contenido y `scrollTarget` exactos pedidos por
-// Braulio; `count` ya no se muestra en ningún lado (se eliminó del layout
-// en un ajuste anterior) pero se mantiene el campo por si se reactiva.
+// ajuste anterior). Orden y contenido exactos pedidos por Braulio; `count`
+// ya no se muestra en ningún lado (se eliminó del layout en un ajuste
+// anterior) pero se mantiene el campo por si se reactiva.
+//
+// Ajuste posterior — bug de navegación (ver nota corta en
+// FASE-06-07-08-CONTENIDO-REAL.md): los 4 primeros bloques ahora tienen
+// página propia y usan `to` (navegación real) en vez de `scrollTarget`
+// (scroll dentro del inicio). "Contacto" es el único que sigue usando
+// `scrollTarget` — no tiene una ruta propia, sigue llevando al bloque de
+// contacto dentro del inicio.
 export const CATS = [
-  { id:'videos',       icon:'film',           label:'Videos y Webinars', sub:'Charlas, demos y webinars grabados',    count:'240+ recursos',   scrollTarget:'videos'       },
-  { id:'infografias',  icon:'pie-chart',      label:'Infografías',       sub:'Contenido visual fácil de compartir',   count:'Actualizado hoy', scrollTarget:'infographics' },
-  { id:'tendencias',   icon:'rss',            label:'Tendencias',       sub:'Lo último del sector tecnológico',      count:'Actualizado hoy', scrollTarget:'news'         },
-  { id:'eventos',      icon:'calendar-check', label:'Eventos',           sub:'Agenda y actividades de TIBOX',         count:'8 próximos',      scrollTarget:'events'       },
-  { id:'contacto',     icon:'mail',           label:'Contacto',          sub:'Cuéntanos tu proyecto',                 count:'Respuesta en 24h',scrollTarget:'contact'      },
+  { id:'videos',       icon:'film',           label:'Videos y Webinars', sub:'Charlas, demos y webinars grabados',    count:'240+ recursos',   to:'/videoteca'    },
+  { id:'infografias',  icon:'pie-chart',      label:'Infografías',       sub:'Contenido visual fácil de compartir',   count:'Actualizado hoy', to:'/infografias'  },
+  { id:'tendencias',   icon:'rss',            label:'Tendencias',       sub:'Lo último del sector tecnológico',      count:'Actualizado hoy', to:'/tendencias'   },
+  { id:'eventos',      icon:'calendar-check', label:'Eventos',           sub:'Agenda y actividades de TIBOX',         count:'8 próximos',      to:'/eventos'      },
+  { id:'contacto',     icon:'mail',           label:'Contacto',          sub:'Cuéntanos tu proyecto',                 count:'Respuesta en 24h',scrollTarget:'contact' },
 ];

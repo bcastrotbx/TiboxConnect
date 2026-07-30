@@ -75,33 +75,20 @@ function SoporteModal({ onClose }) {
 
 // Chrome del portal (header + wrapper de contenido con scroll), antes fijo
 // dentro de src/App.jsx. Las páginas del portal se renderizan vía <Outlet/>.
-// window.scrollToSection sigue siendo un global deliberado (igual que en la
-// Fase 1) porque lo consume tanto CategoryBlocks como los links de
-// navegación del Header (ver ajuste posterior en
-// FASE-06-07-08-CONTENIDO-REAL.md: se eliminó el Sidebar del portal — no el
-// del admin — y su navegación se movió al Header).
+//
+// Ajuste posterior — bug de navegación (ver nota corta en
+// FASE-06-07-08-CONTENIDO-REAL.md): antes existía acá un `window.scrollToSection`
+// global, consumido tanto por el Header como por CategoryBlocks, que hacía
+// scroll suave a una sección anclada (`section-*`) — funcionaba mientras
+// esas secciones solo existían dentro de HomePage, pero se rompía en
+// cualquier otra página (las anclas no existen ahí). Ahora que Videos,
+// Infografías, Tendencias y Eventos tienen su propia ruta, el Header navega
+// directo a esas rutas y ya no necesita esta función. Se eliminó por
+// completo — el único bloque de categoría que todavía hace scroll dentro de
+// la página ("Contacto", que no tiene ruta propia) resuelve su propio
+// scroll localmente en CategoryBlocks (Hero.jsx), sin depender de un global.
 export function PortalLayout() {
   const [showSoporte, setShowSoporte] = React.useState(false);
-
-  // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): scroll suave en
-  // vez del salto instantáneo anterior. `.portal-header` es un hermano de
-  // `.portal-content` dentro de un flex column (no vive "encima"/superpuesto
-  // al contenido, así que no tapa nada por sí solo), pero igual se le da a
-  // cada sección un `scroll-margin-top` (ver `[id^="section-"]` en
-  // index.css) del alto del header + un margen de aire, para que quede
-  // correcto también si el layout cambia más adelante. `scrollIntoView`
-  // anima sobre el contenedor real que hace scroll (`.portal-content`), sin
-  // necesidad de calcular manualmente el offset entre elementos.
-  const scrollToSection = React.useCallback((id) => {
-    const content = document.querySelector('.portal-content');
-    if (!content) return;
-    if (id === 'hero') { content.scrollTo({ top: 0, behavior: 'smooth' }); return; }
-    const el = document.getElementById('section-' + id);
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, []);
-
-  React.useEffect(() => { window.scrollToSection = scrollToSection; }, [scrollToSection]);
 
   return (
     <React.Fragment>
