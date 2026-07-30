@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Icon } from './shared/Icon.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -21,19 +21,20 @@ function initialsFor(profile) {
 // estado "activo" decorativo) — eran enlaces sin función, así que se
 // consideran eliminados a propósito en vez de recrear una navegación falsa.
 //
-// Ajuste posterior — bug de navegación (ver nota corta en
-// FASE-06-07-08-CONTENIDO-REAL.md): antes cada ítem hacía scroll suave a una
-// sección anclada (`section-*`) que solo existe en HomePage — al entrar
-// desde /videoteca, /infografias, /tendencias o /eventos, el menú quedaba
-// roto (esas anclas no existen ahí). Ahora que cada sección tiene su propia
-// página real, el menú simplemente navega a la ruta correspondiente — igual
-// en todas las páginas del sitio, no solo en el inicio.
+// Ajuste posterior — reversión parcial (ver nota corta en
+// FASE-06-07-08-CONTENIDO-REAL.md): hubo un intento breve de que estos
+// ítems navegaran directo a las páginas dedicadas (/videoteca, etc.) — se
+// revirtió a pedido de Braulio. Vuelven a hacer scroll suave a su sección
+// dentro del inicio (`scrollTarget`, igual que antes), con un agregado: si
+// el usuario NO está en el inicio, primero navega ahí y completa el scroll
+// una vez que carga (ver handleNavClick más abajo y el efecto en
+// PortalLayout.jsx que resuelve ese scroll pendiente).
 const NAV_LINKS = [
-  { label: 'Inicio', to: '/' },
-  { label: 'Videos y Webinars', to: '/videoteca' },
-  { label: 'Infografías', to: '/infografias' },
-  { label: 'Noticias', to: '/tendencias' },
-  { label: 'Eventos', to: '/eventos' },
+  { label: 'Inicio', scrollTarget: 'hero' },
+  { label: 'Videos y Webinars', scrollTarget: 'videos' },
+  { label: 'Infografías', scrollTarget: 'infographics' },
+  { label: 'Noticias', scrollTarget: 'news' },
+  { label: 'Eventos', scrollTarget: 'events' },
 ];
 
 // Tibox Connect v2 — Header (Crear Tickets = naranja; el botón azul
@@ -61,10 +62,24 @@ export function Header({ onSoporte }) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const { isAdmin, profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
+  };
+  // Ajuste posterior — reversión parcial (ver nota corta en
+  // FASE-06-07-08-CONTENIDO-REAL.md): si ya estamos en el inicio, scroll
+  // directo; si estamos en cualquier otra página, navega al inicio pasando
+  // el target pendiente en `state` — PortalLayout.jsx lo resuelve una vez
+  // que el Outlet ya cambió a HomePage.
+  const handleNavClick = (target) => {
+    setMobileOpen(false);
+    if (location.pathname === '/') {
+      window.scrollToSection && window.scrollToSection(target);
+    } else {
+      navigate('/', { state: { scrollTo: target } });
+    }
   };
   const handleSoporteClick = () => {
     setMobileOpen(false);
@@ -93,22 +108,24 @@ export function Header({ onSoporte }) {
           FASE-06-07-08-CONTENIDO-REAL.md) */}
       <img src="/assets/logo-tibox.png" alt="TIBOX" style={{ height: 22, flexShrink: 0 }} />
 
-      {/* Navegación — reemplaza los ítems del Sidebar eliminado. Cada ítem
-          navega a su página propia (ver ajuste posterior arriba). Oculta
-          bajo los 900px (ver .header-nav-desktop en index.css) — reemplazada
-          por el menú hamburguesa. */}
+      {/* Navegación por secciones — reemplaza los ítems del Sidebar
+          eliminado. Mismo mecanismo de scroll (window.scrollToSection) que
+          ya usan los bloques de categoría bajo el hero, con el agregado de
+          cross-página (ver handleNavClick arriba). Oculta bajo los 900px
+          (ver .header-nav-desktop en index.css) — reemplazada por el menú
+          hamburguesa. */}
       <nav className="header-nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 18 }}>
         {NAV_LINKS.map(link => (
-          <Link key={link.to} to={link.to} style={{
+          <button key={link.scrollTarget} onClick={() => handleNavClick(link.scrollTarget)} style={{
             background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
-            fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'white', textDecoration: 'none',
+            fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'white',
             padding: '7px 10px', borderRadius: 8, transition: 'background 150ms, opacity 150ms',
           }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
           >
             {link.label}
-          </Link>
+          </button>
         ))}
         {onSoporte && (
           <button onClick={handleSoporteClick} style={{
@@ -290,9 +307,9 @@ export function Header({ onSoporte }) {
             display: 'flex', flexDirection: 'column', padding: '8px 12px 16px',
           }}>
             {NAV_LINKS.map(link => (
-              <Link key={link.to} to={link.to} onClick={() => setMobileOpen(false)} className="header-mobile-link" style={{ textDecoration: 'none', display: 'block' }}>
+              <button key={link.scrollTarget} onClick={() => handleNavClick(link.scrollTarget)} className="header-mobile-link">
                 {link.label}
-              </Link>
+              </button>
             ))}
             {onSoporte && (
               <button onClick={handleSoporteClick} className="header-mobile-link">

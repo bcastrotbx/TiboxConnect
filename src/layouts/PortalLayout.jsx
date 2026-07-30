@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Icon } from '../components/shared/Icon.jsx';
 import { ModalShell } from '../components/shared/ModalShell.jsx';
 import { CosmicBg } from '../components/shared/CosmicBg.jsx';
@@ -75,20 +75,42 @@ function SoporteModal({ onClose }) {
 
 // Chrome del portal (header + wrapper de contenido con scroll), antes fijo
 // dentro de src/App.jsx. Las páginas del portal se renderizan vía <Outlet/>.
+// window.scrollToSection sigue siendo un global deliberado (igual que en la
+// Fase 1) porque lo consume tanto CategoryBlocks como los links de
+// navegación del Header (ver ajuste posterior en
+// FASE-06-07-08-CONTENIDO-REAL.md: se eliminó el Sidebar del portal — no el
+// del admin — y su navegación se movió al Header).
 //
-// Ajuste posterior — bug de navegación (ver nota corta en
-// FASE-06-07-08-CONTENIDO-REAL.md): antes existía acá un `window.scrollToSection`
-// global, consumido tanto por el Header como por CategoryBlocks, que hacía
-// scroll suave a una sección anclada (`section-*`) — funcionaba mientras
-// esas secciones solo existían dentro de HomePage, pero se rompía en
-// cualquier otra página (las anclas no existen ahí). Ahora que Videos,
-// Infografías, Tendencias y Eventos tienen su propia ruta, el Header navega
-// directo a esas rutas y ya no necesita esta función. Se eliminó por
-// completo — el único bloque de categoría que todavía hace scroll dentro de
-// la página ("Contacto", que no tiene ruta propia) resuelve su propio
-// scroll localmente en CategoryBlocks (Hero.jsx), sin depender de un global.
+// Ajuste posterior — reversión parcial (ver nota corta en
+// FASE-06-07-08-CONTENIDO-REAL.md): se había reemplazado este mecanismo por
+// navegación directa a páginas dedicadas (/videoteca, etc.), pero se
+// revirtió a pedido de Braulio — los bloques de categoría y el menú
+// superior vuelven a hacer scroll dentro del inicio. La única pieza nueva
+// es el bloque de abajo: cuando el Header ya no está en "/" y el usuario
+// hace clic en un ítem, primero navega a "/" pasando `state:{scrollTo}` (ver
+// handleNavClick en Header.jsx); este efecto detecta ese estado una vez que
+// el Outlet ya cambió a HomePage y completa el scroll — sin este paso, la
+// navegación cross-página se habría quedado solo en el tope del inicio.
 export function PortalLayout() {
   const [showSoporte, setShowSoporte] = React.useState(false);
+  const location = useLocation();
+
+  const scrollToSection = React.useCallback((id) => {
+    const content = document.querySelector('.portal-content');
+    if (!content) return;
+    if (id === 'hero') { content.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    const el = document.getElementById('section-' + id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  React.useEffect(() => { window.scrollToSection = scrollToSection; }, [scrollToSection]);
+
+  React.useEffect(() => {
+    if (location.pathname === '/' && location.state?.scrollTo) {
+      scrollToSection(location.state.scrollTo);
+    }
+  }, [location, scrollToSection]);
 
   return (
     <React.Fragment>

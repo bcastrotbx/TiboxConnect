@@ -562,6 +562,20 @@ El único caso que seguía necesitando scroll — el bloque de categoría "Conta
 
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
+## Ajuste posterior — reversión parcial: menú superior y bloques de categoría vuelven a hacer scroll en el inicio
+
+Braulio pidió revertir parcialmente el ajuste anterior: los 5 bloques de categoría bajo el carrusel y los ítems del menú superior (Inicio/Videos y Webinars/Infografías/Noticias/Eventos) vuelven a llevar a las secciones del inicio, no a las páginas dedicadas. Las páginas dedicadas (`/videoteca`, `/infografias`, `/tendencias`, `/eventos`) siguen existiendo — solo se llega a ellas desde los botones "Ver todos..." de cada bloque, que no se tocaron.
+
+**Bloques de categoría (`CategoryBlocks`, Hero.jsx).** Vuelven a usar `window.scrollToSection(c.scrollTarget)` para los 5, tal como funcionaban antes del ajuste anterior. `CATS` (`src/data/seed/homeSeed.js`) volvió de `to` a `scrollTarget` en los 4 que lo habían perdido.
+
+**Menú superior (`Header.jsx`).** Este es el único punto que no es una reversión 1:1, porque el pedido explícito fue que el menú funcione en *todas* las páginas, no solo en el inicio: si `location.pathname === '/'`, hace `window.scrollToSection(target)` directo (igual que antes); si está en cualquier otra página, navega a `/` pasando `state: { scrollTo: target }` con `useNavigate`. `PortalLayout.jsx` (que envuelve todas las páginas del portal vía `<Outlet/>`) recuperó su `window.scrollToSection` global y ganó un efecto nuevo que observa `useLocation()`: cuando el pathname es `/` y `location.state.scrollTo` existe, completa el scroll — resolviendo el pendiente una vez que `HomePage` ya está montada. Sin este paso intermedio, navegar desde otra página se habría quedado solo en el tope del inicio (justo el bug que el pedido quería evitar).
+
+Se eliminó por completo la lógica de navegación directa a rutas que se había agregado en el ajuste anterior (`Link to="/videoteca"` etc. en el Header, `navigate(c.to)` en `CategoryBlocks`) — no quedó código muerto porque se reescribió directamente sobre esas mismas líneas.
+
+**Verificado en el navegador:** desde el inicio, cada ítem del menú y cada bloque de categoría llama a `window.scrollToSection` con el target correcto (confirmado programáticamente y con `scrollIntoView({behavior:'instant'})` para saltar la limitación ya documentada de animaciones `smooth` en el entorno de pruebas de este chat). Desde `/videoteca` (llegando ahí vía "Ver todos los videos"), el clic en "Infografías" del menú navega a `/` con `state:{scrollTo:'infographics'}` y, tras esperar la animación, la vista queda exactamente sobre la sección "Información visual, simple y al alcance" — confirmado visualmente con captura de pantalla, sin quedarse en el tope. `npm run lint` y `npm run build` sin errores.
+
+**Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
+
 ## Pendiente
 
 - **Braulio debe ejecutar la migración `20260731100000_events_sort_order.sql`** (agrega `sort_order` a `events`) en el SQL Editor de Supabase — hasta entonces, la sección Eventos del panel admin y "Próximos Eventos" del portal fallarán al cargar (columna inexistente). Contenido completo de la migración:
