@@ -18,6 +18,7 @@ import { AdminRoute } from './AdminRoute.jsx';
 import { DashboardPage } from '../admin/pages/DashboardPage.jsx';
 import { VideosPage } from '../admin/pages/VideosPage.jsx';
 import { InfografiasPage } from '../admin/pages/InfografiasPage.jsx';
+import { InfografiaLeadsPage } from '../admin/pages/InfografiaLeadsPage.jsx';
 import { NoticiasPage } from '../admin/pages/NoticiasPage.jsx';
 import { EventosPage } from '../admin/pages/EventosPage.jsx';
 import { MensajesPage } from '../admin/pages/MensajesPage.jsx';
@@ -80,6 +81,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <VideosPage /> },
           { path: 'infografias', element: <InfografiasPage /> },
+          { path: 'infografias/leads', element: <InfografiaLeadsPage /> },
           { path: 'noticias', element: <NoticiasPage /> },
           { path: 'servicios', element: <ServiciosPage /> },
         ],

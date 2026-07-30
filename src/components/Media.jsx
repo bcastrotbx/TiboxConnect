@@ -10,6 +10,7 @@ import { YouTubePlayer } from './shared/YouTubePlayer.jsx';
 import * as contentService from '../services/contentService.js';
 import * as formService from '../services/formService.js';
 import { extractYouTubeVideoId } from '../lib/youtube.js';
+import { downloadImageWithFallback } from '../lib/download.js';
 
 /* ── Video player modal — Fase 6/7/8, ajuste posterior: reproductor real de
    YouTube en vez del reproductor decorativo heredado del prototipo original
@@ -198,23 +199,30 @@ const navBtnStyle = {
 // (sessionStorage), no persiste entre visitas.
 const INFOGRAFIA_LEAD_KEY = 'tibox_infografia_lead_ok';
 
-// TODO(fase posterior): guardar el lead en un backend real y mostrarlo en el
-// panel admin (sección de leads de infografías). Por ahora el envío solo se
-// simula (formService.submitInfografiaLead) y no persiste fuera de
-// sessionStorage.
-function InfografiaLeadModal({ onSuccess, onClose }) {
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): el envío ahora
+// guarda de verdad en `infographic_leads` (antes solo simulaba con
+// setTimeout). `contentItemId` identifica la infografía que originó la
+// descarga — lo pasa InfografiaModal, dueño de ese dato.
+function InfografiaLeadModal({ contentItemId, onSuccess, onClose }) {
   const [form, setForm] = React.useState({ name:'', empresa:'', cargo:'', email:'' });
   const [sending, setSending] = React.useState(false);
+  const [error, setError] = React.useState('');
   const up = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
   const inputS = { width:'100%',padding:'9px 12px',border:'1.5px solid var(--gray-200)',borderRadius:8,fontSize:13,outline:'none',fontFamily:'inherit',transition:'border-color 150ms' };
 
   const submit = (e) => {
     e.preventDefault();
+    setError('');
     setSending(true);
-    formService.submitInfografiaLead(form).then(() => {
-      sessionStorage.setItem(INFOGRAFIA_LEAD_KEY, 'true');
-      onSuccess();
-    });
+    formService.submitInfografiaLead({ ...form, contentItemId })
+      .then(() => {
+        sessionStorage.setItem(INFOGRAFIA_LEAD_KEY, 'true');
+        onSuccess();
+      })
+      .catch((err) => {
+        setSending(false);
+        setError(err.message || 'No pudimos guardar tus datos. Intenta nuevamente.');
+      });
   };
 
   return (
@@ -245,6 +253,9 @@ function InfografiaLeadModal({ onSuccess, onClose }) {
           <input type="email" value={form.email} onChange={up('email')} required placeholder="tu@empresa.cl" style={inputS}
             onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'} />
         </div>
+        {error && (
+          <div style={{fontSize:12.5,color:'#c0392b',background:'rgba(192,57,43,0.08)',border:'1px solid rgba(192,57,43,0.2)',borderRadius:8,padding:'9px 12px'}}>{error}</div>
+        )}
         <button type="submit" disabled={sending} style={{
           marginTop:4,padding:'12px',borderRadius:10,border:'none',cursor:sending?'default':'pointer',
           background: sending ? 'var(--gray-300)' : 'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',color:'white',
@@ -273,11 +284,13 @@ export function InfografiaModal({ info, channelsById, onClose }) {
   const [showLead, setShowLead] = React.useState(false);
   const [justDownloaded, setJustDownloaded] = React.useState(false);
 
+  // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): descarga real
+  // en vez del estado visual simulado — ver lib/download.js para el
+  // fallback a pestaña nueva cuando el fetch por blob falla (CORS).
   const startDownload = () => {
-    // TODO(fase posterior): disparar la descarga real del asset de la
-    // infografía. Por ahora solo se simula el estado visual.
     setJustDownloaded(true);
     setTimeout(() => setJustDownloaded(false), 2200);
+    downloadImageWithFallback(info.img, info.title);
   };
 
   const handleDownloadClick = () => {
@@ -306,6 +319,7 @@ export function InfografiaModal({ info, channelsById, onClose }) {
       </div>
       {showLead && (
         <InfografiaLeadModal
+          contentItemId={info.id}
           onClose={()=>setShowLead(false)}
           onSuccess={() => { setShowLead(false); startDownload(); }}
         />

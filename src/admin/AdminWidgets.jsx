@@ -7,6 +7,7 @@ import { useAsyncData } from '../hooks/useAsyncData.js';
 import * as adminService from '../services/adminService.js';
 import * as adminContentService from '../services/adminContentService.js';
 import * as adminEventsService from '../services/adminEventsService.js';
+import * as adminLeadsService from '../services/adminLeadsService.js';
 import * as categoryService from '../services/categoryService.js';
 import * as storageService from '../services/storageService.js';
 import { getYouTubeThumbnailUrl } from '../lib/youtube.js';
@@ -1070,6 +1071,74 @@ export function OpinionsPanel() {
             </div>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+const LEADS_PAGE_SIZE = 10;
+
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): sección nueva de
+// solo lectura para ver los leads capturados por InfografiaLeadModal antes
+// de conectarse a Supabase, esos datos solo vivían en la memoria de la
+// sesión del visitante (sessionStorage) y nunca llegaban al admin. Mismo
+// patrón de tabla que OpinionsPanel, con paginación (ver Pagination
+// compartido) porque a diferencia de las opiniones, se espera que esta
+// lista crezca más rápido.
+export function InfographicLeadsPanel() {
+  const { status, data, error } = useAsyncData(() => adminLeadsService.listInfographicLeads(), []);
+  const [page, setPage] = React.useState(1);
+  const leads = data || [];
+  const totalPages = Math.max(1, Math.ceil(leads.length / LEADS_PAGE_SIZE));
+  const pagedLeads = leads.slice((page - 1) * LEADS_PAGE_SIZE, page * LEADS_PAGE_SIZE);
+
+  if (status === 'loading') {
+    return (
+      <div className="adm-card">
+        <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--gray-200)' }}><div style={{ fontSize:15, fontWeight:700, color:'var(--navy-900,#021233)' }}>Leads de infografías</div></div>
+        <LoadingState label="Cargando leads…" />
+      </div>
+    );
+  }
+  if (status === 'error') {
+    return (
+      <div className="adm-card">
+        <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--gray-200)' }}><div style={{ fontSize:15, fontWeight:700, color:'var(--navy-900,#021233)' }}>Leads de infografías</div></div>
+        <ErrorState label="No pudimos cargar los leads." error={error} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="adm-card">
+      <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--gray-200)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div>
+          <div style={{ fontSize:15, fontWeight:700, color:'var(--navy-900,#021233)' }}>Leads de infografías</div>
+          <div style={{ fontSize:12, color:'var(--gray-400)', marginTop:2 }}>Datos dejados antes de descargar una infografía</div>
+        </div>
+        <span style={{ fontSize:12, color:'var(--gray-400)' }}>{leads.length} {leads.length === 1 ? 'lead' : 'leads'}</span>
+      </div>
+      {leads.length === 0 ? (
+        <EmptyState label="Todavía no hay leads capturados." icon="download" />
+      ) : (
+        <React.Fragment>
+          <table className="adm-table">
+            <thead><tr><th>Nombre</th><th>Empresa</th><th>Cargo</th><th>Correo</th><th>Infografía</th><th>Fecha</th></tr></thead>
+            <tbody>
+              {pagedLeads.map((l) => (
+                <tr key={l.id}>
+                  <td style={{ fontWeight:600 }}>{l.name}</td>
+                  <td style={{ color:'var(--gray-500)' }}>{l.company || '—'}</td>
+                  <td style={{ color:'var(--gray-500)' }}>{l.position || '—'}</td>
+                  <td style={{ color:'var(--gray-500)' }}>{l.email}</td>
+                  <td style={{ color:'var(--gray-500)' }}>{l.infographicTitle}</td>
+                  <td style={{ color:'var(--gray-500)' }}>{l.date}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Pagination page={page} totalPages={totalPages} onChange={setPage} bordered />
+        </React.Fragment>
       )}
     </div>
   );

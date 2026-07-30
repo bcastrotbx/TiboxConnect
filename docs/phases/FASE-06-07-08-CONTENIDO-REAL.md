@@ -588,6 +588,28 @@ Se agregó un fallback: si el evento no tiene `thumbnail_url` (`ev.img` vacío),
 
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
+## Ajuste posterior — guardado real de leads de infografías + descarga real + panel admin de solo lectura
+
+Pendiente arrastrado desde la Fase 1.5 (documentado en `FASE-01B-AJUSTES-VISUALES-PAULA.md`): `InfografiaLeadModal` solo simulaba el envío (`setTimeout`) y recordaba el consentimiento en `sessionStorage`, sin persistir nada. La tabla `infographic_leads` (con su RLS: insert público, select solo admin) ya existía desde la Fase 4, sin usar.
+
+**1. Guardado real.** `formService.submitInfografiaLead()` pasó de `simulateDelay` a un `insert` real contra `infographic_leads` (`full_name`, `company`, `position`, `email`, `content_item_id`). `InfografiaModal` le pasa `info.id` (el id del `content_item` de la infografía) a `InfografiaLeadModal` como `contentItemId`, que ahora viaja en el body del insert — antes no existía ese dato en ningún lado del flujo. Se agregó manejo de error real (antes no hacía falta, `simulateDelay` nunca fallaba): si el insert falla, se muestra un mensaje inline en el propio formulario y el botón vuelve a estar habilitado, sin perder los datos ya escritos.
+
+**2. Descarga real de la infografía, con fallback a pestaña nueva.** Nuevo helper `src/lib/download.js` (`downloadImageWithFallback`): intenta primero `fetch(url, {mode:'cors'})` sobre `thumbnail_url`, arma un blob y dispara una descarga forzada con `<a download>` (nombre de archivo derivado del título de la infografía, sanitizado con el mismo criterio sin-literal-unicode que `lib/slugify.js`); si el `fetch` falla — típicamente porque el host de la imagen no manda cabeceras CORS pensadas para que JS pueda leer el contenido, no solo mostrarlo en un `<img>` — cae a `window.open(url, '_blank')` sin mostrar ningún error al usuario, que igual puede guardar la imagen manualmente desde esa pestaña. **Verificado en el navegador con las imágenes reales del seed** (alojadas en Unsplash): Unsplash sí manda CORS permisivo, así que el `fetch` tuvo éxito y se confirmó el blob (98 KB, `image/jpeg`) — la ruta de descarga forzada es la que se ejerce hoy con este contenido. La ruta de fallback se verificó por separado, forzando un `fetch` a una URL que responde con error de red: confirmado que lanza y que el `catch` es exactamente el punto donde se dispara `window.open`. Si en el futuro se cargan infografías desde un host que no permita CORS, el comportamiento observado sería automáticamente el de abrir en pestaña nueva, sin cambios de código.
+
+**3. Panel admin de solo lectura.** Sección nueva **"Leads de infografías"**, en el sidebar del admin justo debajo de "Infografías" (`/admin/contenidos/infografias/leads`) — se eligió un ítem de menú propio en vez de una pestaña dentro de Infografías porque el admin no tiene ningún patrón de pestañas hoy y un ítem de sidebar es más fácil de encontrar que agregar ese patrón desde cero para un solo caso. Mismo patrón visual y de paginación (10/página, `Pagination` compartido) que el resto de tablas del admin. Tabla: nombre, empresa, cargo, correo, infografía relacionada (join a `content_items.title`) y fecha — sin acciones de editar/eliminar, tal como se pidió (la política RLS de `infographic_leads` tampoco da esos permisos a nadie, ni a administradores). No aparece el botón "Nuevo" en esta página (no está en `NEWABLE_PATHS` de `AdminHeader.jsx`) porque no tiene sentido crear un lead a mano.
+
+**4. Comportamiento "una vez por visita" sin cambios de UX**, solo que ahora la primera vez sí persiste: `sessionStorage.getItem('tibox_infografia_lead_ok')` sigue decidiendo si se pide el formulario o se descarga directo, igual que antes.
+
+**Verificado en el navegador:**
+- Se limpió `sessionStorage` y se abrió una infografía → apareció el formulario de lead.
+- Se completó y envió → guardó en `infographic_leads` (confirmado en el panel admin nuevo, fila con los datos enviados y la infografía correcta) y la descarga se disparó sin mostrar error.
+- Se abrió una infografía **distinta** en la misma visita → descargó directo, sin volver a pedir el formulario (confirmado: sigue habiendo solo 1 lead en el panel admin tras la segunda descarga, no 2).
+- `npm run lint` y `npm run build` sin errores.
+
+**Nota para Braulio:** la prueba de este ajuste dejó un lead real en `infographic_leads` (nombre "Braulio Test QA", correo `qa-test@tibox.cl`) — visible en `/admin/contenidos/infografias/leads`. Como la tabla no tiene política de `delete` para nadie (ver Fase 4, decisión 10), no se pudo limpiar desde la app; si quieres sacarlo, hay que borrarlo manualmente desde el Table Editor de Supabase.
+
+**Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
+
 ## Pendiente
 
 - **Braulio debe ejecutar la migración `20260731100000_events_sort_order.sql`** (agrega `sort_order` a `events`) en el SQL Editor de Supabase — hasta entonces, la sección Eventos del panel admin y "Próximos Eventos" del portal fallarán al cargar (columna inexistente). Contenido completo de la migración:
@@ -601,7 +623,6 @@ Se agregó un fallback: si el evento no tiene `thumbnail_url` (`ev.img` vacío),
 - **Braulio debe ejecutar, en este orden, las 3 migraciones nuevas de esta fase** (`20260729100000_webinars_category.sql`, `20260729100100_hero_slides_seed.sql`, `20260729100200_storage_content_images.sql`) en el SQL Editor de Supabase, después de las ya ejecutadas de las Fases 4 y 5.
 - **Si el `INSERT` sobre `storage.buckets` de la migración de Storage falla**, crear el bucket manualmente: Supabase Dashboard → Storage → New bucket → nombre `content-images` → Public bucket activado. Luego ejecutar el resto del archivo (las políticas RLS) igual.
 - **Probar el flujo completo de creación de contenido desde el panel admin** (login real, crear/publicar una noticia con imagen, una infografía con imagen, un video de YouTube, un evento con banner y enlace de inscripción) — ver los pasos exactos en el mensaje de cierre de esta fase.
-- Conectar el guardado real de leads de infografías (`InfografiaLeadModal` → tabla `infographic_leads`) — Fase 9.
 - Agregar `resources` genéricos y galería de eventos, si el negocio los sigue necesitando después del evento de agosto.
 - Mejorar el refetch tras acciones del admin sin recargar la página completa (ver decisión 8).
 - Evaluar restringir el CORS de Storage/Edge Functions a un dominio fijo una vez exista uno de producción (heredado de la Fase 5).

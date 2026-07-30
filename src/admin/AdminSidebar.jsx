@@ -14,6 +14,7 @@ const NAV = [
   { label:'Contenidos', items:[
     { path:'/admin/contenidos', icon:'film', label:'Videos y Webinars' },
     { path:'/admin/contenidos/infografias', icon:'pie-chart', label:'Infografías' },
+    { path:'/admin/contenidos/infografias/leads', icon:'download', label:'Leads de infografías' },
     { path:'/admin/contenidos/noticias', icon:'rss', label:'Noticias' },
     { path:'/admin/eventos', icon:'calendar-check', label:'Eventos' },
   ]},
