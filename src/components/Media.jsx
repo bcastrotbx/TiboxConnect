@@ -264,7 +264,11 @@ function InfografiaLeadModal({ onSuccess, onClose }) {
   );
 }
 
-function InfografiaModal({ info, channelsById, onClose }) {
+// Exportado (ver ajuste posterior "páginas propias" en
+// FASE-06-07-08-CONTENIDO-REAL.md): la página /infografias reutiliza este
+// mismo popup (incluido el flujo de lead) en vez de duplicar la lógica de
+// descarga.
+export function InfografiaModal({ info, channelsById, onClose }) {
   const ch = channelsById[info.channel] || { color:'var(--navy-900)', label:'', icon:'link' };
   const [showLead, setShowLead] = React.useState(false);
   const [justDownloaded, setJustDownloaded] = React.useState(false);
@@ -310,7 +314,9 @@ function InfografiaModal({ info, channelsById, onClose }) {
   );
 }
 
-function InfoCard({ inf, channelsById, onOpen }) {
+// Exportado: reutilizado por la página /infografias (misma tarjeta, dentro
+// de una grilla en vez de un carrusel).
+export function InfoCard({ inf, channelsById, onOpen }) {
   const ch = channelsById[inf.channel] || { color:'var(--navy-900)', label:'', icon:'link' };
   const [hov, setHov] = React.useState(false);
   return (
@@ -345,6 +351,7 @@ function InfoCard({ inf, channelsById, onOpen }) {
 }
 
 export function InfographicsPanel() {
+  const navigate = useNavigate();
   const { data: channels } = useAsyncData(() => contentService.getChannels(), []);
   const { data: allCats } = useAsyncData(() => contentService.getInfographicCategories(), []);
   const [filter, setFilter] = React.useState('all');
@@ -370,7 +377,7 @@ export function InfographicsPanel() {
       <div style={{position:'absolute',inset:0,background:'linear-gradient(160deg,rgba(2,16,46,0.82),rgba(5,24,72,0.65))',pointerEvents:'none'}}></div>
 
       {/* Banner */}
-      <div style={{position:'relative',padding:'26px 28px 0',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:20}}>
+      <div style={{position:'relative',padding:'26px 28px 0',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:20,flexWrap:'wrap'}}>
         <div>
           <div style={{display:'inline-flex',alignItems:'center',gap:8,marginBottom:12,background:'rgba(255,255,255,0.12)',borderRadius:999,padding:'4px 13px',border:'1px solid rgba(255,255,255,0.2)'}}>
             <Icon name="layout-grid" style={{width:13,height:13,color:'var(--brand-cyan)'}} />
@@ -383,6 +390,9 @@ export function InfographicsPanel() {
             Las piezas que publicamos en LinkedIn, Instagram y nuestros mailings, listas para descargar y compartir en tu organización.
           </p>
         </div>
+        <button onClick={()=>navigate('/infografias')} style={{display:'inline-flex',alignItems:'center',gap:7,fontSize:12.5,fontWeight:700,cursor:'pointer',padding:'9px 15px',borderRadius:10,border:'1px solid rgba(255,255,255,0.25)',background:'rgba(255,255,255,0.12)',color:'white',whiteSpace:'nowrap',flexShrink:0}}>
+          <Icon name="layout-grid" style={{width:14,height:14}} />Ver todas las infografías
+        </button>
       </div>
 
       {/* Filter chips */}

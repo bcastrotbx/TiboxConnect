@@ -495,6 +495,57 @@ Con un servidor de desarrollo temporal en un puerto libre (5173 estaba ocupado p
 
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
+## Ajuste posterior — páginas propias para Infografías, Tendencias y Eventos + miga de pan + rediseño del bloque de Eventos
+
+Extensión del cambio de "ver todos" a páginas completas (ver ajuste anterior de Videoteca): mismo patrón aplicado ahora a Infografías, Tendencias y Eventos, más una miga de pan en las 4 páginas y un rediseño del bloque de Eventos del inicio.
+
+### Rutas nuevas
+
+- **`/infografias`** (`src/pages/InfografiasPage.jsx`) — miga de pan, título y reseña iguales a los que ya usaba el bloque del inicio, filtro por categoría, grilla 12/página (reutiliza `.videoteca-grid`), paginación. Reutiliza `InfoCard` e `InfografiaModal` (exportados desde `Media.jsx`) — el clic en una tarjeta abre el mismo popup con el flujo de lead/descarga, sin tocarlo.
+- **`/tendencias`** (`src/pages/TendenciasPage.jsx`) — mismo patrón. No existía una versión "tarjeta" de noticia reutilizable (`NoticiasPanel` usa una lista vertical con scroll propio, pensada para la columna angosta del inicio, no para una grilla de página completa), así que se creó `NoticiaGridCard`, local a esta página, en vez de forzar la lista existente a un layout distinto. El popup sigue siendo el mismo `NoticiaModal` (exportado desde `Events.jsx`).
+- **`/eventos`** (`src/pages/EventosPage.jsx`) — mismo patrón, con una diferencia deliberada: **sin filtro por categoría**. `events` no tiene columna de categoría en el modelo de datos (mismo motivo documentado en el ajuste de Videoteca por el que esa página oculta los eventos al filtrar por categoría), así que no había nada que filtrar. El listado combina próximos y realizados (`eventService.getAllEvents()`, próximos primero) reutilizando la misma `EventCard` del inicio — no se creó una tarjeta nueva. Al hacer clic, cada tarjeta abre el popup que ya tenía según su estado: `EventDetailModal` (con "Inscríbete aquí") para próximos, `VistaModal` (resumen + galería, sin inscripción) para realizados — ninguno de los dos se modificó.
+
+**Texto elegido para Eventos** (el único de los 3 sin un texto preexistente en el inicio que copiar): título **"Agenda y Eventos TIBOX"**, reseña **"Revisa las próximas actividades de TIBOX y vuelve a ver lo mejor de nuestros eventos realizados."** — se optó por nombrar ambos tiempos (próximos y realizados) porque la página, a diferencia de antes, los combina en un solo listado; un texto que solo hablara de "próximos eventos" habría sido engañoso una vez que aparecen tarjetas de eventos ya pasados en el mismo scroll.
+
+**Colisión de nombres evitada:** el panel admin ya tenía `InfografiasPage` y `EventosPage` propias (`admin/pages/`). Los imports públicos en `AppRouter.jsx` se renombraron al importar (`InfografiasPage as InfografiasPublicPage`, `EventosPage as EventosPublicPage`) en vez de renombrar ninguno de los dos componentes existentes.
+
+### Miga de pan
+
+Nuevo componente `src/components/shared/Breadcrumb.jsx` — recibe `items: [{label, to}]`, el último elemento es la página actual y nunca lleva link. Se agregó a las 4 páginas propias del portal (`/videoteca`, `/infografias`, `/tendencias`, `/eventos`), cada una con su propio "Inicio > [Sección]"; el clic en "Inicio" navega a `/` vía `react-router-dom`'s `Link`.
+
+### Botones "Ver todos/as" en el inicio
+
+Cada uno de los 4 bloques del inicio ya tenía o ganó su botón hacia la página completa correspondiente:
+- Videoteca → "Ver todos los videos" → `/videoteca` (ya existía, ver ajuste anterior).
+- Infografías → **"Ver todas las infografías"** (nuevo, agregado al banner de `InfographicsPanel`, estilo "glass" blanco translúcido acorde al fondo oscuro del panel) → `/infografias`.
+- Tendencias → **"Ver todas las tendencias"** (nuevo, agregado al header de `NoticiasPanel`, mismo estilo blanco bordeado que ya usaba "Ver todos los videos") → `/tendencias`.
+- Eventos → **"Ver todos los eventos"** (nuevo, debajo del carrusel combinado) → `/eventos`.
+
+### Rediseño del bloque de Eventos del inicio: de dos paneles a un carrusel único
+
+Antes el inicio mostraba **"Próximos Eventos"** y **"Eventos Realizados"** como dos paneles lado a lado (grilla `1fr 1fr`), cada uno con su propia paginación por "páginas" de 2 tarjetas + puntos. Se unificaron en **un solo panel** (`EventosPanel`, `Events.jsx`) con un **carrusel horizontal de scroll** — mismo patrón visual e interacción que ya usaba `InfographicsPanel` (flechas glass a los costados, `scrollBy` con `behavior:'smooth'`, `scroll-snap`) — en vez del paginado por "páginas fijas" que tenía antes. `EventosRealizadosPanel`, `PastEventsListModal` y `PastEventCard` quedaron sin ningún punto de uso y se eliminaron (mismo criterio que la limpieza de `VideoLibraryModal` en el ajuste de Videoteca).
+
+**Fuente de datos combinada.** Nueva función `eventService.getAllEvents()` — concatena `getUpcomingEvents()` (ya ordenados por `sort_order`/fecha ascendente) y `getPastEvents()` (ya ordenados por fecha descendente) sin duplicar ninguna consulta a Supabase. Próximos primero: es lo accionable (inscribirse), el historial va después.
+
+**Tarjeta enriquecida.** `EventCard` (ahora exportada, reutilizada también por `/eventos`) ya traía modalidad, fecha, hora, descripción breve y colaborador/logo — de ahí solo faltaba la etiqueta "PRÓXIMAMENTE" para los eventos que aún no ocurren, ahora que el panel mezcla ambos estados. Se agregó derivándola de `ev.rawStatus !== 'completed'` (ya expuesto por `mapEventRow`) en vez de un prop aparte — así la tarjeta se comporta igual venga de un listado combinado (inicio, `/eventos`) o de uno ya filtrado, sin que el componente consumidor tenga que indicárselo.
+
+**Popups sin cambios.** Cada tarjeta sigue abriendo el popup que le correspondía antes de la fusión — `EventDetailModal` para próximos, `VistaModal` para realizados — la función `handleVerDetalle` simplemente decide cuál según `ev.rawStatus`. "Ver calendario" (antes exclusivo de "Próximos Eventos") se mantuvo igual, operando solo sobre el subconjunto de próximos (`events.filter(ev => ev.rawStatus !== 'completed')`) — mostrar eventos ya pasados en un "calendario" no habría tenido sentido.
+
+### Verificado en el navegador
+
+Con un servidor de desarrollo temporal en un puerto libre (se cerró al terminar):
+
+- `/infografias`, `/tendencias` y `/eventos` cargan con miga de pan, título, reseña y grilla — clic en "Inicio" de la miga de pan navega a `/` correctamente.
+- `/infografias`: filtro por categoría funciona, clic en una tarjeta abre `InfografiaModal` con el flujo de descarga existente.
+- `/tendencias`: filtro por categoría funciona, clic en una noticia abre `NoticiaModal` con el contenido completo.
+- `/eventos`: sin filtro de categoría (por diseño), tarjetas con etiqueta "PRÓXIMAMENTE" donde corresponde, clic en "Ver detalles" de un evento próximo abre `EventDetailModal` con fecha/hora/modalidad/lugar/"Inscríbete aquí". **No se pudo verificar visualmente el clic sobre un evento ya realizado** (abre `VistaModal`) porque el seed actual no tiene ningún evento `completed` disponible — mismo pendiente ya documentado más abajo (migración `20260730100000_demo_content_agosto.sql`); la rama de código se revisó y sigue el mismo patrón ya probado en Videoteca para esta misma distinción.
+- Los 4 botones "Ver todos/as" del inicio (Videos, Infografías, Tendencias, Eventos) navegan a su página correspondiente — confirmado con `location.pathname` tras cada clic.
+- El carrusel combinado de Eventos en el inicio muestra próximos (con badge "PRÓXIMAMENTE") seguidos del historial, con flechas de navegación funcionales y el botón "Ver todos los eventos" debajo.
+- Responsive a 375px: las 3 grillas nuevas bajan a 1 columna (misma clase `.videoteca-grid` reutilizada de Videoteca), el carrusel de Eventos del inicio se ve en una tarjeta a la vez sin overflow horizontal en el `body` (`scrollWidth === clientWidth === 375`), y el botón "Ver todos los eventos" se ve completo debajo.
+- `npm run lint` y `npm run build` sin errores.
+
+**Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
+
 ## Pendiente
 
 - **Braulio debe ejecutar la migración `20260731100000_events_sort_order.sql`** (agrega `sort_order` a `events`) en el SQL Editor de Supabase — hasta entonces, la sección Eventos del panel admin y "Próximos Eventos" del portal fallarán al cargar (columna inexistente). Contenido completo de la migración:

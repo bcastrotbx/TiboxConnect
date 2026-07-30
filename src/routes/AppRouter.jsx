@@ -4,6 +4,12 @@ import { AdminLayout } from '../layouts/AdminLayout.jsx';
 import { HomePage } from '../pages/HomePage.jsx';
 import { VideotecaPage } from '../pages/VideotecaPage.jsx';
 import { VideotecaDetailPage } from '../pages/VideotecaDetailPage.jsx';
+// Alias: el panel admin ya tiene páginas propias con estos mismos nombres
+// (admin/pages/InfografiasPage.jsx, admin/pages/EventosPage.jsx) — se
+// renombran al importar para evitar el choque, sin tocar ninguna de las dos.
+import { InfografiasPage as InfografiasPublicPage } from '../pages/InfografiasPage.jsx';
+import { TendenciasPage } from '../pages/TendenciasPage.jsx';
+import { EventosPage as EventosPublicPage } from '../pages/EventosPage.jsx';
 import { NotFound } from '../pages/NotFound.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';
 import { UpdatePasswordPage } from '../pages/UpdatePasswordPage.jsx';
@@ -52,6 +58,13 @@ const router = createBrowserRouter([
       // con URL, dentro del mismo PortalLayout (header siempre visible).
       { path: 'videoteca', element: <VideotecaPage /> },
       { path: 'videoteca/:slug', element: <VideotecaDetailPage /> },
+      // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): mismo
+      // patrón que Videoteca, extendido a Infografías, Tendencias y
+      // Eventos — páginas propias en vez de los popups "ver todos"
+      // anteriores.
+      { path: 'infografias', element: <InfografiasPublicPage /> },
+      { path: 'tendencias', element: <TendenciasPage /> },
+      { path: 'eventos', element: <EventosPublicPage /> },
     ],
   },
   { path: '/login', element: <LoginPage /> },

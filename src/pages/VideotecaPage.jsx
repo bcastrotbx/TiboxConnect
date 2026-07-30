@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Icon } from '../components/shared/Icon.jsx';
 import { LoadingState, EmptyState, ErrorState } from '../components/shared/AsyncState.jsx';
 import { Pagination } from '../components/shared/Pagination.jsx';
+import { Breadcrumb } from '../components/shared/Breadcrumb.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import * as videotecaService from '../services/videotecaService.js';
 import * as eventService from '../services/eventService.js';
@@ -130,6 +131,7 @@ export function VideotecaPage() {
   return (
     <div className="section-card" style={{ padding: '28px 28px 4px' }}>
       <div style={{ marginBottom: 20 }}>
+        <Breadcrumb items={[{ label: 'Inicio', to: '/' }, { label: 'Videoteca' }]} />
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#0050C8', marginBottom: 6 }}>Videoteca</div>
         <h1 style={{ fontSize: 'clamp(1.5rem,2.4vw,2rem)', fontWeight: 700, color: 'var(--navy-900)', margin: '0 0 8px' }}>
           Explora <span style={{ background: 'var(--grad-title)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>Videos y Webinars</span>

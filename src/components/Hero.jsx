@@ -4,7 +4,7 @@ import { LoadingState } from './shared/AsyncState.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import * as homeService from '../services/homeService.js';
 import { ExploraPanel, InfographicsPanel } from './Media.jsx';
-import { NoticiasPanel, EventosPanel, EventosRealizadosPanel } from './Events.jsx';
+import { NoticiasPanel, EventosPanel } from './Events.jsx';
 
 /* ── Hero Slider ────────────────────────────────── */
 export function HeroSlider() {
@@ -195,10 +195,7 @@ export function ContentGrid() {
       <div id="section-videos"><ExploraPanel /></div>
       <div id="section-infographics"><InfographicsPanel /></div>
       <div id="section-news"><NoticiasPanel /></div>
-      <div id="section-events" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,alignItems:'stretch'}}>
-        <EventosPanel />
-        <EventosRealizadosPanel />
-      </div>
+      <div id="section-events"><EventosPanel /></div>
     </div>
   );
 }

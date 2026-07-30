@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Icon } from './shared/Icon.jsx';
 import { ModalShell } from './shared/ModalShell.jsx';
 import { CosmicBg } from './shared/CosmicBg.jsx';
@@ -122,9 +123,17 @@ function CalendarModal({ events, modalidadById, onClose }) {
   );
 }
 
-function EventCard({ ev, modalidadById, partnersById, onVerDetalle }) {
+// Exportado (ver ajuste posterior "Eventos en un solo bloque" en
+// FASE-06-07-08-CONTENIDO-REAL.md): antes solo se usaba dentro del panel de
+// "Próximos Eventos"; ahora también lo reutiliza la página /eventos para no
+// duplicar el diseño de tarjeta. La etiqueta "PRÓXIMAMENTE" se deriva de
+// `ev.rawStatus` (mapEventRow ya lo expone) en vez de requerir un prop
+// aparte — así funciona igual sea que la tarjeta venga de un listado
+// combinado (home, /eventos) o de uno ya filtrado.
+export function EventCard({ ev, modalidadById, partnersById, onVerDetalle }) {
   const m = modalidadById[ev.modalidad] || { color:'#0050C8', icon:'wifi' };
   const partner = partnersById[ev.partner] || { logo:'', name:'' };
+  const isUpcoming = ev.rawStatus !== 'completed';
   const [hov, setHov] = React.useState(false);
   return (
     <div
@@ -145,6 +154,11 @@ function EventCard({ ev, modalidadById, partnersById, onVerDetalle }) {
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:5,flexWrap:'wrap'}}>
+            {isUpcoming && (
+              <span style={{fontSize:9.5,fontWeight:700,letterSpacing:'0.04em',textTransform:'uppercase',color:'white',background:'#FF6707',borderRadius:999,padding:'2px 9px'}}>
+                Próximamente
+              </span>
+            )}
             <span style={{fontSize:10,fontWeight:700,borderRadius:999,padding:'2px 9px',background:`${m.color}15`,color:m.color,display:'inline-flex',alignItems:'center',gap:4}}>
               <Icon name={m.icon} style={{width:11,height:11}} />{ev.modalidad}
             </span>
@@ -183,106 +197,125 @@ function EventCard({ ev, modalidadById, partnersById, onVerDetalle }) {
   );
 }
 
+// Ajuste posterior — Eventos en un solo bloque (ver nota extensa en
+// FASE-06-07-08-CONTENIDO-REAL.md): antes el inicio mostraba "Próximos
+// Eventos" y "Eventos Realizados" como dos paneles lado a lado, cada uno con
+// su propia paginación por páginas de 2 tarjetas + puntos. Se unificaron en
+// un solo panel con un carrusel horizontal de scroll (mismo patrón visual e
+// interacción que ya usa InfographicsPanel: flechas a los costados,
+// scrollIntoView por tarjeta) en vez del paginado por "páginas" anterior —
+// mezclar próximos y realizados en páginas fijas de 2 hacía menos sentido
+// que dejarlos fluir en una sola cinta continua. Cada tarjeta (EventCard)
+// ya distingue "PRÓXIMAMENTE" vs realizado por su cuenta (ver
+// ev.rawStatus), así que no hace falta separarlos visualmente en grupos.
 export function EventosPanel() {
+  const navigate = useNavigate();
   const { status, data, error } = useAsyncData(() => Promise.all([
-    eventService.getUpcomingEvents(),
+    eventService.getAllEvents(),
     eventService.getModalidadConfig(),
     eventService.getPartners(),
   ]).then(([events, modalidad, partners]) => ({ events, modalidad, partners })), []);
 
   const [openEvent, setOpenEvent] = React.useState(null);
+  const [openPastEvent, setOpenPastEvent] = React.useState(null);
   const [showCal, setShowCal] = React.useState(false);
-  const [page, setPage] = React.useState(0);
+  const trackRef = React.useRef(null);
 
   const events = data?.events || [];
   const modalidadById = data?.modalidad || {};
   const partnersById = data?.partners || {};
-  const perPage = 2;
-  const pages = [];
-  for (let i = 0; i < events.length; i += perPage) pages.push(events.slice(i, i + perPage));
+  const upcomingEvents = events.filter(ev => ev.rawStatus !== 'completed');
+
+  const scroll = (dir) => {
+    const el = trackRef.current; if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior:'smooth' });
+  };
+
+  // Cada tarjeta mantiene el popup que ya tenía según su estado: próximos
+  // abren EventDetailModal (con "Inscríbete aquí"), realizados abren
+  // VistaModal (resumen + galería, sin inscripción) — no se cambió ninguno
+  // de los dos, solo se unificó el listado que los alimenta.
+  const handleVerDetalle = (ev) => {
+    if (ev.rawStatus === 'completed') setOpenPastEvent(ev);
+    else setOpenEvent(ev);
+  };
 
   return (
-    <div style={{display:'flex',flexDirection:'column',height:'100%',borderRadius:16,overflow:'hidden',position:'relative',background:'var(--grad-corporate)',boxShadow:'0 4px 18px rgba(2,18,55,0.2)'}}>
-      <CosmicBg variant={1} />
-      <div style={{position:'absolute',inset:0,background:'linear-gradient(160deg,rgba(2,16,46,0.82),rgba(5,24,72,0.65))',pointerEvents:'none'}}></div>
-      <div style={{position:'relative',display:'flex',flexDirection:'column',flex:1,minHeight:0}}>
-      <div style={{padding:'18px 20px 14px',borderBottom:'1px solid rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,position:'relative'}}>
-        <div>
-          <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:3}}>Agenda</div>
-          <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'white'}}>Próximos <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>Eventos</span></div>
+    <div>
+      <div style={{borderRadius:16,overflow:'hidden',position:'relative',background:'var(--grad-corporate)',boxShadow:'0 4px 18px rgba(2,18,55,0.2)'}}>
+        <CosmicBg variant={1} />
+        <div style={{position:'absolute',inset:0,background:'linear-gradient(160deg,rgba(2,16,46,0.82),rgba(5,24,72,0.65))',pointerEvents:'none'}}></div>
+        <div style={{position:'relative'}}>
+          <div style={{padding:'22px 24px 0',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16,flexWrap:'wrap'}}>
+            <div>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:6}}>Agenda</div>
+              <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'white'}}>Agenda y <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>Eventos TIBOX</span></div>
+            </div>
+            {status === 'success' && upcomingEvents.length > 0 && (
+              <button onClick={()=>setShowCal(true)} style={{
+                fontSize:12,fontWeight:700,color:'white',
+                background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.22)',borderRadius:9,
+                padding:'9px 15px',cursor:'pointer',display:'inline-flex',alignItems:'center',gap:7,whiteSpace:'nowrap',
+                transition:'transform 150ms,background 150ms',
+              }}
+                onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-1px)';e.currentTarget.style.background='rgba(255,255,255,0.22)';}}
+                onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.background='rgba(255,255,255,0.12)';}}
+              >
+                <Icon name="calendar-days" style={{width:14,height:14}} />Ver calendario
+              </button>
+            )}
+          </div>
+
+          {status === 'loading' && <LoadingState label="Cargando eventos…" tone="dark" />}
+          {status === 'error' && <ErrorState label="No pudimos cargar los eventos." tone="dark" error={error} />}
+          {status === 'success' && events.length === 0 && <EmptyState label="Todavía no hay eventos publicados." icon="calendar-check" tone="dark" />}
+          {status === 'success' && events.length > 0 && (
+            <div style={{display:'flex',alignItems:'stretch',padding:'18px 20px 24px',gap:10}}>
+              <button onClick={()=>scroll(-1)} aria-label="Anterior" style={navBtnGlassStyle}>
+                <Icon name="chevron-left" style={{width:18,height:18}} />
+              </button>
+              <div ref={trackRef} style={{
+                flex:1, display:'flex', gap:16,
+                overflowX:'auto', scrollSnapType:'x mandatory', scrollbarWidth:'none',
+              }} className="hide-scroll">
+                {events.map(ev => (
+                  <div key={ev.id} style={{flex:'0 0 min(320px, 85vw)', scrollSnapAlign:'start'}}>
+                    <EventCard ev={ev} modalidadById={modalidadById} partnersById={partnersById} onVerDetalle={handleVerDetalle} />
+                  </div>
+                ))}
+              </div>
+              <button onClick={()=>scroll(1)} aria-label="Siguiente" style={navBtnGlassStyle}>
+                <Icon name="chevron-right" style={{width:18,height:18}} />
+              </button>
+            </div>
+          )}
+
+          {openEvent && <EventDetailModal event={openEvent} modalidadById={modalidadById} onClose={()=>setOpenEvent(null)} />}
+          {openPastEvent && <VistaModal event={openPastEvent} onClose={()=>setOpenPastEvent(null)} />}
+          {showCal && <CalendarModal events={upcomingEvents} modalidadById={modalidadById} onClose={()=>setShowCal(false)} />}
         </div>
-        {status === 'success' && events.length > 0 && (
-          <button onClick={()=>setShowCal(true)} style={{
-            fontSize:12,fontWeight:700,color:'white',
-            background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.22)',borderRadius:9,
-            padding:'9px 15px',cursor:'pointer',display:'inline-flex',alignItems:'center',gap:7,whiteSpace:'nowrap',
-            transition:'transform 150ms,background 150ms',
-          }}
-            onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-1px)';e.currentTarget.style.background='rgba(255,255,255,0.22)';}}
-            onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.background='rgba(255,255,255,0.12)';}}
-          >
-            <Icon name="calendar-days" style={{width:14,height:14}} />Ver calendario
-          </button>
-        )}
       </div>
 
-      {status === 'loading' && <LoadingState label="Cargando eventos…" tone="dark" />}
-      {status === 'error' && <ErrorState label="No pudimos cargar los próximos eventos." tone="dark" error={error} />}
-      {status === 'success' && events.length === 0 && <EmptyState label="No hay eventos próximos por ahora." icon="calendar-check" tone="dark" />}
-      {status === 'success' && events.length > 0 && (
-        <React.Fragment>
-          <div style={{flex:1, display:'flex', alignItems:'stretch'}}>
-            <button onClick={()=>setPage((page-1+pages.length)%pages.length)}
-              aria-label="Anterior"
-              style={{flexShrink:0,width:32,background:'none',border:'none',cursor:'pointer',
-                color:'rgba(255,255,255,0.4)',display:'flex',alignItems:'center',justifyContent:'center',
-                transition:'color 150ms',
-              }}
-              onMouseEnter={e=>e.currentTarget.style.color='white'}
-              onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.4)'}
-            >
-              <Icon name="chevron-left" style={{width:18,height:18}} />
-            </button>
-            <div style={{flex:1,padding:'14px 0 4px',display:'flex',flexDirection:'column'}}>
-              <div key={page} style={{flex:1,display:'flex',flexDirection:'column',gap:12,animation:'tbxSlideIn 320ms cubic-bezier(0.25,0.8,0.3,1)'}}>
-                {pages[page].map(ev => <EventCard key={ev.id} ev={ev} modalidadById={modalidadById} partnersById={partnersById} onVerDetalle={setOpenEvent} />)}
-              </div>
-            </div>
-            <button onClick={()=>setPage((page+1)%pages.length)}
-              aria-label="Siguiente"
-              style={{flexShrink:0,width:32,background:'none',border:'none',cursor:'pointer',
-                color:'rgba(255,255,255,0.4)',display:'flex',alignItems:'center',justifyContent:'center',
-                transition:'color 150ms',
-              }}
-              onMouseEnter={e=>e.currentTarget.style.color='white'}
-              onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.4)'}
-            >
-              <Icon name="chevron-right" style={{width:18,height:18}} />
-            </button>
-          </div>
-
-          <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:7,padding:'10px 0 16px'}}>
-            {pages.map((_,i)=>(
-              <button key={i} onClick={()=>setPage(i)} aria-label={`Página ${i+1}`} style={{
-                width: i===page ? 20 : 7, height:7,
-                borderRadius:999,border:'none',cursor:'pointer',padding:0,
-                background: i===page ? 'var(--brand-cyan)' : 'rgba(255,255,255,0.3)',
-                transition:'all 300ms',
-              }}/>
-            ))}
-          </div>
-        </React.Fragment>
-      )}
-
-      {openEvent && <EventDetailModal event={openEvent} modalidadById={modalidadById} onClose={()=>setOpenEvent(null)} />}
-      {showCal && <CalendarModal events={events} modalidadById={modalidadById} onClose={()=>setShowCal(false)} />}
+      <div style={{display:'flex',justifyContent:'center',marginTop:16}}>
+        <button onClick={()=>navigate('/eventos')} style={{display:'inline-flex',alignItems:'center',gap:7,fontSize:12.5,fontWeight:700,cursor:'pointer',padding:'10px 18px',borderRadius:10,border:'1px solid var(--gray-200)',background:'white',color:'var(--gray-600)',whiteSpace:'nowrap'}}>
+          <Icon name="calendar-days" style={{width:14,height:14}} />Ver todos los eventos
+        </button>
       </div>
     </div>
   );
 }
+const navBtnGlassStyle = {
+  width:36, height:36, borderRadius:'50%',
+  background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.25)',
+  color:'white', cursor:'pointer', flexShrink:0,
+  display:'flex', alignItems:'center', justifyContent:'center',
+  transition:'background 150ms',
+};
 
 /* ── Vista modal (evento realizado + galería) ───── */
-function VistaModal({ event, onClose }) {
+// Exportado: reutilizado tanto por el carrusel combinado del inicio como
+// por la página /eventos para el detalle de eventos ya realizados.
+export function VistaModal({ event, onClose }) {
   const [lightbox, setLightbox] = React.useState(null);
   // Galería de eventos realizados fuera de alcance de la Fase 6/7/8 (ver
   // docs/phases/FASE-06-07-08-CONTENIDO-REAL.md) — eventos reales no traen
@@ -364,192 +397,14 @@ function VistaModal({ event, onClose }) {
   );
 }
 
-// Lista completa de eventos realizados (status='completed'), abierta desde
-// el botón "Ver eventos realizados". Mismo patrón visual que CalendarModal
-// (header oscuro + filas blancas). Al elegir uno, delega el detalle al
-// VistaModal ya existente (título/fecha/hora/lugar/reseña) — no se agregó
-// un segundo componente de detalle.
-function PastEventsListModal({ events, onClose, onSelect }) {
-  return (
-    <ModalShell onClose={onClose} maxWidth={520}>
-      <div style={{padding:'20px 24px',background:'var(--grad-corporate)',position:'relative',overflow:'hidden'}}>
-        <CosmicBg variant={2} />
-        <div style={{position:'absolute',inset:0,background:'rgba(3,18,55,0.55)'}}></div>
-        <div style={{position:'relative',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
-          <div>
-            <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:4}}>Historial</div>
-            <div style={{fontSize:17,fontWeight:700,color:'white'}}>Eventos realizados</div>
-          </div>
-          <button onClick={onClose} style={{background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:8,cursor:'pointer',color:'white',padding:6,flexShrink:0,display:'flex'}}>
-            <Icon name="x" style={{width:16,height:16}} />
-          </button>
-        </div>
-      </div>
-      <div style={{maxHeight:'56vh',overflowY:'auto',padding:'14px 18px 18px',display:'flex',flexDirection:'column',gap:8}}>
-        {events.map(ev => (
-          <button key={ev.id} onClick={()=>onSelect(ev)} style={{
-            display:'flex',gap:12,alignItems:'center',padding:'10px 12px',borderRadius:10,
-            border:'1px solid var(--gray-200)',background:'white',cursor:'pointer',textAlign:'left',width:'100%',fontFamily:'inherit',
-          }}
-            onMouseEnter={e=>e.currentTarget.style.background='var(--gray-50)'}
-            onMouseLeave={e=>e.currentTarget.style.background='white'}
-          >
-            <div style={{minWidth:46,textAlign:'center',background:'var(--navy-900)',borderRadius:8,padding:'6px 6px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-              <div style={{fontSize:7,fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--brand-cyan)',lineHeight:1.2}}>{ev.month}</div>
-              <div style={{fontSize:17,fontWeight:700,color:'white',lineHeight:1}}>{ev.day}</div>
-            </div>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:12.5,fontWeight:700,color:'var(--navy-900)',lineHeight:1.3}}>{ev.title}</div>
-              {ev.place && <div style={{fontSize:11,color:'var(--gray-500)',marginTop:3,display:'flex',alignItems:'center',gap:4}}><Icon name="map-pin" style={{width:11,height:11}} />{ev.place}</div>}
-            </div>
-            <Icon name="chevron-right" style={{width:16,height:16,color:'var(--gray-400)',flexShrink:0}} />
-          </button>
-        ))}
-      </div>
-    </ModalShell>
-  );
-}
-
-function PastEventCard({ ev, onVer }) {
-  const [hov, setHov] = React.useState(false);
-  return (
-    <div
-      onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{
-        border:'1px solid var(--gray-200)', borderRadius:14, padding:'14px 16px',
-        display:'flex', flexDirection:'column', gap:10, flex:1, justifyContent:'space-between',
-        background: hov ? 'white' : 'rgba(255,255,255,0.95)',
-        boxShadow: hov ? '0 6px 18px rgba(0,0,0,0.18)' : '0 1px 4px rgba(0,0,0,0.08)',
-        borderColor: hov ? 'var(--gray-300)' : 'var(--gray-200)',
-        transition:'box-shadow 180ms, border-color 180ms, background 180ms',
-      }}
-    >
-      <div style={{display:'flex',alignItems:'flex-start',gap:12}}>
-        <div style={{position:'relative',width:56,height:56,borderRadius:10,overflow:'hidden',flexShrink:0,background:'#0b1a3a'}}>
-          <img src={ev.img} alt={ev.title} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}} />
-          <div style={{position:'absolute',inset:0,background:'rgba(2,12,36,0.25)'}}></div>
-        </div>
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:5,flexWrap:'wrap'}}>
-            <span style={{fontSize:10,fontWeight:700,borderRadius:999,padding:'2px 9px',background:'rgba(13,138,78,0.12)',color:'#0d8a4e',display:'inline-flex',alignItems:'center',gap:4}}>
-              <Icon name="check-circle-2" style={{width:11,height:11}} />Realizado
-            </span>
-            <span style={{fontSize:10.5,color:'var(--gray-400)',display:'inline-flex',alignItems:'center',gap:4}}>
-              <Icon name="calendar" style={{width:11,height:11}} />{ev.day} {ev.month}
-            </span>
-          </div>
-          <div style={{fontSize:13.5,fontWeight:700,color:'var(--navy-900)',lineHeight:1.3}}>{ev.title}</div>
-        </div>
-      </div>
-
-      <p style={{fontSize:12,color:'var(--gray-600)',lineHeight:1.5,margin:0,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{ev.resumen}</p>
-
-      <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,paddingTop:2}}>
-        <button onClick={()=>onVer(ev)} style={{
-          fontSize:12,fontWeight:700,color:'white',
-          background:'linear-gradient(135deg, #0050C8 0%, #2a8fe0 100%)',border:'none',borderRadius:9,
-          padding:'8px 16px',cursor:'pointer',flexShrink:0,whiteSpace:'nowrap',
-          display:'inline-flex',alignItems:'center',gap:6,transition:'transform 150ms, box-shadow 150ms',
-          boxShadow:'0 2px 10px rgba(0,80,200,0.32)',
-        }}
-          onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-1px)';e.currentTarget.style.boxShadow='0 4px 16px rgba(0,80,200,0.45)';}}
-          onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.boxShadow='0 2px 10px rgba(0,80,200,0.32)';}}
-        >Ver detalles del evento <Icon name="arrow-right" style={{width:13,height:13}} /></button>
-      </div>
-    </div>
-  );
-}
-
-export function EventosRealizadosPanel() {
-  const { status, data, error } = useAsyncData(() => eventService.getPastEvents(), []);
-  const [openEvent, setOpenEvent] = React.useState(null);
-  const [showAll, setShowAll] = React.useState(false);
-  const [page, setPage] = React.useState(0);
-
-  const pastEventItems = data || [];
-  const perPage = 2;
-  const pages = [];
-  for (let i = 0; i < pastEventItems.length; i += perPage) pages.push(pastEventItems.slice(i, i + perPage));
-
-  return (
-    <div style={{display:'flex',flexDirection:'column',height:'100%',borderRadius:16,overflow:'hidden',position:'relative',background:'var(--grad-corporate)',boxShadow:'0 4px 18px rgba(2,18,55,0.2)'}}>
-      <CosmicBg variant={2} />
-      <div style={{position:'absolute',inset:0,background:'linear-gradient(160deg,rgba(2,16,46,0.82),rgba(5,24,72,0.65))',pointerEvents:'none'}}></div>
-      <div style={{position:'relative',display:'flex',flexDirection:'column',flex:1,minHeight:0}}>
-        <div style={{padding:'18px 20px 14px',borderBottom:'1px solid rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}}>
-          <div>
-            <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:3}}>Historial</div>
-            <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'white'}}>Eventos <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>Realizados</span></div>
-          </div>
-          {status === 'success' && pastEventItems.length > 0 && (
-            <button onClick={()=>setShowAll(true)} style={{
-              fontSize:12,fontWeight:700,color:'white',
-              background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.22)',borderRadius:9,
-              padding:'9px 15px',cursor:'pointer',display:'inline-flex',alignItems:'center',gap:7,whiteSpace:'nowrap',
-              transition:'transform 150ms,background 150ms',
-            }}
-              onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-1px)';e.currentTarget.style.background='rgba(255,255,255,0.22)';}}
-              onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.background='rgba(255,255,255,0.12)';}}
-            >
-              <Icon name="calendar-days" style={{width:14,height:14}} />Ver eventos realizados
-            </button>
-          )}
-        </div>
-
-        {status === 'loading' && <LoadingState label="Cargando eventos realizados…" tone="dark" />}
-        {status === 'error' && <ErrorState label="No pudimos cargar los eventos realizados." tone="dark" error={error} />}
-        {status === 'success' && pastEventItems.length === 0 && <EmptyState label="Todavía no hay eventos realizados." icon="calendar-check" tone="dark" />}
-        {status === 'success' && pastEventItems.length > 0 && (
-          <React.Fragment>
-            <div style={{flex:1, display:'flex', alignItems:'stretch'}}>
-              <button onClick={()=>setPage((page-1+pages.length)%pages.length)} aria-label="Anterior"
-                style={{flexShrink:0,width:32,background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',display:'flex',alignItems:'center',justifyContent:'center',transition:'color 150ms'}}
-                onMouseEnter={e=>e.currentTarget.style.color='white'} onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.4)'}>
-                <Icon name="chevron-left" style={{width:18,height:18}} />
-              </button>
-              <div style={{flex:1,padding:'14px 0 4px',display:'flex',flexDirection:'column'}}>
-                <div key={page} style={{flex:1,display:'flex',flexDirection:'column',gap:12,animation:'tbxSlideIn 320ms cubic-bezier(0.25,0.8,0.3,1)'}}>
-                  {pages[page].map(ev => <PastEventCard key={ev.id} ev={ev} onVer={setOpenEvent} />)}
-                </div>
-              </div>
-              <button onClick={()=>setPage((page+1)%pages.length)} aria-label="Siguiente"
-                style={{flexShrink:0,width:32,background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',display:'flex',alignItems:'center',justifyContent:'center',transition:'color 150ms'}}
-                onMouseEnter={e=>e.currentTarget.style.color='white'} onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.4)'}>
-                <Icon name="chevron-right" style={{width:18,height:18}} />
-              </button>
-            </div>
-
-            <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:7,padding:'10px 0 16px'}}>
-              {pages.map((_,i)=>(
-                <button key={i} onClick={()=>setPage(i)} aria-label={`Página ${i+1}`} style={{
-                  width: i===page ? 20 : 7, height:7, borderRadius:999,border:'none',cursor:'pointer',padding:0,
-                  background: i===page ? 'var(--brand-cyan)' : 'rgba(255,255,255,0.3)', transition:'all 300ms',
-                }}/>
-              ))}
-            </div>
-          </React.Fragment>
-        )}
-
-        {showAll && (
-          <PastEventsListModal
-            events={pastEventItems}
-            onClose={()=>setShowAll(false)}
-            onSelect={(ev)=>{ setShowAll(false); setOpenEvent(ev); }}
-          />
-        )}
-        {openEvent && <VistaModal event={openEvent} onClose={()=>setOpenEvent(null)} />}
-      </div>
-    </div>
-  );
-}
-
 // Popup de detalle de una noticia (Fase 6/7/8, ajuste posterior): antes el
 // clic en una tarjeta o en "Ver publicación" salía a una URL externa; ahora
 // abre este modal con el contenido completo (imagen, categoría, título y
 // body — o summary si el body está vacío, ver newsService.mapNewsRow). Sigue
 // el mismo patrón de ModalShell que InfografiaModal/EventDetailModal para
-// mantener consistencia visual.
-function NoticiaModal({ noticia, onClose }) {
+// mantener consistencia visual. Exportado: la página /tendencias reutiliza
+// este mismo popup en vez de duplicarlo.
+export function NoticiaModal({ noticia, onClose }) {
   return (
     <ModalShell onClose={onClose} maxWidth={640}>
       <div style={{ position:'relative', background: noticia.img ? '#0b1a3a' : 'var(--grad-corporate)' }}>
@@ -576,6 +431,7 @@ function NoticiaModal({ noticia, onClose }) {
 }
 
 export function NoticiasPanel() {
+  const navigate = useNavigate();
   const { data: allCats } = useAsyncData(() => newsService.getNewsCategories(), []);
   const { data: featuredNews } = useAsyncData(() => newsService.getFeaturedNews(), []);
   const [filter, setFilter] = React.useState('all');
@@ -589,9 +445,14 @@ export function NoticiasPanel() {
 
   return (
     <div className="section-card">
-      <div style={{padding:'20px 24px 0'}}>
-        <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:4}}>Al día</div>
-        <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'var(--navy-900)'}}>Tendencias <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>de la industria</span></div>
+      <div style={{padding:'20px 24px 0',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16,flexWrap:'wrap'}}>
+        <div>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:4}}>Al día</div>
+          <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'var(--navy-900)'}}>Tendencias <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>de la industria</span></div>
+        </div>
+        <button onClick={()=>navigate('/tendencias')} style={{display:'inline-flex',alignItems:'center',gap:7,fontSize:12.5,fontWeight:700,cursor:'pointer',padding:'9px 15px',borderRadius:10,border:'1px solid var(--gray-200)',background:'white',color:'var(--gray-600)',whiteSpace:'nowrap',flexShrink:0}}>
+          <Icon name="rss" style={{width:14,height:14}} />Ver todas las tendencias
+        </button>
       </div>
 
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:0,marginTop:16,borderTop:'1px solid var(--gray-100)'}}>

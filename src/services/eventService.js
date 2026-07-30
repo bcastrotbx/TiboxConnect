@@ -102,6 +102,18 @@ export async function getEventById(id) {
   return data ? mapEventRow(data) : null;
 }
 
+// Ajuste posterior — Eventos en un solo bloque (ver nota extensa en
+// FASE-06-07-08-CONTENIDO-REAL.md): el inicio y la página /eventos muestran
+// próximos y realizados combinados en un único listado. Reutiliza
+// getUpcomingEvents/getPastEvents en vez de duplicar la consulta — próximos
+// primero (ya vienen ordenados por sort_order/fecha ascendente, o sea lo
+// más accionable arriba), luego realizados (ya vienen por fecha
+// descendente, el más reciente primero).
+export async function getAllEvents() {
+  const [upcoming, past] = await Promise.all([getUpcomingEvents(), getPastEvents()]);
+  return [...upcoming, ...past];
+}
+
 export function getModalidadConfig() {
   return Promise.resolve(MODALIDAD);
 }
