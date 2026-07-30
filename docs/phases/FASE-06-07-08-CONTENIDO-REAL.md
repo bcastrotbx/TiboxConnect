@@ -576,6 +576,18 @@ Se eliminó por completo la lógica de navegación directa a rutas que se había
 
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
+## Ajuste posterior — etiqueta "PRÓXIMAMENTE" superpuesta sobre la imagen, en azul
+
+Ajuste a `EventCard` (`Events.jsx`), compartida por el carrusel de Eventos del inicio y la página `/eventos` (un solo cambio, ambos lugares se actualizan igual).
+
+La etiqueta "PRÓXIMAMENTE" pasó de estar en la fila de metadatos bajo la imagen (junto a la modalidad) a superponerse sobre la imagen, esquina superior derecha (`position:absolute`, dentro del contenedor de la imagen). Cambió de naranjo (`#FF6707`, mismo tono que "Ver detalles") a azul (`#0050C8`, el azul de marca que ya usa el sitio en botones, links y otros elementos — no se inventó un tono nuevo) con texto blanco, a propósito para que no compita visualmente ni se confunda con el botón de acción. La etiqueta de modalidad ("Online"/"Presencial") no se movió — sigue debajo de la imagen, junto a fecha y hora.
+
+Se agregó un fallback: si el evento no tiene `thumbnail_url` (`ev.img` vacío), la etiqueta vuelve a mostrarse inline junto a la modalidad (mismo lugar de antes) en vez de perderse — no todos los eventos tienen imagen cargada todavía.
+
+**Verificado en el navegador:** mismo resultado visual en el carrusel del inicio y en `/eventos` (misma tarjeta reutilizada). En móvil (375px) la etiqueta queda dentro del área de la imagen sin tapar información relevante (título, colaborador, botón), tanto en la grilla de `/eventos` como en el carrusel del inicio. `npm run lint` y `npm run build` sin errores.
+
+**Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
+
 ## Pendiente
 
 - **Braulio debe ejecutar la migración `20260731100000_events_sort_order.sql`** (agrega `sort_order` a `events`) en el SQL Editor de Supabase — hasta entonces, la sección Eventos del panel admin y "Próximos Eventos" del portal fallarán al cargar (columna inexistente). Contenido completo de la migración:

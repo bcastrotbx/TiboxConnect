@@ -149,10 +149,18 @@ export function EventCard({ ev, modalidadById, partnersById, onVerDetalle }) {
     >
       {/* Imagen destacada (thumbnail_url) — ajuste posterior (ver nota
           corta en FASE-06-07-08-CONTENIDO-REAL.md): mismo patrón visual que
-          InfoCard (Media.jsx), imagen arriba, contenido debajo. */}
+          InfoCard (Media.jsx), imagen arriba, contenido debajo. La etiqueta
+          "PRÓXIMAMENTE" se superpone acá (esquina superior derecha) — ver
+          ajuste posterior más abajo sobre por qué se movió y por qué es
+          azul en vez de naranjo. */}
       {ev.img && (
         <div style={{position:'relative', aspectRatio:'16/9', overflow:'hidden', background:'#0b1a3a', flexShrink:0}}>
           <img src={ev.img} alt="" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',transform:hov?'scale(1.04)':'none',transition:'transform 340ms'}} />
+          {isUpcoming && (
+            <span style={{position:'absolute',top:8,right:8,fontSize:9.5,fontWeight:700,letterSpacing:'0.04em',textTransform:'uppercase',color:'white',background:'#0050C8',borderRadius:999,padding:'3px 10px',boxShadow:'0 1px 4px rgba(0,0,0,0.25)'}}>
+              Próximamente
+            </span>
+          )}
         </div>
       )}
 
@@ -164,8 +172,8 @@ export function EventCard({ ev, modalidadById, partnersById, onVerDetalle }) {
           </div>
           <div style={{flex:1,minWidth:0}}>
             <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:5,flexWrap:'wrap'}}>
-              {isUpcoming && (
-                <span style={{fontSize:9.5,fontWeight:700,letterSpacing:'0.04em',textTransform:'uppercase',color:'white',background:'#FF6707',borderRadius:999,padding:'2px 9px'}}>
+              {!ev.img && isUpcoming && (
+                <span style={{fontSize:9.5,fontWeight:700,letterSpacing:'0.04em',textTransform:'uppercase',color:'white',background:'#0050C8',borderRadius:999,padding:'2px 9px'}}>
                   Próximamente
                 </span>
               )}
