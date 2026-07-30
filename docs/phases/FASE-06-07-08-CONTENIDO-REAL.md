@@ -631,6 +631,37 @@ Cuatro ajustes puntuales pedidos por Braulio.
 
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
+## Auditoría del panel admin — bugs encontrados/corregidos y funcionalidades faltantes
+
+Auditoría completa pedida por Braulio: revisión estática de código (agente de exploración) + pruebas en vivo del flujo crear/editar/publicar/eliminar en las 5 categorías de contenido y de las secciones cruzadas del admin (Dashboard, Leads, Mensajes, Opiniones, Administradores, Configuración, Perfil). El informe completo (con severidad, prioridad y esfuerzo estimado) se entregó a Braulio en el chat; acá queda el resumen de qué se tocó en el código.
+
+### Bugs corregidos en este ajuste
+
+1. **"Publicaciones recientes" del Dashboard siempre vacío.** `ContentTable section="recent"` llamaba `listContentItems(SECTION_TO_TYPE['recent'])`, y `'recent'` nunca estuvo en `SECTION_TO_TYPE` — la consulta filtraba por `type=undefined` y no traía nada, sin importar cuánto contenido real hubiera. Nueva función `adminContentService.listRecentContentItems()` (trae video+infografía+noticia combinados por fecha) y el widget pasa a ser de **solo lectura** (`RowMenu` con prop `readOnly`, solo ofrece "Ver publicación") — mezclar 3 tipos en una tabla significa que el modal de edición no puede saber con qué campos armarse, así que no se ofrece Editar/Eliminar/etc. desde ahí; para eso está la sección real de cada tipo.
+2. **"Abrir en el portal" (popup "Ver publicación") siempre enlazaba a "/"**, sin importar qué contenido se estuviera viendo. Ahora arma la URL real: `/videoteca/:slug` para videos, `/infografias`/`/tendencias` para infografías/noticias (no tienen página propia por ítem, van a su listado), `/eventos` para eventos.
+3. **Imágenes huérfanas en Storage al eliminar contenido.** Ni borrar un video/infografía/noticia/evento limpiaba su imagen subida al bucket `content-images` — quedaba ahí para siempre. `deleteContentItem`/`deleteEvent` ahora usan `.delete().select()` (una sola consulta) para saber qué imagen borrar, y solo la eliminan del Storage si ningún otro content_item/evento sigue apuntando a esa misma URL (`storageService.deleteContentImageIfUnused`) — "Duplicar" copia la URL de la imagen tal cual a la fila nueva, así que dos filas pueden compartir legítimamente el mismo archivo. **Nota:** se intentó extender esta limpieza también a "Editar" (cuando se reemplaza una imagen por otra), pero esa versión requería una consulta `SELECT` previa a la edición — en las pruebas de esta auditoría, agregar esa consulta coincidió con que la edición se quedara colgada indefinidamente (ver bug #6 más abajo). Se revirtió esa parte por precaución; "Editar" no limpia la imagen anterior todavía.
+4. **Sin confirmación antes de eliminar un mensaje de contacto.** El botón "Eliminar" de la bandeja de mensajes borraba la fila al primer clic, sin aviso (a diferencia del resto del admin, que sí usa `ConfirmDialog`). Se agregó el mismo diálogo de confirmación.
+5. **"Marcar todas como leídas" (campana de notificaciones) no tenía ningún `onClick`** — no hacía nada. Se conectó a un estado local que marca las notificaciones visibles como leídas (las notificaciones en sí siguen siendo datos de ejemplo, ver pendiente más abajo).
+6. **Eventos: sin validación de fecha de término anterior al inicio.** Se podía guardar un evento con `ends_at` antes que `starts_at`, sin ningún aviso ni acá ni en la base. Se agregó la validación en el formulario.
+
+### Bug crítico confirmado, NO corregido — requiere que Braulio lo pruebe en su propio navegador
+
+**Crear contenido nuevo desde el panel admin (botón "Nuevo" → "Guardar") se queda colgado indefinidamente**, en las 5 categorías (comparten el mismo código, `NewContentModal`/`createContentItem`/`createEvent`). El botón "Guardar" queda deshabilitado ("Guardando…") para siempre, sin error visible, y el contenido nunca llega a existir (confirmado revisando la lista desde una pestaña nueva). Se reprodujo de forma consistente en dos sesiones de auditoría independientes, esperando hasta 25+ segundos sin que resuelva. Además, en esta sesión, **editar contenido existente también se quedó colgado de la misma forma** después de haber quedado un "crear" pendiente sin resolver en la misma sesión del navegador — no se pudo determinar si son la misma causa o si el primer intento dejó algo bloqueado del lado del servidor (ej. una transacción/lock abierta).
+
+Se revisó todo el código involucrado (`adminContentService.js`, `adminEventsService.js`, `NewContentModal.handleSubmit`) sin encontrar ningún `await` faltante, promesa sin resolver, ni loop de reintento — todas las llamadas a Supabase están bien encadenadas con `throw error` en caso de fallo. Tampoco se encontró nada del lado de las políticas RLS (`is_admin()` es una función simple, sin recursión) ni triggers pesados en `content_items`/`events` que expliquen una demora así. **No se pudo determinar si esto es un bug real que Braulio vería en su propio navegador, o algo específico del entorno de pruebas en sandbox de esta sesión** (no fue posible inspeccionar los logs del proyecto de Supabase ni hacer una llamada HTTP directa de diagnóstico, bloqueada por el clasificador de seguridad de la herramienta). **Se pide que Braulio confirme si esto pasa también en su navegador normal** — si es así, revisar el dashboard de Supabase (Logs → API/Database) para ver si la petición llega y en qué se demora, o si el proyecto tiene algún límite de conexiones/rate limit activo.
+
+### Funcionalidades faltantes detectadas (no corregidas, quedan para que Braulio priorice)
+
+Ver la lista completa con prioridad y esfuerzo estimado en el resumen ejecutivo entregado en el chat. Los hallazgos más relevantes:
+
+- **Configuración/Portada (`/admin/portada`) es 100% decorativa.** Los 3 tabs (Slides del hero, Bloques de categoría, Contacto) leen datos de ejemplo y **el botón "Guardar cambios" no tiene ningún `onClick` en ninguno de los tres** — cualquier edición se pierde sin ningún aviso al recargar. Confirmado en vivo. Es la brecha más severa del panel: se ve como una función real y no lo es en absoluto.
+- **Servicios TIBOX, Mensajes de contacto y Opiniones de clientes no están conectados a Supabase** — leen datos de ejemplo (`adminService.js` + seeds), pese a que las tablas reales (`contact_messages`, `feedback`) ya existen con RLS completo para admin. Confirmado en vivo: los cambios en Servicios TIBOX se pierden al recargar.
+- **Perfil (`/admin/perfil`)** tampoco persiste nada real (avatar, contraseña, preferencias) — solo estado local con un `setTimeout` que simula guardar.
+- **Buscador del header ("Buscar…") es decorativo** — no tiene `value`/`onChange`, no filtra nada en ninguna página.
+- Sin historial/registro de actividad (quién publicó/editó/eliminó qué), sin roles diferenciados (todo admin invitado tiene acceso idéntico), sin exportar a CSV/Excel en ningún listado, sin paginación en Mensajes/Opiniones (aceptable hoy por ser datos de ejemplo pequeños, no una vez sean reales).
+
+**Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
+
 ## Pendiente
 
 - **Braulio debe ejecutar la migración `20260731100100_fix_infographic_thumbnail_duplicates.sql`** (reasigna imágenes únicas a 2 infografías que hoy comparten thumbnail con otras) en el SQL Editor de Supabase. Contenido completo de la migración:

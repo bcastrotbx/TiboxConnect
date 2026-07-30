@@ -64,7 +64,14 @@ function buildRowMenuItems(row, isEvent) {
   return items;
 }
 
-export function RowMenu({ row, isEvent, onAction }) {
+// `readOnly` (ver ajuste posterior, panel "Publicaciones recientes" del
+// Dashboard): esa tabla mezcla videos/infografías/noticias en un solo
+// listado — el modal de edición necesita saber el tipo exacto de cada fila
+// para mostrar los campos correctos, dato que este resumen no expone. En
+// vez de arriesgar un modal con campos equivocados, se limita a "Ver
+// publicación" (solo lectura) y se deja Editar/Eliminar/etc. para la
+// sección real de cada tipo.
+export function RowMenu({ row, isEvent, onAction, readOnly }) {
   const [open, setOpen] = React.useState(false);
   const [pos, setPos] = React.useState({ top:0, left:0 });
   const btnRef = React.useRef(null);
@@ -73,7 +80,7 @@ export function RowMenu({ row, isEvent, onAction }) {
     setPos({ top:r.bottom + 6, left:r.right - 200 });
     setOpen(o => !o);
   };
-  const items = buildRowMenuItems(row, isEvent);
+  const items = readOnly ? [{ id:'view', icon:'eye', label:'Ver publicación' }] : buildRowMenuItems(row, isEvent);
   return (
     <React.Fragment>
       <button ref={btnRef} onClick={toggle} title="Acciones" style={{ background:open?'var(--gray-100)':'none', border:'none', cursor:'pointer', padding:5, borderRadius:7, display:'inline-flex', color:'var(--gray-500)' }}>
@@ -122,8 +129,24 @@ export function ConfirmDialog({ title, message, confirmLabel, onConfirm, onCance
   );
 }
 
-export function ContentViewModal({ item, onClose }) {
+// Ajuste posterior (auditoría del panel admin): "Abrir en el portal" era un
+// link fijo a "/" sin importar qué contenido se estuviera viendo — nunca
+// llevaba al item real. Videos tienen página propia (/videoteca/:slug);
+// infografías y noticias no tienen una ruta por item (se abren en un popup
+// desde su listado), así que el mejor destino posible es esa página de
+// listado; eventos tampoco tienen detalle propio, van a /eventos.
+function contentPublicUrl(item, section) {
+  if (section === 'events') return '/eventos';
+  const type = item.type || (section === 'videos' ? 'video' : section === 'infographics' ? 'infographic' : section === 'news' ? 'news' : null);
+  if (type === 'video') return item.slug ? `/videoteca/${item.slug}` : '/videoteca';
+  if (type === 'infographic') return '/infografias';
+  if (type === 'news') return '/tendencias';
+  return '/';
+}
+
+export function ContentViewModal({ item, section, onClose }) {
   const { Badge } = useDesignSystem();
+  const publicUrl = contentPublicUrl(item, section);
   return (
     <div className="adm-modal-overlay" onClick={onClose}>
       <div className="adm-modal" onClick={e => e.stopPropagation()}>
@@ -149,7 +172,7 @@ export function ContentViewModal({ item, onClose }) {
         </div>
         <div style={{ padding:'16px 24px', borderTop:'1px solid var(--gray-200)', display:'flex', justifyContent:'flex-end', gap:10 }}>
           <button className="adm-mini-btn" onClick={onClose}>Cerrar</button>
-          <a href="/" target="_blank" className="adm-mini-btn primary"><Icon name="external-link" style={{ width:13, height:13 }} />Abrir en el portal</a>
+          <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="adm-mini-btn primary"><Icon name="external-link" style={{ width:13, height:13 }} />Abrir en el portal</a>
         </div>
       </div>
     </div>
@@ -349,6 +372,17 @@ export function NewContentModal({ section, item, onClose }) {
     setSaving(true);
     try {
       if (isEvent) {
+        const startsAt = new Date(`${startDate}T${startTime}`).toISOString();
+        const endsAt = endDate && endTime ? new Date(`${endDate}T${endTime}`).toISOString() : null;
+        // Ajuste posterior (auditoría del panel admin): no había ninguna
+        // validación que impidiera guardar un evento con término anterior
+        // al inicio — ni acá ni en la base (la columna `ends_at` no tiene
+        // un check constraint para esto).
+        if (endsAt && endsAt <= startsAt) {
+          setSaveError('La fecha y hora de término deben ser posteriores al inicio.');
+          setSaving(false);
+          return;
+        }
         const fields = {
           title: title.trim(),
           summary: summary || null,
@@ -360,8 +394,8 @@ export function NewContentModal({ section, item, onClose }) {
           partner_name: partnerName || null,
           visibility,
           status,
-          starts_at: new Date(`${startDate}T${startTime}`).toISOString(),
-          ends_at: endDate && endTime ? new Date(`${endDate}T${endTime}`).toISOString() : null,
+          starts_at: startsAt,
+          ends_at: endsAt,
         };
         if (item) await adminEventsService.updateEvent(item.id, fields);
         else await adminEventsService.createEvent(fields);
@@ -604,10 +638,14 @@ const PAGE_SIZE = 10;
 
 export function ContentTable({ section, title }) {
   const isEvent = section === 'events';
-  const allowReorder = section !== 'news';
+  const isRecent = section === 'recent';
+  const allowReorder = section !== 'news' && !isRecent;
   const fetcher = React.useCallback(
-    () => (isEvent ? adminEventsService.listEvents() : adminContentService.listContentItems(SECTION_TO_TYPE[section])),
-    [section, isEvent]
+    () => {
+      if (isRecent) return adminContentService.listRecentContentItems();
+      return isEvent ? adminEventsService.listEvents() : adminContentService.listContentItems(SECTION_TO_TYPE[section]);
+    },
+    [section, isEvent, isRecent]
   );
   const { status, data, error } = useAsyncData(fetcher, [section]);
   const [rows, setRows] = React.useState([]);
@@ -875,7 +913,7 @@ export function ContentTable({ section, title }) {
                   <td>{!isEvent && r.isFeatured && <Icon name="star" style={{ width:14, height:14, color:'#FFC600', fill:'#FFC600' }} />}</td>
                   <td style={{ color:'var(--gray-500)' }}>{r.date}</td>
                   <td style={{ textAlign:'right' }}>
-                    <RowMenu row={r} isEvent={isEvent} onAction={a => handle(a, r)} />
+                    <RowMenu row={r} isEvent={isEvent} readOnly={isRecent} onAction={a => handle(a, r)} />
                   </td>
                 </tr>
               );
@@ -884,7 +922,7 @@ export function ContentTable({ section, title }) {
         </table>
       )}
       {rows.length > 0 && <Pagination page={page} totalPages={totalPages} onChange={setPage} bordered />}
-      {viewing && <ContentViewModal item={viewing} onClose={() => setViewing(null)} />}
+      {viewing && <ContentViewModal item={viewing} section={section} onClose={() => setViewing(null)} />}
       {editing && <NewContentModal section={section} item={editing} onClose={() => setEditing(null)} />}
       {confirming !== null && (
         <ConfirmDialog title="Eliminar publicación"
@@ -938,10 +976,18 @@ function MessageViewModal({ msg, onClose }) {
   );
 }
 
+// Ajuste posterior (auditoría del panel admin): "Eliminar" no tenía
+// confirmación — un clic de más borraba el mensaje sin aviso. Se agrega
+// ConfirmDialog (mismo patrón que ContentTable). Sigue siendo un borrado
+// solo en el estado local del componente — `adminService.getMessages()`
+// lee de datos de ejemplo, no de la tabla real `contact_messages`, así que
+// esto no persiste entre recargas; conectar esta sección a Supabase queda
+// pendiente (ver informe de auditoría en FASE-06-07-08-CONTENIDO-REAL.md).
 export function MessagesTable() {
   const { status, data, error } = useAsyncData(() => adminService.getMessages(), []);
   const [rows, setRows] = React.useState([]);
   const [viewing, setViewing] = React.useState(null);
+  const [confirming, setConfirming] = React.useState(null);
   React.useEffect(() => { if (status === 'success') setRows(data || []); }, [status, data]);
 
   if (status === 'loading') {
@@ -983,7 +1029,7 @@ export function MessagesTable() {
                 <td style={{ textAlign:'right', whiteSpace:'nowrap' }}>
                   <div style={{ display:'inline-flex', gap:6 }}>
                     <button className="adm-mini-btn" onClick={() => setViewing(m)}><Icon name="eye" style={{width:13,height:13}} />Ver mensaje</button>
-                    <button className="adm-mini-btn danger" onClick={() => setRows(rows.filter((_,ix) => ix !== i))}><Icon name="trash-2" style={{width:13,height:13}} />Eliminar</button>
+                    <button className="adm-mini-btn danger" onClick={() => setConfirming(i)}><Icon name="trash-2" style={{width:13,height:13}} />Eliminar</button>
                   </div>
                 </td>
               </tr>
@@ -992,6 +1038,14 @@ export function MessagesTable() {
         </table>
       )}
       {viewing && <MessageViewModal msg={viewing} onClose={() => setViewing(null)} />}
+      {confirming !== null && (
+        <ConfirmDialog
+          title="¿Eliminar mensaje?"
+          message="Esta acción no se puede deshacer."
+          onCancel={() => setConfirming(null)}
+          onConfirm={() => { setRows(rows.filter((_, ix) => ix !== confirming)); setConfirming(null); }}
+        />
+      )}
     </div>
   );
 }

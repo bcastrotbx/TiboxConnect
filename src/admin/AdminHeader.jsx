@@ -32,8 +32,16 @@ const NEWABLE_PATHS = ['/admin/contenidos', '/admin/contenidos/infografias', '/a
 function NotificationBell() {
   const [open, setOpen] = React.useState(false);
   const { data } = useAsyncData(() => adminService.getNotifications(), []);
-  const notifications = data || [];
+  // Ajuste posterior (auditoría del panel admin): "Marcar todas como leídas"
+  // no tenía onClick — no hacía absolutamente nada. Las notificaciones
+  // siguen siendo datos de ejemplo (adminService.getNotifications() no está
+  // conectado a eventos reales todavía, ver informe de auditoría), pero el
+  // control ya no debe quedar muerto — se lleva localmente qué índices se
+  // marcaron leídos sobre los datos que sí llegan.
+  const [readIds, setReadIds] = React.useState(() => new Set());
+  const notifications = (data || []).map((n, i) => (readIds.has(i) ? { ...n, unread: false } : n));
   const unread = notifications.filter(n => n.unread).length;
+  const markAllRead = () => setReadIds(new Set((data || []).map((_, i) => i)));
   return (
     <div style={{ position:'relative' }}>
       <button onClick={() => setOpen(o => !o)} title="Notificaciones" style={{ position:'relative', width:38, height:38, borderRadius:10, border:'1px solid var(--gray-200)', background:open?'var(--gray-50)':'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--gray-600)' }}>
@@ -66,7 +74,7 @@ function NotificationBell() {
               ))}
             </div>
             <div style={{ padding:'11px 16px', textAlign:'center' }}>
-              <span style={{ fontSize:12.5, fontWeight:700, color:'#0050C8', cursor:'pointer' }}>Marcar todas como leídas</span>
+              <span onClick={markAllRead} style={{ fontSize:12.5, fontWeight:700, color:'#0050C8', cursor:'pointer' }}>Marcar todas como leídas</span>
             </div>
           </div>
         </React.Fragment>

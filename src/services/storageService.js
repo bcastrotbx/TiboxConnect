@@ -16,6 +16,40 @@ const ALLOWED_TYPES = {
 
 export class InvalidImageError extends Error {}
 
+function extractStoragePath(url) {
+  if (!url) return null;
+  const marker = `/storage/v1/object/public/${BUCKET}/`;
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null; // URL externa (ej. Unsplash) — no es nuestra, nunca se toca
+  return url.slice(idx + marker.length);
+}
+
+// Ajuste posterior (auditoría del panel admin): eliminar o editar un
+// contenido/evento no borraba su imagen del bucket `content-images` —
+// cada archivo subido queda huérfano para siempre. Se agrega esta limpieza,
+// llamada desde adminContentService/adminEventsService después de un
+// delete o de un update que reemplaza la imagen. Antes de borrar, confirma
+// que ningún otro content_item ni evento siga apuntando a la misma URL —
+// "Duplicar" copia thumbnail_url tal cual a la fila nueva, así que dos
+// filas pueden compartir legítimamente el mismo archivo. Nunca lanza: un
+// archivo huérfano es un problema menor comparado con que falle la
+// operación principal (delete/update) por un error de limpieza secundario.
+export async function deleteContentImageIfUnused(url) {
+  const path = extractStoragePath(url);
+  if (!path) return;
+  try {
+    const [{ count: itemsCount, error: itemsError }, { count: eventsCount, error: eventsError }] = await Promise.all([
+      supabase.from('content_items').select('id', { count: 'exact', head: true }).eq('thumbnail_url', url),
+      supabase.from('events').select('id', { count: 'exact', head: true }).eq('thumbnail_url', url),
+    ]);
+    if (itemsError || eventsError) throw itemsError || eventsError;
+    if ((itemsCount || 0) > 0 || (eventsCount || 0) > 0) return;
+    await supabase.storage.from(BUCKET).remove([path]);
+  } catch (err) {
+    console.error('No se pudo limpiar la imagen huérfana en Storage:', err);
+  }
+}
+
 export async function uploadContentImage(file) {
   if (!file) {
     throw new InvalidImageError('No se seleccionó ningún archivo.');

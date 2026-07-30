@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase.js';
 import { makeSlug } from '../lib/slugify.js';
 import { formatShortDateEs } from '../lib/formatters.js';
+import { deleteContentImageIfUnused } from './storageService.js';
 
 // Fase 6/7/8 (Parte C) — CRUD real de events para el panel admin. Mismo
 // principio que adminContentService.js: RLS protege cada operación en el
@@ -12,6 +13,7 @@ const MODALITY_LABEL = { online: 'Online', presential: 'Presencial', hybrid: 'H�
 function mapAdminRow(row) {
   return {
     id: row.id,
+    slug: row.slug,
     title: row.title,
     cat: MODALITY_LABEL[row.modality] || row.modality, // events no tienen categoría propia (ver DATA-MODEL.md)
     status: STATUS_LABEL[row.status] || row.status,
@@ -61,7 +63,15 @@ export async function updateEvent(id, fields) {
   if (error) throw error;
 }
 
+// Ajuste posterior (auditoría del panel admin): mismo fix que
+// adminContentService.deleteContentItem — limpia el banner en Storage al
+// eliminar el evento, en una sola llamada (`.delete().select()`, sin
+// consulta previa aparte), solo si ningún otro content_item/evento sigue
+// apuntando a esa misma imagen. Ver esa misma función para la nota sobre
+// por qué "Editar" no limpia la imagen anterior todavía.
 export async function deleteEvent(id) {
-  const { error } = await supabase.from('events').delete().eq('id', id);
+  const { data: deleted, error } = await supabase.from('events').delete().select('thumbnail_url').eq('id', id);
   if (error) throw error;
+  const thumbnailUrl = deleted?.[0]?.thumbnail_url;
+  if (thumbnailUrl) await deleteContentImageIfUnused(thumbnailUrl);
 }
