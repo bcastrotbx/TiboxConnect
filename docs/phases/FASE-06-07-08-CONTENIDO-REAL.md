@@ -703,8 +703,21 @@ No se pudo probar en vivo en esta sesión (sin sesión de admin, misma limitaci�
 
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
+### Bug encontrado y corregido: `site_settings` y `services` inaccesibles en producción (401)
+
+Braulio pidió verificar en vivo contra `https://tibox-connect.vercel.app` que todo lo de esta fase funcionara en producción, no solo en local. El código desplegado sí correspondía al último commit (`afa45f3` — el hash del bundle, `index-AEt7CI2m.js`, es idéntico al de la última build local de esta sesión), pero el bloque de Contacto público mostraba el texto de reserva (fallback) en vez del real.
+
+Diagnóstico en vivo (haciendo las mismas consultas REST que hace la app, con la misma clave pública embebida en el bundle — sin usar ninguna sesión ni credencial ajena): `GET /rest/v1/site_settings` y `GET /rest/v1/services` devolvían `401 permission denied for table X`, con el hint `GRANT the required privileges to the current role with: GRANT SELECT ON public.X TO anon`. `categories`, `hero_slides`, `events` y `content_items` sí respondían `200` normalmente.
+
+Causa: este proyecto Supabase tiene **"Automatically expose new tables" desactivado** — hallazgo ya documentado en la Fase 5 (`20260728110000_grants_anon_authenticated.sql`), que por eso existe: cada tabla nueva necesita su propio `GRANT` de Postgres a nivel de tabla, además de las políticas RLS — sin el GRANT, PostgREST rechaza la petición antes de siquiera evaluar RLS. Se me olvidó replicar ese patrón al crear `site_settings` y `services` en esta misma fase — sus migraciones solo tenían RLS, sin GRANT.
+
+**Corrección:** nueva migración `20260731100400_grants_site_settings_services.sql`, que agrega los GRANT faltantes (mismo alcance que las políticas RLS ya existentes: `anon` solo `select`, `authenticated` según corresponda a cada tabla). No se tocó ningún otro archivo — es un fix puramente de base de datos, el código ya estaba correcto.
+
+**Nota operacional:** durante el diagnóstico se hizo un `INSERT` real de prueba en `contact_messages` (fila con `full_name = 'test-verificacion-no-borrar'`) para confirmar que el insert público funciona — Braulio debe borrarla manualmente desde `/admin/mensajes` o con `delete from public.contact_messages where full_name = 'test-verificacion-no-borrar';`.
+
 ## Pendiente
 
+- **Braulio debe ejecutar la migración `20260731100400_grants_site_settings_services.sql`** (agrega los GRANT de Postgres faltantes para `site_settings` y `services` — sin esto, ambas tablas devuelven 401 en cualquier entorno, ya confirmado en producción) en el SQL Editor de Supabase, **después** de haber corrido `20260731100200_site_settings.sql` y `20260731100300_services.sql`. Contenido completo de la migración en `supabase/migrations/20260731100400_grants_site_settings_services.sql`.
 - **Braulio debe ejecutar la migración `20260731100300_services.sql`** (crea la tabla `services` con el catálogo real de Servicios TIBOX, sembrada con las 6 unidades ya usadas por el portal) en el SQL Editor de Supabase — hasta entonces, `/admin/contenidos/servicios` no puede cargar ni guardar nada real. Contenido completo de la migración en `supabase/migrations/20260731100300_services.sql`.
 - **Braulio debe ejecutar la migración `20260731100200_site_settings.sql`** (crea la tabla `site_settings`, usada por el tab "Contacto" de `/admin/portada` y por el bloque de contacto público en `Services.jsx`) en el SQL Editor de Supabase — hasta entonces, ese tab y el bloque de contacto público funcionan con los textos de reserva (fallback) hardcodeados, sin persistencia real. Contenido completo de la migración en `supabase/migrations/20260731100200_site_settings.sql`.
 - **Braulio debe ejecutar la migración `20260731100100_fix_infographic_thumbnail_duplicates.sql`** (reasigna imágenes únicas a 2 infografías que hoy comparten thumbnail con otras) en el SQL Editor de Supabase. Contenido completo de la migración:
