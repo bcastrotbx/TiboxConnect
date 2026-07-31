@@ -49,15 +49,6 @@ export const NOTIFICATIONS = [
   { icon:'shield-check', tone:'#16a34a', title:'Respaldo completado', desc:'Copia de seguridad del portal finalizada', time:'Ayer', unread:false },
 ];
 
-export const DEFAULT_SERVICES = {
-  'Infraestructura TI': { icon:'network', bullets:['Redes, servidores y respaldo gestionados 24/7', 'Monitoreo proactivo con NOC propio', 'SLA de disponibilidad garantizado'] },
-  'Ciberseguridad': { icon:'lock', bullets:['SOC gestionado con detección y respuesta', 'Protección de endpoints y correo', 'Cumplimiento normativo y auditorías'] },
-  'Soluciones Cloud': { icon:'cloud', bullets:['Migración a Azure / AWS sin downtime', 'Optimización de costos (FinOps)', 'Arquitecturas híbridas y multicloud'] },
-  'Analítica TI': { icon:'trending-up', bullets:['Dashboards de operación en tiempo real', 'Modelos predictivos de demanda', 'Integración con tus fuentes de datos'] },
-  'Consultoría TI': { icon:'layers', bullets:['Diagnóstico y roadmap tecnológico', 'Acompañamiento en transformación digital', 'Gestión de proyectos TI'] },
-  'Soluciones Inteligentes': { icon:'cpu', bullets:['Automatización de procesos con IA', 'Chatbots y asistentes virtuales', 'Integración de modelos generativos'] },
-};
-
 export const ICON_LIBRARY = ['network','lock','cloud','trending-up','layers','cpu','shield-check','server','database','wifi','globe','activity','film','rss','calendar-check','message-circle','star','briefcase','settings','users','headphones','zap'];
 
 export const CONTENT_TYPE_CATEGORIES = ['Microsoft 365', 'Ciberseguridad', 'Inteligencia Artificial', 'Cloud', 'Infraestructura', 'Analítica TI', 'Eventos'];

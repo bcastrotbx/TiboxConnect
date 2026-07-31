@@ -678,10 +678,24 @@ Ambas secciones leían datos de ejemplo (`adminService.getMessages()/getOpinions
 
 No se pudo probar el envío real de ningún formulario en vivo en esta sesión (limitación ya documentada de esta herramienta con las llamadas a Supabase — ver bug crítico descartado, arriba). Verificado con lint + build limpios y revisión de código contra el mismo patrón ya probado en producción por Braulio (`submitInfografiaLead`). Falta que Braulio pruebe en su navegador: enviar el formulario de contacto, enviar una opinión, y verificar que ambos aparezcan en `/admin/mensajes` y `/admin/mensajes/opiniones`.
 
+### Servicios TIBOX conectado a Supabase (y desconexión de fondo corregida)
+
+Al investigar esta sección se encontró algo más grave que "no conectado a Supabase": el admin (`/admin/contenidos/servicios`) editaba un dataset de ejemplo (`adminSeed.js DEFAULT_SERVICES`, solo ícono + lista de puntos, 7 unidades genéricas) **sin ninguna relación** con el catálogo real mostrado en el portal público (`servicesSeed.js servicesV2`, 6 unidades con logo, gradiente, descripción y grupos de ítems detallados) — ni siquiera los nombres coincidían. No se notaba porque el bloque público está oculto (`SHOW_SERVICES = false` en `HomePage.jsx`).
+
+Confirmado con Braulio antes de implementar: en vez de simplemente persistir el dataset chico que el admin ya editaba (dejando la desconexión como estaba), se optó por la solución completa:
+
+- **Nueva tabla `services`** (migración `20260731100300_services.sql`) que replica la estructura real: `slug, label, description, icon, gradient, logo_url, detail jsonb (fullName/intro/groups[{name,items[]}]), sort_order, is_active`. Sembrada con las 6 unidades reales de `servicesSeed.js`, migradas tal cual.
+- **`adminServicesService.js`** — CRUD real (`listServices/createService/updateService/deleteService`).
+- **`ServiciosPage.jsx` (admin) reescrito** — el modal de edición ahora cubre toda la estructura real (nombre, descripción corta, ícono, logo, y los grupos de ítems del popup público), no solo una lista de puntos sueltos. Se agregó "Eliminar" (no existía).
+- **`serviceCatalogService.getServiceCatalog()` (público) ahora lee la tabla real** en vez del seed estático — el bloque sigue oculto (`SHOW_SERVICES=false`, no se tocó esa decisión), pero cuando se reactive mostrará el mismo catálogo que edita el admin, no datos congelados en el código. `servicesSeed.js` se redujo a `OFFICES_MAP` (las oficinas de los mapas, sin tabla ni se pidió una).
+
+No se pudo probar en vivo en esta sesión (sin sesión de admin, misma limitación de siempre). Verificado con lint + build limpios. Falta que Braulio pruebe: editar un servicio, verificar que persiste al recargar, y — si en algún momento reactiva `SHOW_SERVICES`— confirmar que el bloque público muestra el catálogo real.
+
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
 ## Pendiente
 
+- **Braulio debe ejecutar la migración `20260731100300_services.sql`** (crea la tabla `services` con el catálogo real de Servicios TIBOX, sembrada con las 6 unidades ya usadas por el portal) en el SQL Editor de Supabase — hasta entonces, `/admin/contenidos/servicios` no puede cargar ni guardar nada real. Contenido completo de la migración en `supabase/migrations/20260731100300_services.sql`.
 - **Braulio debe ejecutar la migración `20260731100200_site_settings.sql`** (crea la tabla `site_settings`, usada por el tab "Contacto" de `/admin/portada` y por el bloque de contacto público en `Services.jsx`) en el SQL Editor de Supabase — hasta entonces, ese tab y el bloque de contacto público funcionan con los textos de reserva (fallback) hardcodeados, sin persistencia real. Contenido completo de la migración en `supabase/migrations/20260731100200_site_settings.sql`.
 - **Braulio debe ejecutar la migración `20260731100100_fix_infographic_thumbnail_duplicates.sql`** (reasigna imágenes únicas a 2 infografías que hoy comparten thumbnail con otras) en el SQL Editor de Supabase. Contenido completo de la migración:
   ```sql
