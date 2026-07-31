@@ -88,9 +88,24 @@ export async function createContentItem(type, fields) {
   if (error) throw error;
 }
 
+// Ajuste posterior (auditoría del panel admin): al reemplazar la imagen de
+// un contenido desde "Editar", la imagen anterior quedaba huérfana en
+// Storage — igual que el problema que ya se corrigió para "Eliminar". Si
+// `fields` trae un `thumbnail_url` nuevo, se lee primero la URL anterior;
+// tras un update exitoso, si la URL cambió, se limpia la anterior (solo si
+// ningún otro content_item/evento sigue usándola, ver
+// storageService.deleteContentImageIfUnused).
 export async function updateContentItem(id, fields) {
+  let previousUrl = null;
+  if ('thumbnail_url' in fields) {
+    const { data } = await supabase.from('content_items').select('thumbnail_url').eq('id', id).single();
+    previousUrl = data?.thumbnail_url || null;
+  }
   const { error } = await supabase.from('content_items').update(fields).eq('id', id);
   if (error) throw error;
+  if (previousUrl && previousUrl !== fields.thumbnail_url) {
+    await deleteContentImageIfUnused(previousUrl);
+  }
 }
 
 // Ajuste posterior (auditoría del panel admin): eliminar no limpiaba la
@@ -99,14 +114,7 @@ export async function updateContentItem(id, fields) {
 // borrada en la misma llamada (sin una consulta previa aparte) para saber
 // qué imagen limpiar; la limpieza en sí solo procede si ningún otro
 // content_item/evento sigue usando esa URL (ver
-// storageService.deleteContentImageIfUnused). Nota: se probó primero una
-// versión con un SELECT previo a editar/eliminar para poder limpiar
-// también al reemplazar una imagen desde "Editar" — se revirtió esa parte
-// porque, en las pruebas de esta auditoría, agregar esa consulta extra
-// coincidió con que la operación se colgara indefinidamente (ver bug
-// "crear contenido nuevo se cuelga" en el informe de auditoría — no se
-// pudo confirmar si la causa es la misma). Editar sigue sin limpiar la
-// imagen anterior; solo eliminar lo hace, con esta única consulta.
+// storageService.deleteContentImageIfUnused).
 export async function deleteContentItem(id) {
   const { data: deleted, error } = await supabase.from('content_items').delete().select('thumbnail_url').eq('id', id);
   if (error) throw error;

@@ -58,17 +58,28 @@ export async function createEvent(fields) {
   if (error) throw error;
 }
 
+// Ajuste posterior (auditoría del panel admin): mismo fix que
+// adminContentService.updateContentItem — al reemplazar el banner desde
+// "Editar", se limpia la imagen anterior en Storage si nada más la sigue
+// usando.
 export async function updateEvent(id, fields) {
+  let previousUrl = null;
+  if ('thumbnail_url' in fields) {
+    const { data } = await supabase.from('events').select('thumbnail_url').eq('id', id).single();
+    previousUrl = data?.thumbnail_url || null;
+  }
   const { error } = await supabase.from('events').update(fields).eq('id', id);
   if (error) throw error;
+  if (previousUrl && previousUrl !== fields.thumbnail_url) {
+    await deleteContentImageIfUnused(previousUrl);
+  }
 }
 
 // Ajuste posterior (auditoría del panel admin): mismo fix que
 // adminContentService.deleteContentItem — limpia el banner en Storage al
 // eliminar el evento, en una sola llamada (`.delete().select()`, sin
 // consulta previa aparte), solo si ningún otro content_item/evento sigue
-// apuntando a esa misma imagen. Ver esa misma función para la nota sobre
-// por qué "Editar" no limpia la imagen anterior todavía.
+// apuntando a esa misma imagen.
 export async function deleteEvent(id) {
   const { data: deleted, error } = await supabase.from('events').delete().select('thumbnail_url').eq('id', id);
   if (error) throw error;
