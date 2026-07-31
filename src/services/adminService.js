@@ -1,5 +1,5 @@
 import {
-  DASHBOARD_STATS, CONTENT_ITEMS, NOTIFICATIONS, MESSAGES, OPINIONS,
+  DASHBOARD_STATS, CONTENT_ITEMS, NOTIFICATIONS,
   DEFAULT_SERVICES, ICON_LIBRARY, CONTENT_TYPE_CATEGORIES,
 } from '../data/seed/adminSeed.js';
 import { simulateDelay } from './simulateDelay.js';
@@ -20,14 +20,6 @@ export function getContentItems(section) {
 
 export function getNotifications() {
   return simulateDelay(NOTIFICATIONS);
-}
-
-export function getMessages() {
-  return simulateDelay(MESSAGES);
-}
-
-export function getOpinions() {
-  return simulateDelay(OPINIONS);
 }
 
 export function getDefaultServicesConfig() {

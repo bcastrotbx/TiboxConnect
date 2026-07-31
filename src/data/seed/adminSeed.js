@@ -49,26 +49,6 @@ export const NOTIFICATIONS = [
   { icon:'shield-check', tone:'#16a34a', title:'Respaldo completado', desc:'Copia de seguridad del portal finalizada', time:'Ayer', unread:false },
 ];
 
-export const MESSAGES = [
-  { name:'Fernanda Rojas', email:'fernanda.rojas@constructoraandes.cl', empresa:'Constructora Andes', servicio:'Ciberseguridad', fecha:'12 Jul 2026', estado:'Nuevo',
-    mensaje:'Hola, estamos evaluando reforzar la seguridad de nuestra red corporativa tras un intento de phishing reciente. Nos interesa conocer sus planes de SOC gestionado y tiempos de respuesta ante incidentes.' },
-  { name:'Marcelo Iturra', email:'m.iturra@logisticasur.cl', empresa:'Grupo Logístico Sur', servicio:'Infraestructura TI', fecha:'11 Jul 2026', estado:'Nuevo',
-    mensaje:'Buenas tardes, necesitamos modernizar la conectividad entre 5 sucursales con una solución SD-WAN. ¿Podrían enviarnos una propuesta técnica y comercial?' },
-  { name:'Camila Vidal', email:'camila.vidal@retailexpress.cl', empresa:'Retail Express', servicio:'Soluciones Cloud', fecha:'09 Jul 2026', estado:'Respondido',
-    mensaje:'Queremos migrar nuestro ERP a la nube antes de fin de año. Nos gustaría agendar una reunión para revisar alternativas y costos estimados.' },
-  { name:'Andrés Peña', email:'apena@clinicasanrafael.cl', empresa:'Clínica San Rafael', servicio:'Consultoría TI', fecha:'07 Jul 2026', estado:'Respondido',
-    mensaje:'Solicitamos una auditoría de nuestra infraestructura actual para identificar riesgos de continuidad operacional en el área clínica.' },
-  { name:'Josefina Muñoz', email:'jmunoz@agroindustrialmaule.cl', empresa:'Agroindustrial Maule', servicio:'Analítica TI', fecha:'03 Jul 2026', estado:'Cerrado',
-    mensaje:'Nos gustaría implementar dashboards de producción en tiempo real. ¿Tienen experiencia en el rubro agroindustrial?' },
-];
-
-export const OPINIONS = [
-  { name:'Rodrigo Salinas', email:'rsalinas@vertice.cl', rating:5, fecha:'10 Jul 2026', mensaje:'Excelente atención del equipo de soporte, resolvieron nuestro incidente de red en menos de una hora. El portal Connect también nos ha facilitado mucho el seguimiento de tickets.' },
-  { name:'Valentina Correa', email:'vcorrea@puertoblanco.cl', rating:4, fecha:'08 Jul 2026', mensaje:'Muy buena experiencia general con el equipo TIBOX. Sería ideal tener más webinars grabados disponibles para revisar con el equipo interno.' },
-  { name:'Ignacio Bravo', email:'ibravo@textilnorte.cl', rating:5, fecha:'05 Jul 2026', mensaje:'El taller de SD-WAN fue muy práctico y aplicable. Felicitaciones al equipo de eventos por la organización.' },
-  { name:'Daniela Contreras', email:'dcontreras@saludintegra.cl', rating:3, fecha:'01 Jul 2026', mensaje:'El servicio es bueno, pero nos gustaría mayor rapidez en las respuestas del formulario de contacto general.' },
-];
-
 export const DEFAULT_SERVICES = {
   'Infraestructura TI': { icon:'network', bullets:['Redes, servidores y respaldo gestionados 24/7', 'Monitoreo proactivo con NOC propio', 'SLA de disponibilidad garantizado'] },
   'Ciberseguridad': { icon:'lock', bullets:['SOC gestionado con detección y respuesta', 'Protección de endpoints y correo', 'Cumplimiento normativo y auditorías'] },

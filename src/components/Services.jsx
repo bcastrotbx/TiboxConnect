@@ -171,6 +171,7 @@ export function ContactFormSection() {
   const [sent, setSent] = React.useState(false);
   const [sending, setSending] = React.useState(false);
   const [privacyAccepted, setPrivacyAccepted] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState('');
   const { data: settingsData } = useAsyncData(() => siteSettingsService.getContactSettings(), []);
   const settings = { ...CONTACT_FALLBACK, ...settingsData };
 
@@ -181,7 +182,10 @@ export function ContactFormSection() {
   const handleSubmit = (e) => {
     e.preventDefault();
     setSending(true);
-    formService.submitContactForm(form).then(() => { setSending(false); setSent(true); });
+    setSubmitError('');
+    formService.submitContactForm(form)
+      .then(() => { setSending(false); setSent(true); })
+      .catch(() => { setSending(false); setSubmitError('No pudimos enviar tu mensaje. Inténtalo nuevamente.'); });
   };
 
   return (
@@ -271,6 +275,8 @@ export function ContactFormSection() {
                   style={{width:16,height:16,marginTop:1,accentColor:'#FF6707',cursor:'pointer',flexShrink:0}} />
                 <span>He leído y acepto el <a href="https://www.tibox.cl/aviso-de-privacidad/" target="_blank" rel="noopener noreferrer" style={{color:'var(--brand-cyan)',fontWeight:600}}>Aviso de Privacidad / Información del titular</a>.</span>
               </label>
+
+              {submitError && <div style={{fontSize:12.5,color:'#ff8a8a'}}>{submitError}</div>}
 
               <button type="submit" disabled={sending || !privacyAccepted} style={{
                 padding:'11px', borderRadius:10, border:'none', cursor: (sending || !privacyAccepted)?'default':'pointer',

@@ -18,12 +18,20 @@ export function OpinionPanel() {
   const [showModal, setShowModal] = React.useState(false);
   const [form, setForm] = React.useState({name:'',email:'',msg:''});
   const [sent, setSent] = React.useState(false);
+  const [sending, setSending] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setSending(true);
+    setSubmitError('');
     formService.submitOpinionForm({ ...form, rating }).then(() => {
+      setSending(false);
       setSent(true);
       setTimeout(()=>{setShowModal(false);setSent(false);setForm({name:'',email:'',msg:''});setRating(0);},1800);
+    }).catch(() => {
+      setSending(false);
+      setSubmitError('No pudimos enviar tu opinión. Inténtalo nuevamente.');
     });
   };
 
@@ -118,10 +126,11 @@ export function OpinionPanel() {
                       onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'}
                     />
                   </div>
-                  <button type="submit" style={{width:'100%',padding:'12px',borderRadius:10,border:'none',cursor:'pointer',background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',color:'white',fontSize:14,fontWeight:700,boxShadow:'0 2px 14px rgba(255,103,7,0.35)',transition:'transform 150ms'}}
-                    onMouseEnter={e=>e.currentTarget.style.transform='translateY(-1px)'}
+                  {submitError && <div style={{fontSize:12.5,color:'#c0392b'}}>{submitError}</div>}
+                  <button type="submit" disabled={sending} style={{width:'100%',padding:'12px',borderRadius:10,border:'none',cursor:sending?'default':'pointer',background: sending ? 'var(--gray-300)' : 'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',color:'white',fontSize:14,fontWeight:700,boxShadow: sending ? 'none' : '0 2px 14px rgba(255,103,7,0.35)',transition:'transform 150ms'}}
+                    onMouseEnter={e=>{ if(!sending) e.currentTarget.style.transform='translateY(-1px)'; }}
                     onMouseLeave={e=>e.currentTarget.style.transform='none'}
-                  >Enviar opinión</button>
+                  >{sending ? 'Enviando…' : 'Enviar opinión'}</button>
                 </form>
               </React.Fragment>
             )}

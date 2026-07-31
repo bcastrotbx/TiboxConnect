@@ -8,6 +8,8 @@ import * as adminService from '../services/adminService.js';
 import * as adminContentService from '../services/adminContentService.js';
 import * as adminEventsService from '../services/adminEventsService.js';
 import * as adminLeadsService from '../services/adminLeadsService.js';
+import * as adminMessagesService from '../services/adminMessagesService.js';
+import * as adminOpinionsService from '../services/adminOpinionsService.js';
 import * as categoryService from '../services/categoryService.js';
 import * as storageService from '../services/storageService.js';
 import { getYouTubeThumbnailUrl } from '../lib/youtube.js';
@@ -976,19 +978,38 @@ function MessageViewModal({ msg, onClose }) {
   );
 }
 
-// Ajuste posterior (auditoría del panel admin): "Eliminar" no tenía
-// confirmación — un clic de más borraba el mensaje sin aviso. Se agrega
-// ConfirmDialog (mismo patrón que ContentTable). Sigue siendo un borrado
-// solo en el estado local del componente — `adminService.getMessages()`
-// lee de datos de ejemplo, no de la tabla real `contact_messages`, así que
-// esto no persiste entre recargas; conectar esta sección a Supabase queda
-// pendiente (ver informe de auditoría en FASE-06-07-08-CONTENIDO-REAL.md).
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): CRUD real contra
+// `contact_messages` — antes leía datos de ejemplo (adminService.getMessages())
+// y "Eliminar" solo afectaba el estado local del componente, sin persistir
+// entre recargas. "Ver mensaje" ahora también marca el mensaje como leído
+// (status: 'new' → 'read') la primera vez que se abre.
 export function MessagesTable() {
-  const { status, data, error } = useAsyncData(() => adminService.getMessages(), []);
+  const { status, data, error } = useAsyncData(() => adminMessagesService.listMessages(), []);
   const [rows, setRows] = React.useState([]);
   const [viewing, setViewing] = React.useState(null);
   const [confirming, setConfirming] = React.useState(null);
+  const [actionError, setActionError] = React.useState('');
   React.useEffect(() => { if (status === 'success') setRows(data || []); }, [status, data]);
+
+  const openMessage = (m) => {
+    setViewing(m);
+    if (m.rawStatus === 'new') {
+      adminMessagesService.markMessageRead(m.id).catch(() => {});
+      setRows(rows.map(r => r.id === m.id ? { ...r, estado: 'Leído', rawStatus: 'read' } : r));
+    }
+  };
+
+  const confirmDelete = async () => {
+    const id = confirming;
+    setConfirming(null);
+    setActionError('');
+    try {
+      await adminMessagesService.deleteMessage(id);
+      setRows(rows.filter(r => r.id !== id));
+    } catch (err) {
+      setActionError(err.message || 'No se pudo eliminar el mensaje.');
+    }
+  };
 
   if (status === 'loading') {
     return (
@@ -1013,14 +1034,19 @@ export function MessagesTable() {
         <div style={{ fontSize:15, fontWeight:700, color:'var(--navy-900,#021233)' }}>Bandeja de mensajes</div>
         <span style={{ fontSize:12, color:'var(--gray-400)' }}>{rows.length} mensajes</span>
       </div>
+      {actionError && (
+        <div style={{ margin:'12px 20px 0', fontSize:12.5, color:'#c0392b', background:'rgba(192,57,43,0.08)', border:'1px solid rgba(192,57,43,0.2)', borderRadius:8, padding:'9px 12px' }}>
+          {actionError}
+        </div>
+      )}
       {rows.length === 0 ? (
         <EmptyState label="No hay mensajes de contacto todavía." icon="mail" />
       ) : (
         <table className="adm-table">
           <thead><tr><th>Contacto</th><th>Empresa</th><th>Servicio</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
           <tbody>
-            {rows.map((m,i) => (
-              <tr key={i}>
+            {rows.map((m) => (
+              <tr key={m.id}>
                 <td style={{ fontWeight:600 }}>{m.name}</td>
                 <td style={{ color:'var(--gray-500)' }}>{m.empresa}</td>
                 <td style={{ color:'var(--gray-500)' }}>{m.servicio}</td>
@@ -1028,8 +1054,8 @@ export function MessagesTable() {
                 <td><StatusBadge status={m.estado} /></td>
                 <td style={{ textAlign:'right', whiteSpace:'nowrap' }}>
                   <div style={{ display:'inline-flex', gap:6 }}>
-                    <button className="adm-mini-btn" onClick={() => setViewing(m)}><Icon name="eye" style={{width:13,height:13}} />Ver mensaje</button>
-                    <button className="adm-mini-btn danger" onClick={() => setConfirming(i)}><Icon name="trash-2" style={{width:13,height:13}} />Eliminar</button>
+                    <button className="adm-mini-btn" onClick={() => openMessage(m)}><Icon name="eye" style={{width:13,height:13}} />Ver mensaje</button>
+                    <button className="adm-mini-btn danger" onClick={() => setConfirming(m.id)}><Icon name="trash-2" style={{width:13,height:13}} />Eliminar</button>
                   </div>
                 </td>
               </tr>
@@ -1043,17 +1069,38 @@ export function MessagesTable() {
           title="¿Eliminar mensaje?"
           message="Esta acción no se puede deshacer."
           onCancel={() => setConfirming(null)}
-          onConfirm={() => { setRows(rows.filter((_, ix) => ix !== confirming)); setConfirming(null); }}
+          onConfirm={confirmDelete}
         />
       )}
     </div>
   );
 }
 
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): CRUD real contra
+// `feedback` — antes leía datos de ejemplo (adminService.getOpinions()) y
+// no tenía ninguna acción de borrado, a diferencia de Mensajes (que sí la
+// tenía, aunque fuera solo local). Se agrega para tener paridad.
 export function OpinionsPanel() {
-  const { status, data, error } = useAsyncData(() => adminService.getOpinions(), []);
+  const { status, data, error } = useAsyncData(() => adminOpinionsService.listOpinions(), []);
+  const [rows, setRows] = React.useState([]);
   const [viewing, setViewing] = React.useState(null);
-  const opinions = data || [];
+  const [confirming, setConfirming] = React.useState(null);
+  const [actionError, setActionError] = React.useState('');
+  React.useEffect(() => { if (status === 'success') setRows(data || []); }, [status, data]);
+  const opinions = rows;
+
+  const confirmDelete = async () => {
+    const id = confirming;
+    setConfirming(null);
+    setActionError('');
+    try {
+      await adminOpinionsService.deleteOpinion(id);
+      setRows(rows.filter(r => r.id !== id));
+      setViewing(v => (v && v.id === id ? null : v));
+    } catch (err) {
+      setActionError(err.message || 'No se pudo eliminar la opinión.');
+    }
+  };
 
   if (status === 'loading') {
     return (
@@ -1078,14 +1125,19 @@ export function OpinionsPanel() {
         <div style={{ fontSize:15, fontWeight:700, color:'var(--navy-900,#021233)' }}>Opiniones recibidas</div>
         <span style={{ fontSize:12, color:'var(--gray-400)' }}>{opinions.length} opiniones</span>
       </div>
+      {actionError && (
+        <div style={{ margin:'12px 20px 0', fontSize:12.5, color:'#c0392b', background:'rgba(192,57,43,0.08)', border:'1px solid rgba(192,57,43,0.2)', borderRadius:8, padding:'9px 12px' }}>
+          {actionError}
+        </div>
+      )}
       {opinions.length === 0 ? (
         <EmptyState label="Todavía no hay opiniones de clientes." icon="star" />
       ) : (
         <table className="adm-table">
           <thead><tr><th>Nombre</th><th>Email</th><th>Calificación</th><th>Fecha</th><th></th></tr></thead>
           <tbody>
-            {opinions.map((o,i) => (
-              <tr key={i}>
+            {opinions.map((o) => (
+              <tr key={o.id}>
                 <td style={{ fontWeight:600 }}>{o.name}</td>
                 <td style={{ color:'var(--gray-500)' }}>{o.email}</td>
                 <td>
@@ -1094,8 +1146,11 @@ export function OpinionsPanel() {
                   </div>
                 </td>
                 <td style={{ color:'var(--gray-500)' }}>{o.fecha}</td>
-                <td style={{ textAlign:'right' }}>
-                  <button className="adm-mini-btn" onClick={() => setViewing(o)}><Icon name="eye" style={{width:13,height:13}} />Ver mensaje</button>
+                <td style={{ textAlign:'right', whiteSpace:'nowrap' }}>
+                  <div style={{ display:'inline-flex', gap:6 }}>
+                    <button className="adm-mini-btn" onClick={() => setViewing(o)}><Icon name="eye" style={{width:13,height:13}} />Ver mensaje</button>
+                    <button className="adm-mini-btn danger" onClick={() => setConfirming(o.id)}><Icon name="trash-2" style={{width:13,height:13}} />Eliminar</button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -1125,6 +1180,14 @@ export function OpinionsPanel() {
             </div>
           </div>
         </div>
+      )}
+      {confirming !== null && (
+        <ConfirmDialog
+          title="¿Eliminar opinión?"
+          message="Esta acción no se puede deshacer."
+          onCancel={() => setConfirming(null)}
+          onConfirm={confirmDelete}
+        />
       )}
     </div>
   );

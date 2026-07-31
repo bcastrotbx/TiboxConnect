@@ -668,6 +668,16 @@ Los 3 tabs eran 100% decorativos (ver hallazgo de la auditoría, arriba). Se con
 
 No se pudo probar el guardado real en vivo en esta sesión (sin sesión de admin en el navegador de esta herramienta) — verificado con lint + build limpios y navegación pública (fallback del bloque de Contacto confirmado en pantalla). Falta que Braulio pruebe el flujo completo de los 3 tabs en su propio navegador después de ejecutar la migración pendiente.
 
+### Mensajes de contacto y Opiniones conectados a Supabase
+
+Ambas secciones leían datos de ejemplo (`adminService.getMessages()/getOpinions()`) y no persistían ningún cambio — confirmado en la auditoría.
+
+- **Mensajes** — nuevo `adminMessagesService.js`, CRUD real contra `contact_messages`: `listMessages`, `deleteMessage` y `markMessageRead` (nuevo — "Ver mensaje" ahora marca el mensaje como leído la primera vez que se abre, antes el estado "Nuevo"/"Leído"/"Respondido" era puramente decorativo). El diálogo de confirmación de borrado (agregado en la auditoría) ahora sí elimina de verdad.
+- **Opiniones** — nuevo `adminOpinionsService.js`, CRUD real contra `feedback`: `listOpinions`, `deleteOpinion`. Se agregó la acción "Eliminar" (con el mismo `ConfirmDialog`), que antes no existía en esta sección — no era parte de lo pedido explícitamente, pero se agrega para dar paridad con Mensajes ahora que ambas tienen datos reales que sí conviene poder borrar (spam, pruebas, etc.).
+- **Alcance ampliado (con el mismo criterio confirmado por Braulio para el tab Contacto de Portada): se conectaron también los formularios públicos.** `formService.submitContactForm`/`submitOpinionForm` solo simulaban el envío (`setTimeout`, sin persistir nada) — es decir, ni siquiera con este ajuste la bandeja del admin tendría mensajes reales que mostrar si el formulario público seguía sin guardar nada. Ahora ambos insertan de verdad (`contact_messages`/`feedback`, mismo patrón que `submitInfografiaLead`: RLS permite insert público sin sesión). Se agregó manejo de error visible en ambos formularios (`Services.jsx`, `OpinionPanel.jsx`) — antes un fallo de red dejaba el botón en "Enviando…" para siempre porque solo había `.then()`, sin `.catch()`.
+
+No se pudo probar el envío real de ningún formulario en vivo en esta sesión (limitación ya documentada de esta herramienta con las llamadas a Supabase — ver bug crítico descartado, arriba). Verificado con lint + build limpios y revisión de código contra el mismo patrón ya probado en producción por Braulio (`submitInfografiaLead`). Falta que Braulio pruebe en su navegador: enviar el formulario de contacto, enviar una opinión, y verificar que ambos aparezcan en `/admin/mensajes` y `/admin/mensajes/opiniones`.
+
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
 ## Pendiente

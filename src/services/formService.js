@@ -1,18 +1,33 @@
 import { supabase } from '../lib/supabase.js';
-import { simulateDelay } from './simulateDelay.js';
 
-// submitContactForm/submitOpinionForm siguen simulados (setTimeout, sin
-// backend real) — ver docs/phases/FASE-02-RUTAS-Y-DATOS.md. Conectarlos a
-// Supabase (contact_messages/feedback) queda para una fase posterior; no
-// forma parte de este ajuste. Las firmas ya devuelven Promise<{ ok: boolean }>
-// para que ese cambio futuro solo toque la implementación interna.
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): guardado real en
+// contact_messages/feedback — antes solo simulaban el envío (setTimeout) sin
+// persistir nada, así que la bandeja de Mensajes/Opiniones del admin nunca
+// tenía datos reales que mostrar. Mismo patrón que submitInfografiaLead: RLS
+// de ambas tablas permite insert público sin sesión, solo lectura/escritura
+// para administradores.
 
-export function submitContactForm(_data) {
-  return simulateDelay({ ok: true }, 1200);
+export async function submitContactForm({ name, email, empresa, phone, msg }) {
+  const { error } = await supabase.from('contact_messages').insert({
+    full_name: name,
+    email,
+    company: empresa || null,
+    phone: phone || null,
+    message: msg,
+  });
+  if (error) throw error;
+  return { ok: true };
 }
 
-export function submitOpinionForm(_data) {
-  return simulateDelay({ ok: true }, 1200);
+export async function submitOpinionForm({ name, email, msg, rating }) {
+  const { error } = await supabase.from('feedback').insert({
+    full_name: name,
+    email,
+    rating: rating || null,
+    message: msg,
+  });
+  if (error) throw error;
+  return { ok: true };
 }
 
 // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): guardado real en
