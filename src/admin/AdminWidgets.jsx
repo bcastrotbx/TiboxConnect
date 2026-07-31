@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Icon } from '../components/shared/Icon.jsx';
 import { LoadingState, EmptyState, ErrorState } from '../components/shared/AsyncState.jsx';
 import { Pagination } from '../components/shared/Pagination.jsx';
@@ -641,7 +642,9 @@ const PAGE_SIZE = 10;
 export function ContentTable({ section, title }) {
   const isEvent = section === 'events';
   const isRecent = section === 'recent';
-  const allowReorder = section !== 'news' && !isRecent;
+  const [searchParams] = useSearchParams();
+  const query = (searchParams.get('q') || '').trim().toLowerCase();
+  const allowReorder = section !== 'news' && !isRecent && !query;
   const fetcher = React.useCallback(
     () => {
       if (isRecent) return adminContentService.listRecentContentItems();
@@ -701,6 +704,20 @@ export function ContentTable({ section, title }) {
   );
   const orderDirty = allowReorder && currentOrderIds.join(',') !== baselineIds.join(',');
 
+  // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): buscador del
+  // header conectado — filtra sobre lo ya cargado (título/categoría/
+  // resumen/lugar/colaborador), sin volver a consultar Supabase. Mientras
+  // hay una búsqueda activa se desactiva el arrastrar-y-soltar (mismo
+  // criterio que con `colSort`, arriba): el orden visual filtrado no
+  // reflejaría `sort_order` de forma fiel.
+  const searchedRows = React.useMemo(() => {
+    if (!query) return displayRows;
+    return displayRows.filter(r => {
+      const haystack = [r.title, r.cat, r.summary, r.location, r.partnerName].filter(Boolean).join(' ').toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [displayRows, query]);
+
   // Paginación: 10 elementos por página (estilo WordPress, ver Pagination
   // más arriba). Arrastrar-y-soltar solo puede reordenar dentro de la página
   // visible — no es una restricción que se valide explícitamente en el
@@ -713,9 +730,10 @@ export function ContentTable({ section, title }) {
   // página (ida y vuelta) — suficiente para los volúmenes de contenido
   // actuales; no se justificó una solución más compleja (ej. arrastrar entre
   // páginas con auto-scroll) para este panel interno.
-  const totalPages = Math.max(1, Math.ceil(displayRows.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(searchedRows.length / PAGE_SIZE));
   React.useEffect(() => { if (page > totalPages) setPage(totalPages); }, [totalPages, page]);
-  const pagedRows = displayRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  React.useEffect(() => { setPage(1); }, [query]);
+  const pagedRows = searchedRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // Arrastrar-y-soltar (único método de reordenar — ver ajuste posterior en
   // FASE-06-07-08-CONTENIDO-REAL.md, se quitaron las flechas ↑/↓ por
@@ -864,7 +882,7 @@ export function ContentTable({ section, title }) {
               {savingOrder ? 'Guardando…' : 'Guardar cambios'}
             </button>
           )}
-          <span style={{ fontSize:12, color:'var(--gray-400)' }}>{rows.length} elementos</span>
+          <span style={{ fontSize:12, color:'var(--gray-400)' }}>{searchedRows.length} elementos</span>
         </div>
       </div>
       {actionError && (
@@ -872,8 +890,8 @@ export function ContentTable({ section, title }) {
           {actionError}
         </div>
       )}
-      {rows.length === 0 ? (
-        <EmptyState label="Todavía no hay publicaciones en esta sección." icon="inbox" />
+      {searchedRows.length === 0 ? (
+        <EmptyState label={query ? 'Ningún resultado para tu búsqueda.' : 'Todavía no hay publicaciones en esta sección.'} icon={query ? 'search' : 'inbox'} />
       ) : (
         <table className="adm-table">
           <thead>
@@ -923,7 +941,7 @@ export function ContentTable({ section, title }) {
           </tbody>
         </table>
       )}
-      {rows.length > 0 && <Pagination page={page} totalPages={totalPages} onChange={setPage} bordered />}
+      {searchedRows.length > 0 && <Pagination page={page} totalPages={totalPages} onChange={setPage} bordered />}
       {viewing && <ContentViewModal item={viewing} section={section} onClose={() => setViewing(null)} />}
       {editing && <NewContentModal section={section} item={editing} onClose={() => setEditing(null)} />}
       {confirming !== null && (
@@ -989,7 +1007,12 @@ export function MessagesTable() {
   const [viewing, setViewing] = React.useState(null);
   const [confirming, setConfirming] = React.useState(null);
   const [actionError, setActionError] = React.useState('');
+  const [searchParams] = useSearchParams();
+  const query = (searchParams.get('q') || '').trim().toLowerCase();
   React.useEffect(() => { if (status === 'success') setRows(data || []); }, [status, data]);
+  const searchedRows = query
+    ? rows.filter(r => [r.name, r.email, r.empresa, r.servicio, r.mensaje].filter(Boolean).join(' ').toLowerCase().includes(query))
+    : rows;
 
   const openMessage = (m) => {
     setViewing(m);
@@ -1032,20 +1055,20 @@ export function MessagesTable() {
     <div className="adm-card">
       <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--gray-200)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div style={{ fontSize:15, fontWeight:700, color:'var(--navy-900,#021233)' }}>Bandeja de mensajes</div>
-        <span style={{ fontSize:12, color:'var(--gray-400)' }}>{rows.length} mensajes</span>
+        <span style={{ fontSize:12, color:'var(--gray-400)' }}>{searchedRows.length} mensajes</span>
       </div>
       {actionError && (
         <div style={{ margin:'12px 20px 0', fontSize:12.5, color:'#c0392b', background:'rgba(192,57,43,0.08)', border:'1px solid rgba(192,57,43,0.2)', borderRadius:8, padding:'9px 12px' }}>
           {actionError}
         </div>
       )}
-      {rows.length === 0 ? (
-        <EmptyState label="No hay mensajes de contacto todavía." icon="mail" />
+      {searchedRows.length === 0 ? (
+        <EmptyState label={query ? 'Ningún resultado para tu búsqueda.' : 'No hay mensajes de contacto todavía.'} icon={query ? 'search' : 'mail'} />
       ) : (
         <table className="adm-table">
           <thead><tr><th>Contacto</th><th>Empresa</th><th>Servicio</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
           <tbody>
-            {rows.map((m) => (
+            {searchedRows.map((m) => (
               <tr key={m.id}>
                 <td style={{ fontWeight:600 }}>{m.name}</td>
                 <td style={{ color:'var(--gray-500)' }}>{m.empresa}</td>
@@ -1086,8 +1109,12 @@ export function OpinionsPanel() {
   const [viewing, setViewing] = React.useState(null);
   const [confirming, setConfirming] = React.useState(null);
   const [actionError, setActionError] = React.useState('');
+  const [searchParams] = useSearchParams();
+  const query = (searchParams.get('q') || '').trim().toLowerCase();
   React.useEffect(() => { if (status === 'success') setRows(data || []); }, [status, data]);
-  const opinions = rows;
+  const opinions = query
+    ? rows.filter(r => [r.name, r.email, r.mensaje].filter(Boolean).join(' ').toLowerCase().includes(query))
+    : rows;
 
   const confirmDelete = async () => {
     const id = confirming;
@@ -1131,7 +1158,7 @@ export function OpinionsPanel() {
         </div>
       )}
       {opinions.length === 0 ? (
-        <EmptyState label="Todavía no hay opiniones de clientes." icon="star" />
+        <EmptyState label={query ? 'Ningún resultado para tu búsqueda.' : 'Todavía no hay opiniones de clientes.'} icon={query ? 'search' : 'star'} />
       ) : (
         <table className="adm-table">
           <thead><tr><th>Nombre</th><th>Email</th><th>Calificación</th><th>Fecha</th><th></th></tr></thead>
@@ -1205,8 +1232,14 @@ const LEADS_PAGE_SIZE = 10;
 export function InfographicLeadsPanel() {
   const { status, data, error } = useAsyncData(() => adminLeadsService.listInfographicLeads(), []);
   const [page, setPage] = React.useState(1);
-  const leads = data || [];
+  const [searchParams] = useSearchParams();
+  const query = (searchParams.get('q') || '').trim().toLowerCase();
+  const allLeads = data || [];
+  const leads = query
+    ? allLeads.filter(l => [l.name, l.company, l.position, l.email, l.infographicTitle].filter(Boolean).join(' ').toLowerCase().includes(query))
+    : allLeads;
   const totalPages = Math.max(1, Math.ceil(leads.length / LEADS_PAGE_SIZE));
+  React.useEffect(() => { setPage(1); }, [query]);
   const pagedLeads = leads.slice((page - 1) * LEADS_PAGE_SIZE, page * LEADS_PAGE_SIZE);
 
   if (status === 'loading') {
@@ -1236,7 +1269,7 @@ export function InfographicLeadsPanel() {
         <span style={{ fontSize:12, color:'var(--gray-400)' }}>{leads.length} {leads.length === 1 ? 'lead' : 'leads'}</span>
       </div>
       {leads.length === 0 ? (
-        <EmptyState label="Todavía no hay leads capturados." icon="download" />
+        <EmptyState label={query ? 'Ningún resultado para tu búsqueda.' : 'Todavía no hay leads capturados.'} icon={query ? 'search' : 'download'} />
       ) : (
         <React.Fragment>
           <table className="adm-table">

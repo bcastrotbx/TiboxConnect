@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '../components/shared/Icon.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import * as adminService from '../services/adminService.js';
@@ -87,6 +87,19 @@ export function AdminHeader({ pathname, onNew }) {
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
   const newable = NEWABLE_PATHS.includes(pathname);
+  // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): el buscador era
+  // decorativo (sin value/onChange). Se guarda en el query param `q` en vez
+  // de un estado local/contexto — así cada página de listado (ContentTable,
+  // MessagesTable, OpinionsPanel, InfographicLeadsPanel) puede leerlo con
+  // useSearchParams sin que el header y la página necesiten compartir
+  // estado directamente, y cambiar de sección limpia la búsqueda sola (la
+  // URL destino no trae `q`).
+  const [searchParams, setSearchParams] = useSearchParams();
+  const query = searchParams.get('q') || '';
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearchParams(val ? { q: val } : {}, { replace: true });
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -102,7 +115,7 @@ export function AdminHeader({ pathname, onNew }) {
       <div style={{ display:'flex', alignItems:'center', gap:12 }}>
         <div style={{ position:'relative' }}>
           <Icon name="search" style={{ width:15, height:15, position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'var(--gray-400)' }} />
-          <input placeholder="Buscar…" style={{ padding:'9px 14px 9px 34px', borderRadius:10, border:'1px solid var(--gray-200)', fontSize:13, width:220, fontFamily:'inherit' }} />
+          <input placeholder="Buscar…" value={query} onChange={handleSearchChange} style={{ padding:'9px 14px 9px 34px', borderRadius:10, border:'1px solid var(--gray-200)', fontSize:13, width:220, fontFamily:'inherit' }} />
         </div>
         <a href="/" title="Ir al portal" style={{
           display:'inline-flex', alignItems:'center', gap:6,

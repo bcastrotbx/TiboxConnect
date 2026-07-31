@@ -693,6 +693,16 @@ No se pudo probar en vivo en esta sesión (sin sesión de admin, misma limitaci�
 
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
+### Buscador del header del admin conectado
+
+El input "Buscar…" de `AdminHeader.jsx` no tenía `value`/`onChange` — no filtraba nada en ninguna página. Se conecta guardando el término en el query param `q` de la URL (`useSearchParams`) en vez de un estado local o un contexto compartido: así cada página de listado lo lee de forma independiente sin que el header necesite conocer qué página está activa, y cambiar de sección desde el sidebar limpia la búsqueda solo (la ruta destino no trae `q`).
+
+Se conectó en las 4 tablas de listado que tenía sentido filtrar: `ContentTable` (Videos/Infografías/Noticias/Eventos, filtra por título/categoría/resumen/lugar/colaborador — mientras hay una búsqueda activa se desactiva el arrastrar-y-soltar, mismo criterio ya usado con el ordenamiento por columna), `MessagesTable` (nombre/email/empresa/servicio/mensaje), `OpinionsPanel` (nombre/email/mensaje) e `InfographicLeadsPanel` (nombre/empresa/cargo/email/infografía). Es un filtro sobre lo ya cargado en el navegador (no una nueva consulta a Supabase por cada tecla) — suficiente para los volúmenes de datos actuales del panel; no se justificó una búsqueda del lado del servidor.
+
+No se pudo probar en vivo en esta sesión (sin sesión de admin, misma limitación de siempre) — verificado con lint + build limpios y revisión de código. Falta que Braulio pruebe: escribir en el buscador desde cada sección (Videos, Infografías, Noticias, Eventos, Mensajes, Opiniones, Leads) y confirmar que filtra y que la paginación se ajusta.
+
+**Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
+
 ## Pendiente
 
 - **Braulio debe ejecutar la migración `20260731100300_services.sql`** (crea la tabla `services` con el catálogo real de Servicios TIBOX, sembrada con las 6 unidades ya usadas por el portal) en el SQL Editor de Supabase — hasta entonces, `/admin/contenidos/servicios` no puede cargar ni guardar nada real. Contenido completo de la migración en `supabase/migrations/20260731100300_services.sql`.
