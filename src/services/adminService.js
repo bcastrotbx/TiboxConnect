@@ -1,7 +1,6 @@
 import {
   DASHBOARD_STATS, CONTENT_ITEMS, NOTIFICATIONS, MESSAGES, OPINIONS,
   DEFAULT_SERVICES, ICON_LIBRARY, CONTENT_TYPE_CATEGORIES,
-  DEFAULT_SLIDES, DEFAULT_CATS, DEFAULT_FORM_FIELDS,
 } from '../data/seed/adminSeed.js';
 import { simulateDelay } from './simulateDelay.js';
 
@@ -41,16 +40,4 @@ export function getIconLibrary() {
 
 export function getContentTypeCategories() {
   return simulateDelay(CONTENT_TYPE_CATEGORIES);
-}
-
-export function getPortadaSlides() {
-  return simulateDelay(DEFAULT_SLIDES);
-}
-
-export function getPortadaCategoryBlocks() {
-  return simulateDelay(DEFAULT_CATS);
-}
-
-export function getContactFormFields() {
-  return simulateDelay(DEFAULT_FORM_FIELDS);
 }

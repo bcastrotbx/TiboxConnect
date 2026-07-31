@@ -6,6 +6,7 @@ import { LoadingState, EmptyState, ErrorState } from './shared/AsyncState.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import * as serviceCatalogService from '../services/serviceCatalogService.js';
 import * as formService from '../services/formService.js';
+import * as siteSettingsService from '../services/siteSettingsService.js';
 import { OpinionPanel } from './OpinionPanel.jsx';
 
 /* ── Service detail modal ───────────────────────── */
@@ -154,11 +155,24 @@ export function ServicesV2() {
 // ambas columnas quedan sobre el mismo fondo oscuro (grad-corporate), las
 // etiquetas y el texto de ayuda del formulario se ajustaron a colores claros
 // para mantener contraste (antes vivían sobre fondo blanco).
+// Ajuste posterior (Portada real): título/descripción/CTA del formulario
+// ahora vienen de site_settings (editables desde /admin/portada → tab
+// Contacto) en vez de estar hardcodeados acá. Se mantienen los mismos
+// textos como fallback mientras carga o si falla la consulta, para no
+// dejar la sección en blanco.
+const CONTACT_FALLBACK = {
+  title: '¿Tienes algún proyecto en mente?',
+  description: 'Si tienes una necesidad, iniciativa o proyecto tecnológico en evaluación, cuéntanos. Un consultor TIBOX te contactará en menos de 24 horas hábiles.',
+  ctaText: 'Enviar mensaje',
+};
+
 export function ContactFormSection() {
   const [form, setForm] = React.useState({ name:'', email:'', empresa:'', phone:'', msg:'' });
   const [sent, setSent] = React.useState(false);
   const [sending, setSending] = React.useState(false);
   const [privacyAccepted, setPrivacyAccepted] = React.useState(false);
+  const { data: settingsData } = useAsyncData(() => siteSettingsService.getContactSettings(), []);
+  const settings = { ...CONTACT_FALLBACK, ...settingsData };
 
   const update = (k) => (e) => setForm(f => ({...f, [k]: e.target.value}));
   const inputStyle = { width:'100%', padding:'10px 13px', border:'1.5px solid var(--gray-200)', borderRadius:9, fontSize:13, fontFamily:'inherit', outline:'none', background:'white', color:'var(--gray-800)', transition:'border-color 150ms' };
@@ -196,10 +210,10 @@ export function ContactFormSection() {
           <div style={{ position:'relative' }}>
             <div style={{ fontSize:11, fontWeight:700, letterSpacing:'0.16em', textTransform:'uppercase', color:'var(--brand-cyan)', marginBottom:8 }}>Contacto</div>
             <h2 style={{ fontSize:'clamp(1.4rem,2.2vw,2rem)', fontWeight:700, color:'white', lineHeight:1.2, margin:'0 0 8px', letterSpacing:'-0.01em' }}>
-              ¿Tienes algún <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>proyecto en mente</span>?
+              {settings.title}
             </h2>
             <p style={{ fontSize:14, color:'rgba(255,255,255,0.65)', lineHeight:1.55, margin:0 }}>
-              Si tienes una necesidad, iniciativa o proyecto tecnológico en evaluación, cuéntanos. Un consultor TIBOX te contactará en menos de 24 horas hábiles.
+              {settings.description}
             </p>
           </div>
 
@@ -271,7 +285,7 @@ export function ContactFormSection() {
               >
                 {sending
                   ? <React.Fragment><Icon name="loader-2" style={{width:16,height:16}} /> Enviando…</React.Fragment>
-                  : <React.Fragment><Icon name="send" style={{width:16,height:16}} /> Enviar mensaje</React.Fragment>
+                  : <React.Fragment><Icon name="send" style={{width:16,height:16}} /> {settings.ctaText}</React.Fragment>
                 }
               </button>
             </form>

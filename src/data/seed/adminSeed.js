@@ -81,26 +81,3 @@ export const DEFAULT_SERVICES = {
 export const ICON_LIBRARY = ['network','lock','cloud','trending-up','layers','cpu','shield-check','server','database','wifi','globe','activity','film','rss','calendar-check','message-circle','star','briefcase','settings','users','headphones','zap'];
 
 export const CONTENT_TYPE_CATEGORIES = ['Microsoft 365', 'Ciberseguridad', 'Inteligencia Artificial', 'Cloud', 'Infraestructura', 'Analítica TI', 'Eventos'];
-
-export const DEFAULT_SLIDES = [
-  { id:1, title:'Continuidad operacional sin interrupciones', category:'Infraestructura TI', desc:'Redes, servidores y monitoreo 24/7 para que tu operación nunca se detenga.', cta:'Agenda una asesoría', bg:'hero-slider-1.jpg' },
-  { id:2, title:'Ciberseguridad que protege tu negocio', category:'Ciberseguridad', desc:'SOC gestionado y respuesta ante incidentes para tu tranquilidad.', cta:'Conoce nuestros servicios', bg:'hero-slider-2.jpg' },
-  { id:3, title:'Tecnología que impulsa tu crecimiento', category:'Soluciones Cloud', desc:'Migra a la nube sin downtime y con costos optimizados.', cta:'Solicita una cotización', bg:'hero-slider-3.jpg' },
-  { id:4, title:'El universo TIBOX, en expansión constante', category:'Empresa', desc:'Un socio tecnológico que crece junto a tu organización.', cta:'Conversemos', bg:'hero-universe.jpg' },
-];
-
-export const DEFAULT_CATS = [
-  { id:1, icon:'film', title:'Explora', tag:'Videos y Webinars' },
-  { id:2, icon:'rss', title:'Noticias', tag:'Sector Tecnológico' },
-  { id:3, icon:'calendar-check', title:'Eventos', tag:'Agenda y Webinars' },
-  { id:4, icon:'message-circle', title:'Tu Opinión', tag:'Comparte tu voz' },
-];
-
-export const DEFAULT_FORM_FIELDS = [
-  { name:'Nombre completo', helper:'Como aparece en tu correo corporativo' },
-  { name:'Correo corporativo', helper:'Te responderemos en menos de 24 horas' },
-  { name:'Empresa', helper:'Razón social de tu organización' },
-  { name:'Teléfono', helper:'Opcional' },
-  { name:'Servicio de interés', helper:'Selecciona el área que te interesa' },
-  { name:'Mensaje', helper:'Cuéntanos brevemente tu proyecto' },
-];

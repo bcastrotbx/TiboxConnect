@@ -658,10 +658,21 @@ Ver la lista completa con prioridad y esfuerzo estimado en el resumen ejecutivo 
 - **Buscador del header ("Buscar…") es decorativo** — no tiene `value`/`onChange`, no filtra nada en ninguna página.
 - Sin historial/registro de actividad (quién publicó/editó/eliminó qué), sin roles diferenciados (todo admin invitado tiene acceso idéntico), sin exportar a CSV/Excel en ningún listado, sin paginación en Mensajes/Opiniones (aceptable hoy por ser datos de ejemplo pequeños, no una vez sean reales).
 
+### Configuración/Portada (`/admin/portada`) conectada a Supabase
+
+Los 3 tabs eran 100% decorativos (ver hallazgo de la auditoría, arriba). Se conectaron los tres:
+
+- **Sliders principales** — CRUD real contra `hero_slides` (la misma tabla que ya alimenta el hero público, `homeService.getHeroSlides()`). Nuevo `adminPortadaService.js` con `listHeroSlides/createHeroSlide/updateHeroSlide/deleteHeroSlide`; "Quitar"/"Agregar slider" persisten al instante, el resto de los campos se acumulan como cambios pendientes y se guardan con "Guardar cambios" (ahora con `onClick` real, estado de carga y de error). La imagen de fondo usa el mismo flujo de subida que Videos/Infografías/Noticias/Eventos (`storageService.uploadContentImage`), y reemplazar o quitar una imagen limpia la anterior del bucket si nada más la usa.
+- **"Bloques de categorías" → renombrado a "Categorías de contenido", repurposeado a la tabla `categories` real** (decisión confirmada con Braulio antes de implementar). El concepto original — los 4 bloques de navegación bajo el hero (Explora/Noticias/Eventos/Tu Opinión) — es chrome fijo del portal sin tabla propia (`homeService.getCategoryBlocks()`, decisión deliberada documentada ahí mismo); no había nada real que ese tab pudiera editar. Se repurposa para editar las categorías que sí existen y sí se usan (clasificación de videos/infografías/noticias en todo el portal) — CRUD real contra `categories`, mismo patrón de guardado que sliders.
+- **Contacto** — nueva tabla `site_settings` (fila única `id='contact'`, columna `data jsonb`) vía la migración `20260731100200_site_settings.sql`. `adminPortadaService.updateContactSettings()` guarda título/descripción/direcciones/CTA de verdad. Además — confirmado con Braulio que valía la pena ampliar el alcance — **se conectó también la portada pública**: antes ni siquiera el "Guardar cambios" fantasma alimentaba nada, el título/descripción/CTA del bloque de contacto (`Services.jsx`) estaban hardcodeados directamente en el JSX. Ahora `Services.jsx` lee esos 3 campos desde la misma fila vía `siteSettingsService.getContactSettings()` (nuevo, lectura pública compartida entre portal y admin), con los textos actuales como fallback mientras carga o si la tabla todavía no existe. Las direcciones de oficina (Chile/Perú) se guardan pero no se muestran en el portal — se habían quitado deliberadamente de este bloque en un ajuste anterior (ver comentario en `Services.jsx`), no se reintrodujeron.
+
+No se pudo probar el guardado real en vivo en esta sesión (sin sesión de admin en el navegador de esta herramienta) — verificado con lint + build limpios y navegación pública (fallback del bloque de Contacto confirmado en pantalla). Falta que Braulio pruebe el flujo completo de los 3 tabs en su propio navegador después de ejecutar la migración pendiente.
+
 **Commit local únicamente, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 
 ## Pendiente
 
+- **Braulio debe ejecutar la migración `20260731100200_site_settings.sql`** (crea la tabla `site_settings`, usada por el tab "Contacto" de `/admin/portada` y por el bloque de contacto público en `Services.jsx`) en el SQL Editor de Supabase — hasta entonces, ese tab y el bloque de contacto público funcionan con los textos de reserva (fallback) hardcodeados, sin persistencia real. Contenido completo de la migración en `supabase/migrations/20260731100200_site_settings.sql`.
 - **Braulio debe ejecutar la migración `20260731100100_fix_infographic_thumbnail_duplicates.sql`** (reasigna imágenes únicas a 2 infografías que hoy comparten thumbnail con otras) en el SQL Editor de Supabase. Contenido completo de la migración:
   ```sql
   update public.content_items
