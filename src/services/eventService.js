@@ -3,12 +3,13 @@ import { MODALIDAD, PARTNERS } from '../data/seed/eventsSeed.js';
 import { formatDayMonth, formatTimeRange, modalityLabel } from '../lib/formatters.js';
 
 // Fase 6/7/8 — conectado a Supabase (tabla events). Mismas firmas que en la
-// Fase 2. MODALIDAD y PARTNERS siguen siendo configuración visual estática
-// (colores/íconos por modalidad, logos de un set fijo de partners) — no
-// existe (ni se pidió) una tabla para esto; events.partner_name es texto
-// libre, así que se intenta emparejar contra los partners conocidos y, si no
-// hay coincidencia, se muestra el nombre en texto (ver ajuste en
-// EventCard/Events.jsx documentado en FASE-06-07-08-CONTENIDO-REAL.md).
+// Fase 2. MODALIDAD sigue siendo configuración visual estática (colores/
+// íconos por modalidad) — no existe (ni se pidió) una tabla para esto.
+// PARTNERS (logos de un set fijo) queda como fallback legacy: el admin
+// ahora puede subir el logo real del colaborador por evento
+// (partner_logo_url, ver EventCard/Events.jsx), así que este emparejo por
+// nombre de texto solo se usa si un evento viejo no tiene logo propio
+// subido (ver ajuste posterior en FASE-06-07-08-CONTENIDO-REAL.md).
 
 function matchPartnerSlug(partnerName) {
   if (!partnerName) return null;
@@ -31,6 +32,7 @@ function mapEventRow(row) {
     place: row.location || '',
     partner: matchPartnerSlug(row.partner_name),
     partnerName: row.partner_name || '',
+    partnerLogoUrl: row.partner_logo_url || '',
     img: row.thumbnail_url,
     registrationUrl: row.registration_url,
     desc: row.summary || '',

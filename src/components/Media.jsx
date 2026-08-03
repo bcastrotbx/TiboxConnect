@@ -7,6 +7,7 @@ import { LoadingState, EmptyState, ErrorState } from './shared/AsyncState.jsx';
 import { CtaPrimary, CtaCard, CtaLink } from './shared/CtaStyles.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import { useFadeContent } from '../hooks/useFadeContent.js';
+import { useDragScroll } from '../hooks/useDragScroll.js';
 import { YouTubePlayer } from './shared/YouTubePlayer.jsx';
 import * as contentService from '../services/contentService.js';
 import * as formService from '../services/formService.js';
@@ -114,6 +115,7 @@ export function ExploraPanel() {
   const { displayData: fadeItems, isInitialLoad, isRefreshing } = useFadeContent(status, items);
   const [openVideo, setOpenVideo] = React.useState(null);
   const trackRef = React.useRef(null);
+  const dragHandlers = useDragScroll(trackRef);
 
   const cats = categories || [];
   const catsById = React.useMemo(() => Object.fromEntries((categories || []).map(c => [c.id, c])), [categories]);
@@ -128,19 +130,13 @@ export function ExploraPanel() {
       <div style={{padding:'20px 24px 0',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16}}>
         <div>
           <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'#0050C8',marginBottom:4}}>Videos y Webinars</div>
-          <div style={{fontSize:19,fontWeight:700,color:'var(--navy-900)'}}>Explora <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>Videos y Webinars</span></div>
+          <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'var(--navy-900)'}}>Explora <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>Videos y Webinars</span></div>
           <div style={{fontSize:13,color:'var(--gray-500)',marginTop:4,maxWidth:560,lineHeight:1.5}}>Webinars, cápsulas, charlas y registros de eventos, reunidos en un solo lugar.</div>
         </div>
-        <div style={{display:'flex',gap:10,flexShrink:0,paddingTop:4,alignItems:'center'}}>
+        <div style={{flexShrink:0,paddingTop:4}}>
           <CtaLink onClick={()=>navigate('/videoteca')}>
             Ver todos los videos <Icon name="arrow-right" style={{width:13,height:13}} />
           </CtaLink>
-          <button onClick={()=>scroll(-1)} aria-label="Anterior" style={navBtnStyle}>
-            <Icon name="chevron-left" style={{width:18,height:18}} />
-          </button>
-          <button onClick={()=>scroll(1)} aria-label="Siguiente" style={navBtnStyle}>
-            <Icon name="chevron-right" style={{width:18,height:18}} />
-          </button>
         </div>
       </div>
 
@@ -161,7 +157,9 @@ export function ExploraPanel() {
         })}
       </div>
 
-      {/* Carousel track — 5 visible, horizontal scroll. Al cambiar de
+      {/* Carousel con flechas laterales (mismo criterio que
+          InfographicsPanel/EventosPanel — vertical centradas respecto a
+          las tarjetas, ya no arriba junto al título). Al cambiar de
           categoría se mantiene la última grilla cargada (fadeItems) con
           opacidad reducida durante el refetch, en vez de desmontarla y
           mostrar el spinner — ver useFadeContent. */}
@@ -171,13 +169,21 @@ export function ExploraPanel() {
         (fadeItems || []).length === 0 ? (
           <EmptyState label="No hay videos en esta categoría todavía." icon="film" />
         ) : (
-          <div ref={trackRef} style={{
-            display:'flex', gap:16, padding:'16px 24px 24px',
-            overflowX:'auto', scrollSnapType:'x mandatory',
-            scrollbarWidth:'none',
-            opacity: isRefreshing ? 0.35 : 1, transition:'opacity 220ms ease',
-          }} className="hide-scroll">
-            {fadeItems.map(v => <VideoCard key={v.id} v={v} catsById={catsById} onOpen={setOpenVideo} />)}
+          <div style={{display:'flex',alignItems:'center',padding:'16px 24px 24px',gap:10}}>
+            <button onClick={()=>scroll(-1)} aria-label="Anterior" style={navBtnStyle}>
+              <Icon name="chevron-left" style={{width:18,height:18}} />
+            </button>
+            <div ref={trackRef} {...dragHandlers} style={{
+              flex:1, display:'flex', gap:16,
+              overflowX:'auto', scrollSnapType:'x mandatory',
+              scrollbarWidth:'none', cursor:'grab',
+              opacity: isRefreshing ? 0.35 : 1, transition:'opacity 220ms ease',
+            }} className="hide-scroll">
+              {fadeItems.map(v => <VideoCard key={v.id} v={v} catsById={catsById} onOpen={setOpenVideo} />)}
+            </div>
+            <button onClick={()=>scroll(1)} aria-label="Siguiente" style={navBtnStyle}>
+              <Icon name="chevron-right" style={{width:18,height:18}} />
+            </button>
           </div>
         )
       )}
@@ -365,6 +371,7 @@ export function InfographicsPanel() {
   const { displayData: fadeItems, isInitialLoad, isRefreshing } = useFadeContent(status, items);
   const [openInfo, setOpenInfo] = React.useState(null);
   const trackRef = React.useRef(null);
+  const dragHandlers = useDragScroll(trackRef);
 
   const channelsById = channels || {};
   const cats = allCats || [];
@@ -385,10 +392,7 @@ export function InfographicsPanel() {
       {/* Banner */}
       <div style={{position:'relative',padding:'26px 28px 0',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:20,flexWrap:'wrap'}}>
         <div>
-          <div style={{display:'inline-flex',alignItems:'center',gap:8,marginBottom:12,background:'rgba(255,255,255,0.12)',borderRadius:999,padding:'4px 13px',border:'1px solid rgba(255,255,255,0.2)'}}>
-            <Icon name="layout-grid" style={{width:13,height:13,color:'var(--brand-cyan)'}} />
-            <span style={{fontSize:11,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'white'}}>Infografías</span>
-          </div>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:6}}>Infografías</div>
           <h2 style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'white',lineHeight:1.18,margin:'0 0 8px',letterSpacing:'-0.01em'}}>
             Información visual, <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>simple y al alcance</span>
           </h2>
@@ -430,9 +434,9 @@ export function InfographicsPanel() {
             <button onClick={()=>scroll(-1)} aria-label="Anterior" style={navBtnGlassStyle}>
               <Icon name="chevron-left" style={{width:18,height:18}} />
             </button>
-            <div ref={trackRef} style={{
+            <div ref={trackRef} {...dragHandlers} style={{
               flex:1, display:'flex', gap:18,
-              overflowX:'auto', scrollSnapType:'x mandatory', scrollbarWidth:'none',
+              overflowX:'auto', scrollSnapType:'x mandatory', scrollbarWidth:'none', cursor:'grab',
               opacity: isRefreshing ? 0.35 : 1, transition:'opacity 220ms ease',
             }} className="hide-scroll">
               {fadeItems.map(inf => <InfoCard key={inf.id} inf={inf} channelsById={channelsById} onOpen={setOpenInfo} />)}

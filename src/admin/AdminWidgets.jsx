@@ -348,6 +348,7 @@ export function NewContentModal({ section, item, onClose }) {
   const [modality, setModality] = React.useState(item?.modality || 'online');
   const [location, setLocation] = React.useState(item?.location || '');
   const [partnerName, setPartnerName] = React.useState(item?.partnerName || '');
+  const [partnerLogoUrl, setPartnerLogoUrl] = React.useState(item?.partnerLogoUrl || '');
   const [registrationUrl, setRegistrationUrl] = React.useState(item?.registrationUrl || '');
   const [visibility, setVisibility] = React.useState(item?.visibility || 'public');
   const [startDate, setStartDate] = React.useState(item?.startsAt ? item.startsAt.slice(0, 10) : '');
@@ -395,6 +396,7 @@ export function NewContentModal({ section, item, onClose }) {
           thumbnail_url: thumbnailUrl || null,
           registration_url: registrationUrl || null,
           partner_name: partnerName || null,
+          partner_logo_url: partnerLogoUrl || null,
           visibility,
           status,
           starts_at: startsAt,
@@ -527,9 +529,10 @@ export function NewContentModal({ section, item, onClose }) {
                 <Field label="Reseña completa"><textarea placeholder="Descripción completa (se muestra en el detalle del evento)…" value={description} onChange={e => setDescription(e.target.value)}></textarea></Field>
                 <ImageUploadField label="Banner del evento" value={thumbnailUrl} onChange={setThumbnailUrl} />
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-                  <Field label="Colaborador"><input type="text" placeholder="Microsoft, Veeam…" value={partnerName} onChange={e => setPartnerName(e.target.value)} /></Field>
+                  <Field label="Nombre del colaborador"><input type="text" placeholder="Microsoft, Veeam…" value={partnerName} onChange={e => setPartnerName(e.target.value)} /></Field>
                   <Field label="Enlace de inscripción"><input type="url" placeholder="https://teams.microsoft.com/registration/…" value={registrationUrl} onChange={e => setRegistrationUrl(e.target.value)} /></Field>
                 </div>
+                <ImageUploadField label="Logo del colaborador (recomendado 300x100 px)" value={partnerLogoUrl} onChange={setPartnerLogoUrl} />
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                   <Field label="Visibilidad">
                     <select value={visibility} onChange={e => setVisibility(e.target.value)}>

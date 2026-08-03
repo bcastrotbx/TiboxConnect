@@ -38,6 +38,20 @@ const NAV_LINKS = [
   { label: 'Eventos', scrollTarget: 'events' },
 ];
 
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): cada scrollTarget
+// del menú tiene una página propia de "ver todo" — se usa para decidir a
+// dónde navega el menú cuando el usuario ya está fuera del inicio (ver
+// handleNavClick). Rutas relativas (no absolutas ni con dominio) a
+// propósito: el dominio actual (tibox-connect.vercel.app) es temporal, va a
+// cambiar a uno propio de TIBOX más adelante — nada acá debe depender de
+// cuál sea.
+const CATEGORY_ROUTES = {
+  videos: '/videoteca',
+  infographics: '/infografias',
+  news: '/tendencias',
+  events: '/eventos',
+};
+
 // Tibox Connect v2 — Header (Crear Tickets = naranja; el botón azul
 // "Contacta a tu KAM" se eliminó a pedido de negocio)
 //
@@ -69,18 +83,31 @@ export function Header({ onSoporte }) {
     await signOut();
     navigate('/');
   };
-  // Ajuste posterior — reversión parcial (ver nota corta en
-  // FASE-06-07-08-CONTENIDO-REAL.md): si ya estamos en el inicio, scroll
-  // directo; si estamos en cualquier otra página, navega al inicio pasando
-  // el target pendiente en `state` — PortalLayout.jsx lo resuelve una vez
-  // que el Outlet ya cambió a HomePage.
+  // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): en el inicio,
+  // el menú sigue haciendo scroll con ancla dentro de la misma página (sin
+  // cambios). Fuera del inicio — en una página de "ver todo" de una
+  // categoría (/videoteca, /infografias, /tendencias, /eventos, o el
+  // detalle de un video) — pedido de Braulio: ya no debe volver al inicio
+  // con un ancla pendiente, sino ir directo a la página de esa categoría.
+  // Si ya es la categoría en la que está, hace scroll al inicio de la
+  // página en vez de un navigate() redundante.
   const handleNavClick = (target) => {
     setMobileOpen(false);
     if (location.pathname === '/') {
       window.scrollToSection && window.scrollToSection(target);
-    } else {
-      navigate('/', { state: { scrollTo: target } });
+      return;
     }
+    const categoryRoute = CATEGORY_ROUTES[target];
+    if (!categoryRoute) {
+      // "Inicio" (target === 'hero') u otro sin página propia: siempre al inicio.
+      navigate('/', { state: { scrollTo: target } });
+      return;
+    }
+    if (location.pathname === categoryRoute || location.pathname.startsWith(categoryRoute + '/')) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    navigate(categoryRoute);
   };
   const handleSoporteClick = () => {
     setMobileOpen(false);

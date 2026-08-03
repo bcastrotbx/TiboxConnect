@@ -24,6 +24,7 @@ function mapAdminRow(row) {
     thumbnailUrl: row.thumbnail_url || '',
     registrationUrl: row.registration_url || '',
     partnerName: row.partner_name || '',
+    partnerLogoUrl: row.partner_logo_url || '',
     location: row.location || '',
     modality: row.modality,
     visibility: row.visibility,
@@ -58,31 +59,42 @@ export async function createEvent(fields) {
   if (error) throw error;
 }
 
+// Imágenes propias de un evento (banner + logo del colaborador, ambas en
+// el bucket content-images) — se limpian de la misma forma al editar o
+// eliminar, ver más abajo.
+const EVENT_IMAGE_FIELDS = ['thumbnail_url', 'partner_logo_url'];
+
 // Ajuste posterior (auditoría del panel admin): mismo fix que
-// adminContentService.updateContentItem — al reemplazar el banner desde
-// "Editar", se limpia la imagen anterior en Storage si nada más la sigue
-// usando.
+// adminContentService.updateContentItem — al reemplazar el banner o el
+// logo del colaborador desde "Editar", se limpia la imagen anterior en
+// Storage si nada más la sigue usando.
 export async function updateEvent(id, fields) {
-  let previousUrl = null;
-  if ('thumbnail_url' in fields) {
-    const { data } = await supabase.from('events').select('thumbnail_url').eq('id', id).single();
-    previousUrl = data?.thumbnail_url || null;
+  const changedImageFields = EVENT_IMAGE_FIELDS.filter(f => f in fields);
+  let previous = {};
+  if (changedImageFields.length > 0) {
+    const { data } = await supabase.from('events').select(changedImageFields.join(',')).eq('id', id).single();
+    previous = data || {};
   }
   const { error } = await supabase.from('events').update(fields).eq('id', id);
   if (error) throw error;
-  if (previousUrl && previousUrl !== fields.thumbnail_url) {
-    await deleteContentImageIfUnused(previousUrl);
+  for (const f of changedImageFields) {
+    const previousUrl = previous[f];
+    if (previousUrl && previousUrl !== fields[f]) {
+      await deleteContentImageIfUnused(previousUrl);
+    }
   }
 }
 
 // Ajuste posterior (auditoría del panel admin): mismo fix que
-// adminContentService.deleteContentItem — limpia el banner en Storage al
-// eliminar el evento, en una sola llamada (`.delete().select()`, sin
-// consulta previa aparte), solo si ningún otro content_item/evento sigue
-// apuntando a esa misma imagen.
+// adminContentService.deleteContentItem — limpia el banner y el logo del
+// colaborador en Storage al eliminar el evento, en una sola llamada
+// (`.delete().select()`, sin consulta previa aparte), solo si ningún otro
+// content_item/evento sigue apuntando a esa misma imagen.
 export async function deleteEvent(id) {
-  const { data: deleted, error } = await supabase.from('events').delete().select('thumbnail_url').eq('id', id);
+  const { data: deleted, error } = await supabase.from('events').delete().select(EVENT_IMAGE_FIELDS.join(',')).eq('id', id);
   if (error) throw error;
-  const thumbnailUrl = deleted?.[0]?.thumbnail_url;
-  if (thumbnailUrl) await deleteContentImageIfUnused(thumbnailUrl);
+  for (const f of EVENT_IMAGE_FIELDS) {
+    const url = deleted?.[0]?.[f];
+    if (url) await deleteContentImageIfUnused(url);
+  }
 }

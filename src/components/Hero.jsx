@@ -20,6 +20,36 @@ export function HeroSlider() {
     return () => clearInterval(id);
   }, [go, total]);
 
+  // Pedido de Braulio: arrastrar con clic sostenido (mouse) o dedo (touch)
+  // para navegar el hero, sin quitar las flechas. A diferencia de los
+  // carruseles de tarjetas (ver useDragScroll), el hero no tiene scroll
+  // horizontal nativo que reaprovechar en touch — es un solo slide a la
+  // vez — así que acá el gesto se maneja a mano para mouse y touch por
+  // igual: se mide el desplazamiento horizontal entre el "pointerdown" y
+  // el "pointerup" y, si supera el umbral, se avanza/retrocede un slide.
+  const dragRef = React.useRef({ dragging:false, startX:0 });
+  const HERO_DRAG_THRESHOLD = 40;
+  const onHeroPointerDown = (e) => {
+    dragRef.current = { dragging:true, startX:e.clientX };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    // Evita que el arrastre se interprete como selección de texto (el
+    // hero tiene título/descripción encima) — mismo criterio que
+    // useDragScroll para los carruseles de tarjetas.
+    document.body.style.userSelect = 'none';
+  };
+  const onHeroPointerUp = (e) => {
+    if (!dragRef.current.dragging) return;
+    dragRef.current.dragging = false;
+    document.body.style.userSelect = '';
+    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    const dx = e.clientX - dragRef.current.startX;
+    if (Math.abs(dx) > HERO_DRAG_THRESHOLD) go(dx < 0 ? 1 : -1);
+  };
+  const onHeroPointerCancel = () => {
+    dragRef.current.dragging = false;
+    document.body.style.userSelect = '';
+  };
+
   if (status !== 'success' || total === 0) {
     return (
       <div style={{ borderRadius:18, overflow:'hidden', background:'var(--grad-corporate)', height:360, display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -31,12 +61,17 @@ export function HeroSlider() {
   const slide = slides[cur];
 
   return (
-    <div className="hero-shell" style={{
-      borderRadius: 18, overflow: 'hidden',
-      background: 'var(--grad-corporate)',
-      position: 'relative', color: 'white',
-      display: 'flex', flexDirection: 'column', justifyContent: 'center',
-    }}>
+    <div className="hero-shell"
+      onPointerDown={onHeroPointerDown}
+      onPointerUp={onHeroPointerUp}
+      onPointerCancel={onHeroPointerCancel}
+      style={{
+        borderRadius: 18, overflow: 'hidden',
+        background: 'var(--grad-corporate)',
+        position: 'relative', color: 'white',
+        display: 'flex', flexDirection: 'column', justifyContent: 'center',
+        cursor: 'grab', touchAction: 'pan-y',
+      }}>
       {/* Real background image per slide */}
       <img key={cur} src={slide.bg} alt="" style={{
         position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',
@@ -68,9 +103,23 @@ export function HeroSlider() {
               {slide.titleAccent}
             </span>
           </h1>
-          <p style={{fontSize:15,color:'rgba(255,255,255,0.78)',lineHeight:1.65,maxWidth:500,margin:'0 0 26px'}}>
+          <p style={{fontSize:15,color:'rgba(255,255,255,0.78)',lineHeight:1.65,maxWidth:500,margin:'0 0 18px'}}>
             {slide.desc}
           </p>
+          {/* Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): el
+              indicador de progreso (puntos) vivía junto a las flechas en la
+              columna derecha — se mueve acá, debajo del texto descriptivo y
+              alineado a la izquierda con el resto del bloque de texto. */}
+          <div style={{display:'flex',gap:7,alignItems:'center',marginBottom:20}}>
+            {slides.map((_,i)=>(
+              <button key={i} onClick={()=>setCur(i)} style={{
+                width: i===cur ? 20 : 7, height:7,
+                borderRadius:999, border:'none', cursor:'pointer', padding:0,
+                background: i===cur ? 'var(--brand-cyan)' : 'rgba(255,255,255,0.35)',
+                transition:'all 300ms',
+              }}/>
+            ))}
+          </div>
           <div style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}}>
             <CtaPrimary>
               <Icon name={slide.ctaIcon} style={{width:15,height:15}} />
@@ -79,32 +128,20 @@ export function HeroSlider() {
           </div>
         </div>
 
-        {/* Slide counter & indicators */}
+        {/* Slide counter & arrows */}
         <div className="hero-side" style={{display:'flex',flexDirection:'column',alignItems:'flex-end',justifyContent:'space-between',height:'100%',gap:20}}>
           <div className="hero-counter" style={{fontSize:40,fontWeight:700,color:'rgba(255,255,255,0.16)',lineHeight:1,fontVariantNumeric:'tabular-nums'}}>
             {String(cur+1).padStart(2,'0')}<span style={{fontSize:20,color:'rgba(255,255,255,0.1)'}}>/0{total}</span>
           </div>
-          <div style={{display:'flex',flexDirection:'column',gap:10,alignItems:'flex-end'}}>
-            <div style={{display:'flex',gap:8}}>
-              <button onClick={()=>go(-1)} style={heroArrow}
-                onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.2)'}
-                onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.1)'}
-              ><Icon name="chevron-left" style={{width:16,height:16}} /></button>
-              <button onClick={()=>go(1)} style={heroArrow}
-                onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.2)'}
-                onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.1)'}
-              ><Icon name="chevron-right" style={{width:16,height:16}} /></button>
-            </div>
-            <div style={{display:'flex',gap:7,alignItems:'center'}}>
-              {slides.map((_,i)=>(
-                <button key={i} onClick={()=>setCur(i)} style={{
-                  width: i===cur ? 20 : 7, height:7,
-                  borderRadius:999, border:'none', cursor:'pointer', padding:0,
-                  background: i===cur ? 'var(--brand-cyan)' : 'rgba(255,255,255,0.35)',
-                  transition:'all 300ms',
-                }}/>
-              ))}
-            </div>
+          <div style={{display:'flex',gap:8}}>
+            <button onClick={()=>go(-1)} style={heroArrow}
+              onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.2)'}
+              onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.1)'}
+            ><Icon name="chevron-left" style={{width:16,height:16}} /></button>
+            <button onClick={()=>go(1)} style={heroArrow}
+              onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.2)'}
+              onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.1)'}
+            ><Icon name="chevron-right" style={{width:16,height:16}} /></button>
           </div>
         </div>
       </div>

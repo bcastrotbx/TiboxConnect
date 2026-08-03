@@ -717,30 +717,12 @@ Causa: este proyecto Supabase tiene **"Automatically expose new tables" desactiv
 
 ## Pendiente
 
-- **Braulio debe ejecutar la migración `20260731100400_grants_site_settings_services.sql`** (agrega los GRANT de Postgres faltantes para `site_settings` y `services` — sin esto, ambas tablas devuelven 401 en cualquier entorno, ya confirmado en producción) en el SQL Editor de Supabase, **después** de haber corrido `20260731100200_site_settings.sql` y `20260731100300_services.sql`. Contenido completo de la migración en `supabase/migrations/20260731100400_grants_site_settings_services.sql`.
-- **Braulio debe ejecutar la migración `20260731100300_services.sql`** (crea la tabla `services` con el catálogo real de Servicios TIBOX, sembrada con las 6 unidades ya usadas por el portal) en el SQL Editor de Supabase — hasta entonces, `/admin/contenidos/servicios` no puede cargar ni guardar nada real. Contenido completo de la migración en `supabase/migrations/20260731100300_services.sql`.
-- **Braulio debe ejecutar la migración `20260731100200_site_settings.sql`** (crea la tabla `site_settings`, usada por el tab "Contacto" de `/admin/portada` y por el bloque de contacto público en `Services.jsx`) en el SQL Editor de Supabase — hasta entonces, ese tab y el bloque de contacto público funcionan con los textos de reserva (fallback) hardcodeados, sin persistencia real. Contenido completo de la migración en `supabase/migrations/20260731100200_site_settings.sql`.
-- **Braulio debe ejecutar la migración `20260731100100_fix_infographic_thumbnail_duplicates.sql`** (reasigna imágenes únicas a 2 infografías que hoy comparten thumbnail con otras) en el SQL Editor de Supabase. Contenido completo de la migración:
-  ```sql
-  update public.content_items
-  set thumbnail_url = 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=450&fit=crop'
-  where type = 'infographic'
-    and title = 'Los 5 pilares de la transformación digital empresarial';
-
-  update public.content_items
-  set thumbnail_url = 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&h=450&fit=crop'
-  where type = 'infographic'
-    and title = 'Automatización de procesos: por dónde empezar';
-  ```
-- **Braulio debe ejecutar la migración `20260731100000_events_sort_order.sql`** (agrega `sort_order` a `events`) en el SQL Editor de Supabase — hasta entonces, la sección Eventos del panel admin y "Próximos Eventos" del portal fallarán al cargar (columna inexistente). Contenido completo de la migración:
+- **Braulio debe ejecutar la migración `20260801100000_events_partner_logo.sql`** (agrega `partner_logo_url` a `events`, para el campo de logo del colaborador subido desde el admin — ver ajuste posterior más abajo) en el SQL Editor de Supabase. Contenido completo de la migración:
   ```sql
   alter table public.events
-    add column if not exists sort_order integer not null default 0;
-
-  create index if not exists events_sort_order_idx on public.events (sort_order);
+    add column if not exists partner_logo_url text;
   ```
-- **Braulio debe ejecutar la migración `20260730100000_demo_content_agosto.sql`** (contenido de ejemplo adicional para la demo) en el SQL Editor de Supabase — entre otras cosas, incluye el único evento `completed` disponible hoy; hasta que se ejecute, el botón "Ver eventos realizados" no aparece (el panel muestra correctamente el estado vacío "Todavía no hay eventos realizados").
-- **Braulio debe ejecutar, en este orden, las 3 migraciones nuevas de esta fase** (`20260729100000_webinars_category.sql`, `20260729100100_hero_slides_seed.sql`, `20260729100200_storage_content_images.sql`) en el SQL Editor de Supabase, después de las ya ejecutadas de las Fases 4 y 5.
+- **Ya ejecutadas y confirmadas por Braulio** (se dejan de listar como pendientes): `20260729100000_webinars_category.sql`, `20260729100100_hero_slides_seed.sql`, `20260729100200_storage_content_images.sql`, `20260730100000_demo_content_agosto.sql`, `20260731100000_events_sort_order.sql`, `20260731100100_fix_infographic_thumbnail_duplicates.sql`, `20260731100200_site_settings.sql`, `20260731100300_services.sql`, `20260731100400_grants_site_settings_services.sql`.
 - **Si el `INSERT` sobre `storage.buckets` de la migración de Storage falla**, crear el bucket manualmente: Supabase Dashboard → Storage → New bucket → nombre `content-images` → Public bucket activado. Luego ejecutar el resto del archivo (las políticas RLS) igual.
 - **Probar el flujo completo de creación de contenido desde el panel admin** (login real, crear/publicar una noticia con imagen, una infografía con imagen, un video de YouTube, un evento con banner y enlace de inscripción) — ver los pasos exactos en el mensaje de cierre de esta fase.
 - Agregar `resources` genéricos y galería de eventos, si el negocio los sigue necesitando después del evento de agosto.
@@ -756,6 +738,23 @@ Pedido de Braulio: casi todos los CTA del portal usaban el mismo degradado naran
 - Se agregó el botón Nivel 3 donde no existía ningún CTA visible en la tarjeta (`VideoCard` en Media.jsx, `VideotecaCard` en VideotecaPage.jsx, `NoticiaGridCard` en TendenciasPage.jsx — antes toda la tarjeta era clickeable sin ningún botón); se convirtió el texto plano "Ver infografía →" de `InfoCard` a este mismo botón.
 - La lista vertical de noticias del home (columna izquierda de "Tendencias de la industria") se dejó sin botón a propósito — ya tenía cursor y hover propios, es un patrón de lista, no de tarjeta.
 - No se tocó el panel admin — tiene su propio sistema de estilos (`admin.css`).
+
+**Commit local únicamente al momento de escribir esto, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
+
+## Ajuste posterior — pulido visual del portal, drag-to-scroll, logo de colaborador y navegación del menú
+
+Batch de pedidos puntuales de Braulio, todos revisados en local antes de aprobar:
+
+- **Indicador de progreso del hero** movido de la columna derecha (junto a las flechas) a debajo del texto descriptivo, alineado a la izquierda con el resto del bloque de texto (`Hero.jsx`).
+- **Flechas de "Videos y Webinars"** movidas a los costados del carrusel (mismo patrón que Infografías/Eventos), centradas verticalmente respecto a las tarjetas — antes vivían arriba, junto al título (`Media.jsx`).
+- **Bug de alineación en Eventos:** las flechas usaban `alignItems:'stretch'` en vez de `'center'`, así que se estiraban a la altura de la tarjeta más alta de la fila en vez de centrarse — una línea de fix (`Events.jsx`).
+- **Tamaño de títulos de sección unificado** — "Explora Videos y Webinars" usaba un `fontSize` fijo más chico que el resto (`clamp(1.3rem,2vw,1.7rem)`); ahora usa el mismo clamp que todas las demás secciones (`Media.jsx`).
+- **Ícono eliminado del eyebrow de Infografías** — el pill con ícono circular se reemplazó por texto plano, igual que Eventos/Tendencias (`Media.jsx`).
+- **Drag-to-scroll (arrastrar con clic sostenido)** en los 3 carruseles de tarjetas (Videos, Infografías, Eventos) y gesto de swipe propio en el hero — nuevo `src/hooks/useDragScroll.js`. Solo mouse en los carruseles (touch ya arrastra nativo sobre `overflow-x:auto`); mouse y touch en el hero. **Bug real encontrado y corregido en el camino:** la primera versión suprimía el clic post-arrastre con un `addEventListener` dentro de un `useEffect` con dependencia `[ref]` — como el `<div>` del carrusel no existe todavía en el primer render (detrás de un estado de carga), el efecto corría una sola vez con `ref.current = null` y nunca se re-ejecutaba cuando el carrusel aparecía después. Se reescribió para usar `onClickCapture` como prop normal de React (se re-vincula en cada render, igual que `onPointerDown`) — verificado con pruebas de arrastre real que el carrusel se desliza y el clic post-arrastre queda suprimido, sin afectar el clic simple.
+- **Logo de Veeam demasiado pequeño en la tarjeta de evento** — bug del asset SVG, no del componente: `partner-veeam.svg` tenía `viewBox="0 0 24 24"` (cuadrado) pero el wordmark real solo ocupaba ~18% de esa altura (medido con `getBBox()`: el contenido va de y=9.8 a y=14.2 dentro de un viewBox de 24 de alto) — el resto era espacio vacío invisible. Se ajustó el `viewBox` para encerrar justo el contenido real.
+- **Campo de logo del colaborador conectado de verdad** — antes el logo se resolvía emparejando `partner_name` (texto libre) contra un set fijo de logos estáticos en el código; si el nombre no calzaba exacto, no había logo real. Nueva columna `events.partner_logo_url` (migración `20260801100000_events_partner_logo.sql`, pendiente de ejecutar — ver `## Pendiente`) + campo de subida de imagen en el admin (recomendado 300×100px), con la misma limpieza automática en Storage al reemplazar/eliminar que ya tienen banners e infografías. El emparejo estático anterior queda como fallback para eventos viejos sin logo propio subido.
+- **Alto del bloque "Tendencias" (2 columnas) corregido dos veces** — el primer intento (`ResizeObserver` sobre la columna de la publicación destacada + alto fijo en la lista) tenía un bug: el grid contenedor estira (`align-items: stretch` por defecto) ambas columnas a la misma altura, así que la columna destacada se inflaba para igualar el alto natural (sin acotar) de la lista, y el `ResizeObserver` terminaba midiendo ese alto ya inflado — un círculo vicioso. Fix: `alignItems:'start'` en el grid contenedor, para que cada columna mida su propio contenido de forma independiente; la destacada vuelve a su alto real y ese es el valor correcto que se mide y se aplica a la lista, que mantiene su scroll interno (`Events.jsx`).
+- **Menú superior — navegación contextual.** Antes, el menú siempre volvía al inicio con un scroll pendiente, sin importar en qué página estuviera el usuario. Ahora: en el inicio, sigue con scroll por ancla (sin cambios); en una página de "ver todo" de una categoría (`/videoteca`, `/infografias`, `/tendencias`, `/eventos`, o el detalle de un video), el menú navega directo a la página de esa categoría en vez de volver al inicio; si ya es la categoría activa, hace scroll al inicio de la página en vez de un `navigate()` redundante; "Inicio" siempre lleva a `/` (`Header.jsx`). Rutas relativas a propósito — el dominio actual (`tibox-connect.vercel.app`) es temporal y va a cambiar a uno propio de TIBOX, nada de este cambio depende de cuál sea.
 
 **Commit local únicamente al momento de escribir esto, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
 

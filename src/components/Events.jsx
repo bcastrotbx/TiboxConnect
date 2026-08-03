@@ -7,6 +7,7 @@ import { LoadingState, EmptyState, ErrorState } from './shared/AsyncState.jsx';
 import { CtaPrimary, CtaCard, CtaLink } from './shared/CtaStyles.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import { useFadeContent } from '../hooks/useFadeContent.js';
+import { useDragScroll } from '../hooks/useDragScroll.js';
 import * as eventService from '../services/eventService.js';
 import * as newsService from '../services/newsService.js';
 
@@ -126,6 +127,12 @@ function CalendarModal({ events, modalidadById, onClose }) {
 export function EventCard({ ev, modalidadById, partnersById, onVerDetalle }) {
   const m = modalidadById[ev.modalidad] || { color:'#0050C8', icon:'wifi' };
   const partner = partnersById[ev.partner] || { logo:'', name:'' };
+  // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): el logo del
+  // colaborador ahora se puede subir por evento (partner_logo_url) en vez
+  // de depender de emparejar partner_name contra un set fijo de logos
+  // estáticos — ese emparejo (partner.logo) queda como fallback para
+  // eventos viejos que no tienen un logo propio subido todavía.
+  const partnerLogo = ev.partnerLogoUrl || partner.logo;
   const isUpcoming = ev.rawStatus !== 'completed';
   const [hov, setHov] = React.useState(false);
   return (
@@ -184,11 +191,11 @@ export function EventCard({ ev, modalidadById, partnersById, onVerDetalle }) {
         <p style={{fontSize:12,color:'var(--gray-600)',lineHeight:1.5,margin:0,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{ev.desc}</p>
 
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,paddingTop:2}}>
-          {(partner.logo || ev.partnerName) && (
+          {(partnerLogo || ev.partnerName) && (
           <div style={{display:'flex',alignItems:'center',gap:8,minWidth:0}}>
             <span style={{fontSize:9.5,fontWeight:700,letterSpacing:'0.06em',textTransform:'uppercase',color:'var(--gray-400)'}}>Colaborador</span>
-            {partner.logo ? (
-              <img src={partner.logo} alt={partner.name} title={partner.name} style={{height:17,maxWidth:96,objectFit:'contain'}} />
+            {partnerLogo ? (
+              <img src={partnerLogo} alt={ev.partnerName || partner.name} title={ev.partnerName || partner.name} style={{height:17,maxWidth:96,objectFit:'contain'}} />
             ) : (
               <span style={{fontSize:12,fontWeight:700,color:'var(--navy-900)'}}>{ev.partnerName}</span>
             )}
@@ -224,6 +231,7 @@ export function EventosPanel() {
   const [openPastEvent, setOpenPastEvent] = React.useState(null);
   const [showCal, setShowCal] = React.useState(false);
   const trackRef = React.useRef(null);
+  const dragHandlers = useDragScroll(trackRef);
 
   const events = data?.events || [];
   const modalidadById = data?.modalidad || {};
@@ -283,13 +291,13 @@ export function EventosPanel() {
           {status === 'error' && <ErrorState label="No pudimos cargar los eventos." tone="dark" error={error} />}
           {status === 'success' && events.length === 0 && <EmptyState label="Todavía no hay eventos publicados." icon="calendar-check" tone="dark" />}
           {status === 'success' && events.length > 0 && (
-            <div style={{display:'flex',alignItems:'stretch',padding:'18px 20px 24px',gap:10}}>
+            <div style={{display:'flex',alignItems:'center',padding:'18px 20px 24px',gap:10}}>
               <button onClick={()=>scroll(-1)} aria-label="Anterior" style={navBtnGlassStyle}>
                 <Icon name="chevron-left" style={{width:18,height:18}} />
               </button>
-              <div ref={trackRef} style={{
+              <div ref={trackRef} {...dragHandlers} style={{
                 flex:1, display:'flex', gap:16,
-                overflowX:'auto', scrollSnapType:'x mandatory', scrollbarWidth:'none',
+                overflowX:'auto', scrollSnapType:'x mandatory', scrollbarWidth:'none', cursor:'grab',
               }} className="hide-scroll">
                 {events.map(ev => (
                   <div key={ev.id} style={{flex:'0 0 min(320px, 85vw)', scrollSnapAlign:'start'}}>
@@ -450,6 +458,27 @@ export function NoticiasPanel() {
   const catsById = React.useMemo(() => Object.fromEntries((allCats || []).map(c => [c.id, c])), [allCats]);
   const fc = featuredNews ? catsById[featuredNews.cat] : null;
 
+  // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): primero se
+  // probó dejar que la lista creciera con flex:1 dentro de un grid
+  // estirado — terminó expandiendo todo el bloque al alto de la ventana en
+  // vez de quedarse acotada por el contenido real de la columna derecha
+  // (la publicación destacada). Se mide esa columna con ResizeObserver y
+  // se aplica como alto fijo en píxeles a la columna izquierda: un alto
+  // explícito (no un porcentaje contra un ancestro de alto ambiguo) es lo
+  // que permite que flex:1 + overflow:auto funcionen de forma predecible
+  // y la lista quede con scroll interno en vez de expandir el bloque.
+  const rightColRef = React.useRef(null);
+  const [leftColHeight, setLeftColHeight] = React.useState(null);
+  React.useEffect(() => {
+    const el = rightColRef.current;
+    if (!el) return;
+    const update = () => setLeftColHeight(el.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [featuredNews]);
+
   return (
     <div className="section-card">
       <div style={{padding:'20px 24px 0',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16,flexWrap:'wrap'}}>
@@ -462,9 +491,22 @@ export function NoticiasPanel() {
         </CtaLink>
       </div>
 
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:0,marginTop:16,borderTop:'1px solid var(--gray-100)'}}>
-        {/* Left: categories + news list */}
-        <div style={{padding:'18px 22px',borderRight:'1px solid var(--gray-100)'}}>
+      {/* Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): CSS Grid
+          estira ("stretch") sus columnas a la misma altura por defecto —
+          antes de este alignItems:'start', la columna derecha (con su
+          contenido acotado: imagen + fecha/tiempo + título + resumen +
+          botón) se estiraba para igualar el alto NATURAL de la lista
+          izquierda (sin acotar, potencialmente larga), y el
+          ResizeObserver de abajo terminaba midiendo ese alto ya inflado —
+          un círculo vicioso donde ambas columnas terminaban tan altas
+          como la lista completa. Con 'start', cada columna mide su propio
+          contenido; la derecha vuelve a su alto real (el de la tarjeta
+          destacada) y ese es el valor correcto que se mide y se aplica a
+          la izquierda. */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:0,marginTop:16,borderTop:'1px solid var(--gray-100)',alignItems:'start'}}>
+        {/* Left: categories + news list — alto fijo en px, igualado al de
+            la columna derecha (ver leftColHeight arriba). */}
+        <div style={{padding:'18px 22px',borderRight:'1px solid var(--gray-100)',display:'flex',flexDirection:'column',height:leftColHeight ?? undefined,overflow:'hidden'}}>
           {/* Category filter */}
           <div style={{display:'flex',gap:7,flexWrap:'wrap',marginBottom:16}}>
             {cats.map(c => {
@@ -490,8 +532,8 @@ export function NoticiasPanel() {
           {status === 'error' && <ErrorState label="No pudimos cargar las noticias." error={error} />}
           {!isInitialLoad && status !== 'error' && (fadeItems || []).length === 0 && <EmptyState label="No hay noticias en esta categoría todavía." icon="rss" />}
           {!isInitialLoad && status !== 'error' && (fadeItems || []).length > 0 && (
-            <div style={{position:'relative'}}>
-              <div style={{display:'flex',flexDirection:'column',maxHeight:450,overflowY:'auto',scrollbarWidth:'thin',scrollbarColor:'var(--gray-300) transparent',paddingRight:4,opacity:isRefreshing?0.35:1,transition:'opacity 220ms ease'}}>
+            <div style={{position:'relative',flex:1,minHeight:0}}>
+              <div style={{display:'flex',flexDirection:'column',height:'100%',overflowY:'auto',scrollbarWidth:'thin',scrollbarColor:'var(--gray-300) transparent',paddingRight:4,opacity:isRefreshing?0.35:1,transition:'opacity 220ms ease'}}>
                 {fadeItems.map((n,idx) => {
                   const c = catsById[n.cat] || {};
                   return (
@@ -523,7 +565,7 @@ export function NoticiasPanel() {
 
         {/* Right: featured publication */}
         {featuredNews && (
-          <div style={{padding:'18px 22px',display:'flex',flexDirection:'column'}}>
+          <div ref={rightColRef} style={{padding:'18px 22px',display:'flex',flexDirection:'column'}}>
             <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.12em',textTransform:'uppercase',color:'#FF6707',marginBottom:12,display:'flex',alignItems:'center',gap:6}}>
               <Icon name="star" style={{width:13,height:13}} />Publicación destacada
             </div>
