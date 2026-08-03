@@ -2,6 +2,7 @@ import React from 'react';
 import { Icon } from '../components/shared/Icon.jsx';
 import { Breadcrumb } from '../components/shared/Breadcrumb.jsx';
 import { LoadingState, EmptyState, ErrorState } from '../components/shared/AsyncState.jsx';
+import { CtaCard } from '../components/shared/CtaStyles.jsx';
 import { Pagination } from '../components/shared/Pagination.jsx';
 import { NoticiaModal } from '../components/Events.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
@@ -39,6 +40,7 @@ function NoticiaGridCard({ n, catsById, onOpen }) {
           {n.source && <span>{n.source}</span>}
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Icon name="clock" style={{ width: 11, height: 11 }} />{n.date}</span>
         </div>
+        <CtaCard onClick={(e) => { e.stopPropagation(); onOpen(); }} style={{ marginTop: 10 }}>Ver noticia</CtaCard>
       </div>
     </div>
   );

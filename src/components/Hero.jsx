@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from './shared/Icon.jsx';
+import { CtaPrimary } from './shared/CtaStyles.jsx';
 import { LoadingState } from './shared/AsyncState.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import * as homeService from '../services/homeService.js';
@@ -71,21 +72,10 @@ export function HeroSlider() {
             {slide.desc}
           </p>
           <div style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}}>
-            <button style={{
-              display:'inline-flex',alignItems:'center',gap:8,
-              background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',
-              color:'white',
-              fontSize:14,fontWeight:700,padding:'11px 22px',
-              borderRadius:10,border:'none',cursor:'pointer',
-              boxShadow:'0 0 0 1px rgba(255,140,58,0.4), 0 2px 14px rgba(255,103,7,0.5), 0 0 26px rgba(255,103,7,0.35)',
-              transition:'transform 150ms, box-shadow 200ms',
-            }}
-              onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='0 0 0 1px rgba(255,140,58,0.5), 0 4px 20px rgba(255,103,7,0.6), 0 0 34px rgba(255,103,7,0.5)';}}
-              onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.boxShadow='0 0 0 1px rgba(255,140,58,0.4), 0 2px 14px rgba(255,103,7,0.5), 0 0 26px rgba(255,103,7,0.35)';}}
-            >
+            <CtaPrimary>
               <Icon name={slide.ctaIcon} style={{width:15,height:15}} />
               {slide.cta}
-            </button>
+            </CtaPrimary>
           </div>
         </div>
 

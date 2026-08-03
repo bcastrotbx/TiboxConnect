@@ -4,6 +4,7 @@ import { Icon } from './shared/Icon.jsx';
 import { ModalShell } from './shared/ModalShell.jsx';
 import { CosmicBg } from './shared/CosmicBg.jsx';
 import { LoadingState, EmptyState, ErrorState } from './shared/AsyncState.jsx';
+import { CtaPrimary, CtaCard, CtaLink } from './shared/CtaStyles.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import { useFadeContent } from '../hooks/useFadeContent.js';
 import * as eventService from '../services/eventService.js';
@@ -61,17 +62,9 @@ export function EventDetailModal({ event, modalidadById, onClose }) {
       {/* Inscripción: enlace externo (registrationUrl), editable desde el
           admin en una fase futura */}
       <div style={{padding:'18px 24px 24px'}}>
-        <a href={event.registrationUrl} target="_blank" rel="noopener noreferrer" style={{
-          width:'100%',padding:'12px',borderRadius:10,border:'none',cursor:'pointer',
-          background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',color:'white',textDecoration:'none',
-          fontSize:14,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:8,
-          boxShadow:'0 2px 14px rgba(255,103,7,0.4)',transition:'transform 150ms',
-        }}
-          onMouseEnter={e=>e.currentTarget.style.transform='translateY(-1px)'}
-          onMouseLeave={e=>e.currentTarget.style.transform='none'}
-        >
+        <CtaPrimary as="a" href={event.registrationUrl} target="_blank" rel="noopener noreferrer" style={{width:'100%'}}>
           <Icon name="external-link" style={{width:16,height:16}} />Inscríbete aquí
-        </a>
+        </CtaPrimary>
       </div>
     </ModalShell>
   );
@@ -201,15 +194,7 @@ export function EventCard({ ev, modalidadById, partnersById, onVerDetalle }) {
             )}
           </div>
           )}
-          <button onClick={()=>onVerDetalle(ev)} style={{
-            fontSize:12,fontWeight:700,color:'white',
-            background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',border:'none',borderRadius:9,
-            padding:'8px 16px',cursor:'pointer',flexShrink:0,whiteSpace:'nowrap',
-            boxShadow:'0 2px 10px rgba(255,103,7,0.32)',transition:'transform 150ms',
-          }}
-            onMouseEnter={e=>e.currentTarget.style.transform='translateY(-1px)'}
-            onMouseLeave={e=>e.currentTarget.style.transform='none'}
-          >Ver detalles</button>
+          <CtaCard onClick={()=>onVerDetalle(ev)}>Ver detalles</CtaCard>
         </div>
       </div>
     </div>
@@ -274,18 +259,10 @@ export function EventosPanel() {
                 FASE-06-07-08-CONTENIDO-REAL.md): "Ver todos los eventos" se
                 movió acá, a la izquierda de "Ver calendario" — antes vivía
                 suelto debajo del panel. */}
-            <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
-              <button onClick={()=>navigate('/eventos')} style={{
-                fontSize:12,fontWeight:700,color:'white',
-                background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.22)',borderRadius:9,
-                padding:'9px 15px',cursor:'pointer',display:'inline-flex',alignItems:'center',gap:7,whiteSpace:'nowrap',
-                transition:'transform 150ms,background 150ms',
-              }}
-                onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-1px)';e.currentTarget.style.background='rgba(255,255,255,0.22)';}}
-                onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.background='rgba(255,255,255,0.12)';}}
-              >
-                <Icon name="layout-grid" style={{width:14,height:14}} />Ver todos los eventos
-              </button>
+            <div style={{display:'flex',gap:16,flexWrap:'wrap',alignItems:'center'}}>
+              <CtaLink tone="dark" onClick={()=>navigate('/eventos')}>
+                Ver todos los eventos <Icon name="arrow-right" style={{width:13,height:13}} />
+              </CtaLink>
               {status === 'success' && upcomingEvents.length > 0 && (
                 <button onClick={()=>setShowCal(true)} style={{
                   fontSize:12,fontWeight:700,color:'white',
@@ -480,9 +457,9 @@ export function NoticiasPanel() {
           <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:4}}>Tendencias</div>
           <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'var(--navy-900)'}}>Tendencias <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>de la industria</span></div>
         </div>
-        <button onClick={()=>navigate('/tendencias')} style={{display:'inline-flex',alignItems:'center',gap:7,fontSize:12.5,fontWeight:700,cursor:'pointer',padding:'9px 15px',borderRadius:10,border:'1px solid var(--gray-200)',background:'white',color:'var(--gray-600)',whiteSpace:'nowrap',flexShrink:0}}>
-          <Icon name="rss" style={{width:14,height:14}} />Ver todas las tendencias
-        </button>
+        <CtaLink onClick={()=>navigate('/tendencias')} style={{alignSelf:'center'}}>
+          Ver todas las tendencias <Icon name="arrow-right" style={{width:13,height:13}} />
+        </CtaLink>
       </div>
 
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:0,marginTop:16,borderTop:'1px solid var(--gray-100)'}}>
@@ -561,17 +538,9 @@ export function NoticiasPanel() {
             </div>
             <h3 style={{fontSize:17,fontWeight:700,color:'var(--navy-900)',lineHeight:1.3,margin:'0 0 9px'}}>{featuredNews.title}</h3>
             <p style={{fontSize:13,color:'var(--gray-600)',lineHeight:1.6,margin:'0 0 18px'}}>{featuredNews.excerpt}</p>
-            <button onClick={() => setOpenNews({ title:featuredNews.title, img:featuredNews.img, body:featuredNews.body, catLabel:fc?.label, catColor:fc?.color })} style={{
-              alignSelf:'flex-start',display:'inline-flex',alignItems:'center',gap:8,border:'none',cursor:'pointer',
-              fontSize:13.5,fontWeight:700,color:'white',
-              background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',borderRadius:10,
-              padding:'12px 22px',boxShadow:'0 2px 14px rgba(255,103,7,0.35)',transition:'transform 150ms',
-            }}
-              onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'}
-              onMouseLeave={e=>e.currentTarget.style.transform='none'}
-            >
+            <CtaPrimary onClick={() => setOpenNews({ title:featuredNews.title, img:featuredNews.img, body:featuredNews.body, catLabel:fc?.label, catColor:fc?.color })} style={{alignSelf:'flex-start'}}>
               Ver publicación <Icon name="arrow-right" style={{width:15,height:15}} />
-            </button>
+            </CtaPrimary>
           </div>
         )}
 

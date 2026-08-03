@@ -4,6 +4,7 @@ import { Icon } from './shared/Icon.jsx';
 import { ModalShell } from './shared/ModalShell.jsx';
 import { CosmicBg } from './shared/CosmicBg.jsx';
 import { LoadingState, EmptyState, ErrorState } from './shared/AsyncState.jsx';
+import { CtaPrimary, CtaCard, CtaLink } from './shared/CtaStyles.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import { useFadeContent } from '../hooks/useFadeContent.js';
 import { YouTubePlayer } from './shared/YouTubePlayer.jsx';
@@ -99,6 +100,7 @@ function VideoCard({ v, catsById, onOpen }) {
           <span style={{display:'inline-flex',alignItems:'center',gap:4}}><Icon name="clock" style={{width:11,height:11}} />{v.dur}</span>
           <span style={{display:'inline-flex',alignItems:'center',gap:4}}><Icon name="calendar" style={{width:11,height:11}} />{v.date}</span>
         </div>
+        <CtaCard onClick={(e) => { e.stopPropagation(); onOpen(v); }} style={{alignSelf:'flex-start'}}>Ver video</CtaCard>
       </div>
     </div>
   );
@@ -130,9 +132,9 @@ export function ExploraPanel() {
           <div style={{fontSize:13,color:'var(--gray-500)',marginTop:4,maxWidth:560,lineHeight:1.5}}>Webinars, cápsulas, charlas y registros de eventos, reunidos en un solo lugar.</div>
         </div>
         <div style={{display:'flex',gap:10,flexShrink:0,paddingTop:4,alignItems:'center'}}>
-          <button onClick={()=>navigate('/videoteca')} style={{display:'inline-flex',alignItems:'center',gap:7,fontSize:12.5,fontWeight:700,cursor:'pointer',padding:'9px 15px',borderRadius:10,border:'1px solid var(--gray-200)',background:'white',color:'var(--gray-600)',whiteSpace:'nowrap'}}>
-            <Icon name="layout-grid" style={{width:14,height:14}} />Ver todos los videos
-          </button>
+          <CtaLink onClick={()=>navigate('/videoteca')}>
+            Ver todos los videos <Icon name="arrow-right" style={{width:13,height:13}} />
+          </CtaLink>
           <button onClick={()=>scroll(-1)} aria-label="Anterior" style={navBtnStyle}>
             <Icon name="chevron-left" style={{width:18,height:18}} />
           </button>
@@ -256,20 +258,12 @@ function InfografiaLeadModal({ contentItemId, onSuccess, onClose }) {
         {error && (
           <div style={{fontSize:12.5,color:'#c0392b',background:'rgba(192,57,43,0.08)',border:'1px solid rgba(192,57,43,0.2)',borderRadius:8,padding:'9px 12px'}}>{error}</div>
         )}
-        <button type="submit" disabled={sending} style={{
-          marginTop:4,padding:'12px',borderRadius:10,border:'none',cursor:sending?'default':'pointer',
-          background: sending ? 'var(--gray-300)' : 'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',color:'white',
-          fontSize:14,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:8,
-          boxShadow: sending ? 'none' : '0 2px 14px rgba(255,103,7,0.4)',transition:'transform 150ms',
-        }}
-          onMouseEnter={e=>{ if(!sending) e.currentTarget.style.transform='translateY(-1px)'; }}
-          onMouseLeave={e=>e.currentTarget.style.transform='none'}
-        >
+        <CtaPrimary type="submit" disabled={sending} style={{marginTop:4,width:'100%'}}>
           {sending
             ? <React.Fragment><Icon name="loader-2" style={{width:16,height:16}} />Enviando…</React.Fragment>
             : <React.Fragment><Icon name="download" style={{width:16,height:16}} />Continuar a la descarga</React.Fragment>
           }
-        </button>
+        </CtaPrimary>
       </form>
     </ModalShell>
   );
@@ -313,9 +307,9 @@ export function InfografiaModal({ info, channelsById, onClose }) {
       <div style={{padding:'20px 24px 24px'}}>
         <div style={{fontSize:16.5,fontWeight:700,color:'var(--navy-900)',lineHeight:1.32,marginBottom:9}}>{info.title}</div>
         <p style={{fontSize:13.5,color:'var(--gray-600)',lineHeight:1.65,margin:'0 0 18px'}}>{info.summary}</p>
-        <button onClick={handleDownloadClick} style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'11px',borderRadius:10,border:'none',cursor:'pointer',background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',color:'white',fontSize:13.5,fontWeight:700,boxShadow:'0 2px 12px rgba(255,103,7,0.35)'}}>
+        <CtaPrimary onClick={handleDownloadClick} style={{width:'100%'}}>
           <Icon name={justDownloaded ? 'check' : 'download'} style={{width:15,height:15}} />{justDownloaded ? 'Descarga iniciada' : 'Descargar'}
-        </button>
+        </CtaPrimary>
       </div>
       {showLead && (
         <InfografiaLeadModal
@@ -356,9 +350,7 @@ export function InfoCard({ inf, channelsById, onOpen }) {
           <span style={{fontSize:9.5,fontWeight:700,color:'var(--gray-600)',background:'var(--gray-100)',border:'1px solid var(--gray-200)',borderRadius:999,padding:'3px 9px',textTransform:'capitalize'}}>{inf.cat}</span>
         </div>
         <div style={{fontSize:13.5,fontWeight:700,color:'var(--navy-900)',lineHeight:1.32,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden',minHeight:'2.7em'}}>{inf.title}</div>
-        <div style={{display:'flex',alignItems:'center',gap:6,marginTop:10,fontSize:11.5,fontWeight:700,color:'#0050C8'}}>
-          Ver infografía <Icon name="arrow-right" style={{width:13,height:13}} />
-        </div>
+        <CtaCard onClick={(e) => { e.stopPropagation(); onOpen(inf); }} style={{marginTop:10}}>Ver infografía</CtaCard>
       </div>
     </div>
   );
@@ -404,9 +396,9 @@ export function InfographicsPanel() {
             Las piezas que publicamos en LinkedIn, Instagram y nuestros mailings, listas para descargar y compartir en tu organización.
           </p>
         </div>
-        <button onClick={()=>navigate('/infografias')} style={{display:'inline-flex',alignItems:'center',gap:7,fontSize:12.5,fontWeight:700,cursor:'pointer',padding:'9px 15px',borderRadius:10,border:'1px solid rgba(255,255,255,0.25)',background:'rgba(255,255,255,0.12)',color:'white',whiteSpace:'nowrap',flexShrink:0}}>
-          <Icon name="layout-grid" style={{width:14,height:14}} />Ver todas las infografías
-        </button>
+        <CtaLink tone="dark" onClick={()=>navigate('/infografias')} style={{flexShrink:0}}>
+          Ver todas las infografías <Icon name="arrow-right" style={{width:13,height:13}} />
+        </CtaLink>
       </div>
 
       {/* Filter chips */}

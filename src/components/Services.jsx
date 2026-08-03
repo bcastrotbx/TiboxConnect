@@ -3,6 +3,7 @@ import { Icon } from './shared/Icon.jsx';
 import { ModalShell } from './shared/ModalShell.jsx';
 import { CosmicBg } from './shared/CosmicBg.jsx';
 import { LoadingState, EmptyState, ErrorState } from './shared/AsyncState.jsx';
+import { CtaPrimary, CtaLink } from './shared/CtaStyles.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import * as serviceCatalogService from '../services/serviceCatalogService.js';
 import * as formService from '../services/formService.js';
@@ -122,9 +123,9 @@ export function ServicesV2() {
           <div style={{ fontSize:10, fontWeight:700, letterSpacing:'0.14em', textTransform:'uppercase', color:'var(--gray-400)', marginBottom:4 }}>También en TIBOX</div>
           <div style={{ fontSize:'clamp(1.3rem,2vw,1.7rem)', fontWeight:700, color:'var(--navy-900)' }}>Servicios <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>TIBOX</span></div>
         </div>
-        <a href="https://www.tibox.cl/servicios-ti-empresas/" target="_blank" rel="noopener noreferrer" style={{ fontSize:12.5, fontWeight:600, color:'var(--gray-500)', textDecoration:'none', display:'flex', alignItems:'center', gap:5 }}>
-          Ver todos <Icon name="arrow-right" style={{ width:14, height:14 }} />
-        </a>
+        <CtaLink as="a" href="https://www.tibox.cl/servicios-ti-empresas/" target="_blank" rel="noopener noreferrer">
+          Ver todos <Icon name="arrow-right" style={{ width:13, height:13 }} />
+        </CtaLink>
       </div>
 
       {/* Grid de servicios — 2 columnas */}
@@ -278,22 +279,12 @@ export function ContactFormSection() {
 
               {submitError && <div style={{fontSize:12.5,color:'#ff8a8a'}}>{submitError}</div>}
 
-              <button type="submit" disabled={sending || !privacyAccepted} style={{
-                padding:'11px', borderRadius:10, border:'none', cursor: (sending || !privacyAccepted)?'default':'pointer',
-                background: (sending || !privacyAccepted) ? 'var(--gray-300)' : 'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',
-                color:'white', fontSize:14, fontWeight:700,
-                display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-                boxShadow: (sending || !privacyAccepted) ? 'none' : '0 4px 16px rgba(255,103,7,0.28)',
-                transition:'transform 150ms, box-shadow 150ms',
-              }}
-                onMouseEnter={e=>{ if(!sending && privacyAccepted){ e.currentTarget.style.transform='translateY(-1px)'; e.currentTarget.style.boxShadow='0 6px 22px rgba(255,103,7,0.38)'; }}}
-                onMouseLeave={e=>{ e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow=(sending || !privacyAccepted)?'none':'0 4px 16px rgba(255,103,7,0.28)'; }}
-              >
+              <CtaPrimary type="submit" disabled={sending || !privacyAccepted}>
                 {sending
                   ? <React.Fragment><Icon name="loader-2" style={{width:16,height:16}} /> Enviando…</React.Fragment>
                   : <React.Fragment><Icon name="send" style={{width:16,height:16}} /> {settings.ctaText}</React.Fragment>
                 }
-              </button>
+              </CtaPrimary>
             </form>
           )}
         </div>

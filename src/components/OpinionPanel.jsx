@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from './shared/Icon.jsx';
+import { CtaPrimary } from './shared/CtaStyles.jsx';
 import * as formService from '../services/formService.js';
 
 // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): este panel ya no
@@ -45,19 +46,10 @@ export function OpinionPanel() {
         <p style={{fontSize:14,color:'rgba(255,255,255,0.65)',lineHeight:1.55,margin:'0 0 18px'}}>
           Cuéntanos qué te parece el portal Tibox Connect. Tu feedback orienta el contenido y la experiencia que construimos para tu empresa.
         </p>
-        <button onClick={()=>setShowModal(true)} style={{
-          display:'inline-flex',alignItems:'center',gap:8,fontSize:13.5,fontWeight:700,color:'white',
-          background:'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',border:'none',
-          borderRadius:11,padding:'13px 26px',cursor:'pointer',whiteSpace:'nowrap',
-          boxShadow:'0 0 0 1px rgba(255,140,58,0.4), 0 2px 14px rgba(255,103,7,0.5), 0 0 24px rgba(255,103,7,0.3)',
-          transition:'transform 150ms,box-shadow 150ms',
-        }}
-          onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='0 0 0 1px rgba(255,140,58,0.5), 0 4px 20px rgba(255,103,7,0.6), 0 0 32px rgba(255,103,7,0.45)';}}
-          onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.boxShadow='0 0 0 1px rgba(255,140,58,0.4), 0 2px 14px rgba(255,103,7,0.5), 0 0 24px rgba(255,103,7,0.3)';}}
-        >
+        <CtaPrimary onClick={()=>setShowModal(true)}>
           <Icon name="message-circle" style={{width:15,height:15}} />
           Enviar mi opinión
-        </button>
+        </CtaPrimary>
       </div>
 
       {showModal && (
@@ -127,10 +119,9 @@ export function OpinionPanel() {
                     />
                   </div>
                   {submitError && <div style={{fontSize:12.5,color:'#c0392b'}}>{submitError}</div>}
-                  <button type="submit" disabled={sending} style={{width:'100%',padding:'12px',borderRadius:10,border:'none',cursor:sending?'default':'pointer',background: sending ? 'var(--gray-300)' : 'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',color:'white',fontSize:14,fontWeight:700,boxShadow: sending ? 'none' : '0 2px 14px rgba(255,103,7,0.35)',transition:'transform 150ms'}}
-                    onMouseEnter={e=>{ if(!sending) e.currentTarget.style.transform='translateY(-1px)'; }}
-                    onMouseLeave={e=>e.currentTarget.style.transform='none'}
-                  >{sending ? 'Enviando…' : 'Enviar opinión'}</button>
+                  <CtaPrimary type="submit" disabled={sending} style={{width:'100%'}}>
+                    {sending ? 'Enviando…' : 'Enviar opinión'}
+                  </CtaPrimary>
                 </form>
               </React.Fragment>
             )}

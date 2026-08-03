@@ -747,6 +747,18 @@ Causa: este proyecto Supabase tiene **"Automatically expose new tables" desactiv
 - Mejorar el refetch tras acciones del admin sin recargar la página completa (ver decisión 8).
 - Evaluar restringir el CORS de Storage/Edge Functions a un dominio fijo una vez exista uno de producción (heredado de la Fase 5).
 
+## Ajuste posterior — sistema de jerarquía de botones (CTA) del portal público
+
+Pedido de Braulio: casi todos los CTA del portal usaban el mismo degradado naranja sin distinción de peso visual (hero, "Crear Tickets", "Ver detalles" de tarjetas, "Ver publicación", "Enviar mi opinión", etc. — todos compitiendo al mismo nivel). Se define un sistema de 4 niveles, centralizado en un archivo nuevo para que no se repita esta inconsistencia:
+
+- **Nuevo `src/components/shared/CtaStyles.jsx`** — exporta `CtaPrimary` (Nivel 1: degradado naranja `#FF6707→#FF8C3A`, el de mayor tamaño), `CtaSecondary` (Nivel 2: degradado `var(--u-infra-g)` azul→cian, hoy solo en "Crear Tickets" del header), `CtaCard` (Nivel 3: mismo naranja pero más chico, para CTA dentro de tarjetas — referencia: "Ver detalles" de `EventCard`) y `CtaLink` (Nivel 4: texto + flecha sin fondo/borde, para los enlaces "ver todo" de cada sección — `tone="dark"` sobre fondo navy, `tone="light"` por defecto sobre fondo claro).
+- Aplicado en `Hero.jsx`, `Header.jsx`, `Events.jsx`, `Media.jsx`, `OpinionPanel.jsx`, `Services.jsx`, `VideotecaPage.jsx`, `TendenciasPage.jsx` — incluye botones que ya eran naranjas pero no estaban mencionados explícitamente en el pedido original (confirmado con Braulio antes de tocarlos): "Inscríbete aquí", "Descargar"/"Continuar a la descarga", "Enviar mensaje".
+- Se agregó el botón Nivel 3 donde no existía ningún CTA visible en la tarjeta (`VideoCard` en Media.jsx, `VideotecaCard` en VideotecaPage.jsx, `NoticiaGridCard` en TendenciasPage.jsx — antes toda la tarjeta era clickeable sin ningún botón); se convirtió el texto plano "Ver infografía →" de `InfoCard` a este mismo botón.
+- La lista vertical de noticias del home (columna izquierda de "Tendencias de la industria") se dejó sin botón a propósito — ya tenía cursor y hover propios, es un patrón de lista, no de tarjeta.
+- No se tocó el panel admin — tiene su propio sistema de estilos (`admin.css`).
+
+**Commit local únicamente al momento de escribir esto, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
+
 ## Próxima fase recomendada
 
 Fase 9 (o la que Braulio priorice después del evento de agosto) — guardado real de leads de infografías, mensajes de contacto y opiniones (conectar `formService.js` a Supabase), y evaluar `resources`/galería de eventos si siguen siendo necesarios. **No se avanza sin confirmación explícita de Braulio**, y sin que primero se hayan ejecutado las migraciones de esta fase y probado la creación de contenido real desde el panel admin.

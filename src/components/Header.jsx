@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Icon } from './shared/Icon.jsx';
+import { CtaSecondary } from './shared/CtaStyles.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
 function initialsFor(profile) {
@@ -165,22 +166,13 @@ export function Header({ onSoporte }) {
       )}
 
       {/* Crear Tickets — siempre visible, incluso en celular (ver nota de
-          diseño arriba). NARANJA (antes "Mis Tickets", mismo estilo) */}
-      <a href="https://soporte.tibox.cl/Login/LoginCliente" target="_blank" rel="noopener noreferrer" style={{
-        display: 'inline-flex', alignItems: 'center', gap: 7,
-        fontSize: 13, fontWeight: 700, color: 'white',
-        background: 'linear-gradient(135deg, #FF6707 0%, #FF8C3A 100%)',
-        border: 'none', borderRadius: 10, padding: '8px 16px',
-        cursor: 'pointer', whiteSpace: 'nowrap', textDecoration: 'none', flexShrink: 0,
-        boxShadow: '0 2px 10px rgba(255,103,7,0.28)',
-        transition: 'transform 150ms, box-shadow 150ms',
-      }}
-        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(255,103,7,0.4)'; }}
-        onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(255,103,7,0.28)'; }}
-      >
+          diseño arriba). Nivel 2 del sistema de CTA del portal (ver
+          CtaStyles.jsx): degradado azul→cian de "Infraestructura TI", para
+          no competir visualmente con el Nivel 1 (naranja) del hero. */}
+      <CtaSecondary href="https://soporte.tibox.cl/Login/LoginCliente" target="_blank" rel="noopener noreferrer">
         <Icon name="ticket" style={{ width: 15, height: 15 }} />
         Crear Tickets
-      </a>
+      </CtaSecondary>
 
       <div className="header-secondary-desktop" style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.15)', margin: '0 6px' }}></div>
 

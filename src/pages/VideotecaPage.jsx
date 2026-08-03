@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '../components/shared/Icon.jsx';
 import { LoadingState, EmptyState, ErrorState } from '../components/shared/AsyncState.jsx';
+import { CtaCard } from '../components/shared/CtaStyles.jsx';
 import { Pagination } from '../components/shared/Pagination.jsx';
 import { Breadcrumb } from '../components/shared/Breadcrumb.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
@@ -82,6 +83,9 @@ function VideotecaCard({ item, catsById, onOpen }) {
             <Icon name="calendar" style={{ width: 11, height: 11 }} />{item.date}
           </span>
         </div>
+        <CtaCard onClick={(e) => { e.stopPropagation(); onOpen(); }} style={{ alignSelf: 'flex-start' }}>
+          {item.kind === 'event' ? 'Ver detalles' : 'Ver video'}
+        </CtaCard>
       </div>
     </div>
   );
