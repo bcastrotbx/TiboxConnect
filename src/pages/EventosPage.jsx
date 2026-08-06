@@ -1,8 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Breadcrumb } from '../components/shared/Breadcrumb.jsx';
 import { LoadingState, EmptyState, ErrorState } from '../components/shared/AsyncState.jsx';
 import { Pagination } from '../components/shared/Pagination.jsx';
-import { EventCard, EventDetailModal, VistaModal } from '../components/Events.jsx';
+import { EventCard } from '../components/Events.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import * as eventService from '../services/eventService.js';
 
@@ -16,13 +17,15 @@ const PAGE_SIZE = 12;
 // /videoteca oculta los eventos al filtrar por categoría). El listado
 // combina próximos y realizados (eventService.getAllEvents(), próximos
 // primero) reutilizando la misma EventCard del inicio, que ya distingue
-// "PRÓXIMAMENTE" por su cuenta. Al hacer clic, cada tarjeta abre el popup
-// que ya tenía según su estado — EventDetailModal para próximos, VistaModal
-// para realizados — sin cambios de comportamiento.
+// "PRÓXIMAMENTE" por su cuenta.
+//
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): "Ver detalles"
+// pasó de abrir el popup del inicio (EventDetailModal/VistaModal) a navegar
+// a una página propia (/eventos/:slug) — mismo patrón que Videoteca. El
+// inicio (EventosPanel) sigue usando el popup, no se tocó.
 export function EventosPage() {
+  const navigate = useNavigate();
   const [page, setPage] = React.useState(1);
-  const [openEvent, setOpenEvent] = React.useState(null);
-  const [openPastEvent, setOpenPastEvent] = React.useState(null);
 
   const { status, data, error } = useAsyncData(() => Promise.all([
     eventService.getAllEvents(),
@@ -36,10 +39,7 @@ export function EventosPage() {
   const totalPages = Math.max(1, Math.ceil(events.length / PAGE_SIZE));
   const pageItems = events.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const handleVerDetalle = (ev) => {
-    if (ev.rawStatus === 'completed') setOpenPastEvent(ev);
-    else setOpenEvent(ev);
-  };
+  const handleVerDetalle = (ev) => navigate(`/eventos/${ev.slug}`);
 
   return (
     <div className="section-card" style={{ padding: '28px 28px 4px' }}>
@@ -69,9 +69,6 @@ export function EventosPage() {
       )}
 
       <Pagination page={page} totalPages={totalPages} onChange={setPage} />
-
-      {openEvent && <EventDetailModal event={openEvent} modalidadById={modalidadById} onClose={() => setOpenEvent(null)} />}
-      {openPastEvent && <VistaModal event={openPastEvent} onClose={() => setOpenPastEvent(null)} />}
     </div>
   );
 }

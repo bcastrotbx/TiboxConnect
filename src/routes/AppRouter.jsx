@@ -10,6 +10,7 @@ import { VideotecaDetailPage } from '../pages/VideotecaDetailPage.jsx';
 import { InfografiasPage as InfografiasPublicPage } from '../pages/InfografiasPage.jsx';
 import { TendenciasPage } from '../pages/TendenciasPage.jsx';
 import { EventosPage as EventosPublicPage } from '../pages/EventosPage.jsx';
+import { EventoDetailPage } from '../pages/EventoDetailPage.jsx';
 import { NotFound } from '../pages/NotFound.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';
 import { UpdatePasswordPage } from '../pages/UpdatePasswordPage.jsx';
@@ -66,6 +67,7 @@ const router = createBrowserRouter([
       { path: 'infografias', element: <InfografiasPublicPage /> },
       { path: 'tendencias', element: <TendenciasPage /> },
       { path: 'eventos', element: <EventosPublicPage /> },
+      { path: 'eventos/:slug', element: <EventoDetailPage /> },
     ],
   },
   { path: '/login', element: <LoginPage /> },

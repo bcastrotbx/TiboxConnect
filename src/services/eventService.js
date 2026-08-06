@@ -91,6 +91,24 @@ export async function getEventBySlug(slug) {
   return data ? mapEventRow(data) : null;
 }
 
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): usada por la
+// página propia /eventos/:slug — a diferencia de getEventBySlug (solo
+// realizados, para el caso de /videoteca/:slug), acá el detalle propio de
+// Eventos existe para próximos Y realizados, así que no se restringe el
+// status.
+export async function getEventDetailBySlug(slug) {
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .eq('slug', slug)
+    .in('status', ['published', 'completed'])
+    .eq('visibility', 'public')
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? mapEventRow(data) : null;
+}
+
 export async function getEventById(id) {
   const { data, error } = await supabase
     .from('events')
