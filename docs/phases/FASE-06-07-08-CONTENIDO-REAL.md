@@ -761,7 +761,20 @@ Pedido de Braulio: tres bugs/mejoras de comportamiento en Videos, Eventos e Info
 - **"Mira también" de `/videoteca/:slug`** ya filtraba correctamente por `status='published'` (vía `eventService.getUpcomingEvents()`) — no requirió cambios.
 - **Eventos — mismo patrón de Videos: popup en el home, página propia desde el listado.** Antes, tanto el home como la página `/eventos` abrían el mismo popup (`EventDetailModal`/`VistaModal`). Ahora `/eventos` navega a una página independiente `/eventos/:slug` (nueva `src/pages/EventoDetailPage.jsx`, misma grilla 70/30 que `/videoteca/:slug` vía `.videoteca-detail-grid`) con una sección "Eventos recomendados" (otros próximos eventos publicados, excluyendo el actual). El home (`EventosPanel`) no se tocó — sigue abriendo el popup existente. Nuevo `eventService.getEventDetailBySlug(slug)` (a diferencia de `getEventBySlug`, que solo resuelve realizados para el caso de `/videoteca/:slug`, este resuelve tanto próximos como realizados, que es lo que necesita la página propia de Eventos).
 
-**Commit local únicamente al momento de escribir esto, sin `git push`** — a la espera de que Braulio lo revise en local con `npm run dev`.
+**Confirmado por Braulio en local, commiteado y pusheado a `origin/main`** (commit `42e76ee`) — verificado que el deploy en Vercel quedó al día con ese commit antes de continuar.
+
+## Ajuste posterior — formulario de lead de Infografías solo la primera vez por navegador
+
+Pedido de Braulio: el formulario de datos (nombre, empresa, cargo, correo) antes de descargar una infografía debía pedirse solo la primera vez que la persona descarga algo desde ese navegador — no una vez por pestaña/visita como estaba.
+
+- **`src/components/Media.jsx`** — la marca de "lead ya capturado" pasó de `sessionStorage` (se borraba al cerrar la pestaña) a `localStorage` (persiste entre visitas). Se guarda un JSON con la fecha de la primera descarga (`{ completedAt: <ISO> }`) en vez de solo `'true'`, aunque hoy solo se usa la presencia de la clave, no el valor — por si más adelante se quiere mostrar o vencer esa marca. Clave renombrada de `tibox_infografia_lead_ok` a `tibox_infografia_lead_completado` para que el nombre describa lo que ahora es (persistente, no de sesión).
+- El lead se sigue guardando en `infographic_leads` solo la primera vez — las descargas siguientes no generan un nuevo registro (Braulio no pidió registrar cada descarga individual, solo evitar repetir el formulario).
+- Limitación conocida y aceptada (explícita en el pedido): si el visitante borra los datos del navegador o usa otro dispositivo, se le vuelve a pedir el formulario — no hay forma de identificar a la persona sin pedirle datos.
+- Texto del formulario actualizado ("la primera vez… no te los volveremos a pedir en este navegador" en vez de "una vez por visita") para que sea consistente con el comportamiento real.
+- **Verificado en este entorno de trabajo** (Braulio pidió explícitamente no probarlo en local esta vez): con `localStorage` limpio, la primera descarga de una infografía mostró el formulario; al enviarlo se guardó un lead real de prueba en `infographic_leads` (`name="Test Verificación"`, `email="qa-verificacion-no-usar@tibox.cl"` — **Braulio debe borrarlo** desde `/admin/contenidos/infografias/leads` o con `delete from public.infographic_leads where email = 'qa-verificacion-no-usar@tibox.cl';`) y se guardó la marca en `localStorage`; al abrir una infografía *distinta* inmediatamente después, la descarga fue directa sin volver a mostrar el formulario. `npm run lint` y `npm run build` limpios.
+- **Sin migraciones SQL** — cambio puramente de frontend, no toca ninguna tabla ni columna.
+
+**Commit y push directo a `origin/main`, sin revisión previa en local** — a pedido explícito de Braulio para este ajuste puntual.
 
 ## Próxima fase recomendada
 

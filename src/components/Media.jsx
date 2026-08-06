@@ -202,10 +202,18 @@ const navBtnStyle = {
 
 /* ── Infografías ─────────────────────────────────── */
 
-// Recordatorio de "lead ya capturado" durante la visita actual, para no
-// pedir el formulario en cada descarga. Se limpia solo al cerrar la pestaña
-// (sessionStorage), no persiste entre visitas.
-const INFOGRAFIA_LEAD_KEY = 'tibox_infografia_lead_ok';
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): pedido de
+// Braulio — el formulario debe pedirse solo la primera vez que la persona
+// descarga una infografía desde ese navegador, no una vez por visita.
+// Cambiado de sessionStorage (se borraba al cerrar la pestaña) a
+// localStorage (persiste entre visitas, hasta que el visitante borre los
+// datos del navegador o use otro dispositivo — limitación conocida y
+// aceptada de esta solución, no hay forma de identificar a la persona sin
+// pedirle datos). Se guarda un JSON con la fecha de la primera descarga en
+// vez de solo `'true'`, por si en el futuro se quiere mostrar o vencer esa
+// marca — hoy no se usa el valor de la fecha para nada, solo la presencia
+// de la clave.
+const INFOGRAFIA_LEAD_KEY = 'tibox_infografia_lead_completado';
 
 // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): el envío ahora
 // guarda de verdad en `infographic_leads` (antes solo simulaba con
@@ -224,7 +232,7 @@ function InfografiaLeadModal({ contentItemId, onSuccess, onClose }) {
     setSending(true);
     formService.submitInfografiaLead({ ...form, contentItemId })
       .then(() => {
-        sessionStorage.setItem(INFOGRAFIA_LEAD_KEY, 'true');
+        localStorage.setItem(INFOGRAFIA_LEAD_KEY, JSON.stringify({ completedAt: new Date().toISOString() }));
         onSuccess();
       })
       .catch((err) => {
@@ -238,7 +246,7 @@ function InfografiaLeadModal({ contentItemId, onSuccess, onClose }) {
       <div style={{padding:'24px 26px 4px'}}>
         <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'#0050C8',marginBottom:6}}>Antes de descargar</div>
         <div style={{fontSize:18,fontWeight:700,color:'var(--navy-900)'}}>Cuéntanos un poco de ti</div>
-        <div style={{fontSize:13,color:'var(--gray-500)',marginTop:6,lineHeight:1.5}}>Completa estos datos una vez por visita para descargar el material de TIBOX Connect.</div>
+        <div style={{fontSize:13,color:'var(--gray-500)',marginTop:6,lineHeight:1.5}}>Completa estos datos la primera vez para descargar material de TIBOX Connect — no te los volveremos a pedir en este navegador.</div>
       </div>
       <form onSubmit={submit} style={{padding:'18px 26px 26px',display:'flex',flexDirection:'column',gap:14}}>
         <div>
@@ -294,7 +302,7 @@ export function InfografiaModal({ info, channelsById, onClose }) {
   };
 
   const handleDownloadClick = () => {
-    const leadOk = sessionStorage.getItem(INFOGRAFIA_LEAD_KEY) === 'true';
+    const leadOk = localStorage.getItem(INFOGRAFIA_LEAD_KEY) != null;
     if (leadOk) startDownload();
     else setShowLead(true);
   };
