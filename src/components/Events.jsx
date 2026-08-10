@@ -184,11 +184,11 @@ export function EventCard({ ev, modalidadById, partnersById, onVerDetalle }) {
                 <Icon name="clock" style={{width:11,height:11}} />{ev.time} hrs
               </span>
             </div>
-            <div style={{fontSize:13.5,fontWeight:700,color:'var(--navy-900)',lineHeight:1.3}}>{ev.title}</div>
+            <div style={{fontSize:13.5,fontWeight:700,color:'var(--navy-900)',lineHeight:1.3,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden',minHeight:'2.6em'}}>{ev.title}</div>
           </div>
         </div>
 
-        <p style={{fontSize:12,color:'var(--gray-600)',lineHeight:1.5,margin:0,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{ev.desc}</p>
+        <p style={{fontSize:12,color:'var(--gray-600)',lineHeight:1.5,margin:0,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden',minHeight:'3em'}}>{ev.desc}</p>
 
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,paddingTop:2}}>
           {(partnerLogo || ev.partnerName) && (
