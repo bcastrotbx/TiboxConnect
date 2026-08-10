@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase.js';
 import { makeSlug } from '../lib/slugify.js';
 import { formatShortDateEs } from '../lib/formatters.js';
-import { deleteContentImageIfUnused } from './storageService.js';
+import { deleteContentImageIfUnused, deleteContentImageUnconditional } from './storageService.js';
 
 // Fase 6/7/8 (Parte C) — CRUD real de events para el panel admin. Mismo
 // principio que adminContentService.js: RLS protege cada operación en el
@@ -29,8 +29,8 @@ function mapAdminRow(row) {
     modality: row.modality,
     visibility: row.visibility,
     startsAt: row.starts_at,
-    endsAt: row.ends_at,
     dateRaw: row.starts_at,
+    gallery: row.gallery || [],
     sortOrder: row.sort_order ?? 0,
   };
 }
@@ -68,11 +68,20 @@ const EVENT_IMAGE_FIELDS = ['thumbnail_url', 'partner_logo_url'];
 // adminContentService.updateContentItem — al reemplazar el banner o el
 // logo del colaborador desde "Editar", se limpia la imagen anterior en
 // Storage si nada más la sigue usando.
+//
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): mismo criterio
+// para la galería de fotos, pero sin el "¿nada más la usa?" de
+// deleteContentImageIfUnused — cada foto de galería es propia de ese
+// evento (no se comparte entre filas como thumbnail_url al duplicar), así
+// que las fotos que salieron del array (comparando contra lo que había
+// antes de este update) se borran directo de Storage.
 export async function updateEvent(id, fields) {
   const changedImageFields = EVENT_IMAGE_FIELDS.filter(f => f in fields);
+  const galleryChanged = 'gallery' in fields;
   let previous = {};
-  if (changedImageFields.length > 0) {
-    const { data } = await supabase.from('events').select(changedImageFields.join(',')).eq('id', id).single();
+  if (changedImageFields.length > 0 || galleryChanged) {
+    const selectCols = [...changedImageFields, ...(galleryChanged ? ['gallery'] : [])].join(',');
+    const { data } = await supabase.from('events').select(selectCols).eq('id', id).single();
     previous = data || {};
   }
   const { error } = await supabase.from('events').update(fields).eq('id', id);
@@ -83,6 +92,12 @@ export async function updateEvent(id, fields) {
       await deleteContentImageIfUnused(previousUrl);
     }
   }
+  if (galleryChanged) {
+    const oldUrls = previous.gallery || [];
+    const newUrls = fields.gallery || [];
+    const removedUrls = oldUrls.filter((url) => !newUrls.includes(url));
+    for (const url of removedUrls) await deleteContentImageUnconditional(url);
+  }
 }
 
 // Ajuste posterior (auditoría del panel admin): mismo fix que
@@ -91,10 +106,12 @@ export async function updateEvent(id, fields) {
 // (`.delete().select()`, sin consulta previa aparte), solo si ningún otro
 // content_item/evento sigue apuntando a esa misma imagen.
 export async function deleteEvent(id) {
-  const { data: deleted, error } = await supabase.from('events').delete().select(EVENT_IMAGE_FIELDS.join(',')).eq('id', id);
+  const { data: deleted, error } = await supabase.from('events').delete().select([...EVENT_IMAGE_FIELDS, 'gallery'].join(',')).eq('id', id);
   if (error) throw error;
   for (const f of EVENT_IMAGE_FIELDS) {
     const url = deleted?.[0]?.[f];
     if (url) await deleteContentImageIfUnused(url);
   }
+  const galleryUrls = deleted?.[0]?.gallery || [];
+  for (const url of galleryUrls) await deleteContentImageUnconditional(url);
 }

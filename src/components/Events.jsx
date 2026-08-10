@@ -121,7 +121,7 @@ function CalendarModal({ events, modalidadById, onClose }) {
 // FASE-06-07-08-CONTENIDO-REAL.md): antes solo se usaba dentro del panel de
 // "Próximos Eventos"; ahora también lo reutiliza la página /eventos para no
 // duplicar el diseño de tarjeta. La etiqueta "PRÓXIMAMENTE" se deriva de
-// `ev.rawStatus` (mapEventRow ya lo expone) en vez de requerir un prop
+// `ev.startsAtRaw` (ver eventService.isEventPast) en vez de requerir un prop
 // aparte — así funciona igual sea que la tarjeta venga de un listado
 // combinado (home, /eventos) o de uno ya filtrado.
 export function EventCard({ ev, modalidadById, partnersById, onVerDetalle }) {
@@ -133,7 +133,7 @@ export function EventCard({ ev, modalidadById, partnersById, onVerDetalle }) {
   // estáticos — ese emparejo (partner.logo) queda como fallback para
   // eventos viejos que no tienen un logo propio subido todavía.
   const partnerLogo = ev.partnerLogoUrl || partner.logo;
-  const isUpcoming = ev.rawStatus !== 'completed';
+  const isUpcoming = !eventService.isEventPast(ev.startsAtRaw);
   const [hov, setHov] = React.useState(false);
   return (
     <div
@@ -218,7 +218,8 @@ export function EventCard({ ev, modalidadById, partnersById, onVerDetalle }) {
 // mezclar próximos y realizados en páginas fijas de 2 hacía menos sentido
 // que dejarlos fluir en una sola cinta continua. Cada tarjeta (EventCard)
 // ya distingue "PRÓXIMAMENTE" vs realizado por su cuenta (ver
-// ev.rawStatus), así que no hace falta separarlos visualmente en grupos.
+// eventService.isEventPast), así que no hace falta separarlos visualmente
+// en grupos.
 export function EventosPanel() {
   const navigate = useNavigate();
   const { status, data, error } = useAsyncData(() => Promise.all([
@@ -236,7 +237,7 @@ export function EventosPanel() {
   const events = data?.events || [];
   const modalidadById = data?.modalidad || {};
   const partnersById = data?.partners || {};
-  const upcomingEvents = events.filter(ev => ev.rawStatus !== 'completed');
+  const upcomingEvents = events.filter(ev => !eventService.isEventPast(ev.startsAtRaw));
 
   const scroll = (dir) => {
     const el = trackRef.current; if (!el) return;
@@ -248,7 +249,7 @@ export function EventosPanel() {
   // VistaModal (resumen + galería, sin inscripción) — no se cambió ninguno
   // de los dos, solo se unificó el listado que los alimenta.
   const handleVerDetalle = (ev) => {
-    if (ev.rawStatus === 'completed') setOpenPastEvent(ev);
+    if (eventService.isEventPast(ev.startsAtRaw)) setOpenPastEvent(ev);
     else setOpenEvent(ev);
   };
 

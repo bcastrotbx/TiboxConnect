@@ -43,7 +43,7 @@ export function EventoDetailPage() {
   const mod = modalidadById[event.modalidad] || { color: '#0050C8', icon: 'wifi' };
   const partner = partnersById[event.partner] || { logo: '', name: '' };
   const partnerLogo = event.partnerLogoUrl || partner.logo;
-  const isUpcoming = event.rawStatus !== 'completed';
+  const isUpcoming = !eventService.isEventPast(event.startsAtRaw);
   const gallery = event.gallery || [];
   const recommended = (upcoming || []).filter((ev) => ev.id !== event.id).slice(0, 6);
 

@@ -59,9 +59,14 @@ function buildRowMenuItems(row, isEvent) {
     { id:'duplicate', icon:'copy', label:'Duplicar' },
   ];
   if (row.rawStatus !== 'published') items.push({ id:'publish', icon:'upload', label:'Publicar' });
-  if (isEvent && row.rawStatus !== 'completed') items.push({ id:'complete', icon:'check-circle-2', label:'Marcar como realizado' });
   if (!isEvent) items.push({ id: row.isFeatured ? 'unfeature' : 'feature', icon:'star', label: row.isFeatured ? 'Quitar destacado' : 'Marcar como destacado' });
-  if (row.rawStatus !== 'archived') items.push({ id:'archive', icon:'archive', label:'Archivar' });
+  // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): Eventos ya no
+  // tiene "Archivar" ni "Marcar como realizado" — su Estado quedó reducido
+  // a Borrador/Publicado (ver formulario más abajo), y "¿ya se realizó?"
+  // ahora se calcula solo a partir de la fecha de inicio, no de un estado
+  // manual. Ofrecer "Archivar" para un evento dejaría el status en un valor
+  // que el formulario ya ni siquiera muestra como opción.
+  if (!isEvent && row.rawStatus !== 'archived') items.push({ id:'archive', icon:'archive', label:'Archivar' });
   if (row.rawStatus !== 'draft') items.push({ id:'draft', icon:'file-edit', label:'Volver a borrador' });
   items.push({ id:'delete', icon:'trash-2', label:'Eliminar', danger:true });
   return items;
@@ -299,6 +304,106 @@ function ImageUploadField({ label, value, onChange }) {
   );
 }
 
+const GALLERY_MAX = 8;
+
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): galería de fotos
+// del evento — pedido explícito de Braulio, máximo 8 imágenes, mismo bucket
+// de Storage que el resto de las imágenes del admin (content-images, vía
+// storageService.uploadContentImage, reutilizado sin cambios). A diferencia
+// de ImageUploadField (un solo valor), acá `value`/`onChange` son un array
+// de URLs — cada foto tiene su propio botón de eliminar individual, que
+// borra el archivo de Storage de inmediato (ver
+// storageService.deleteContentImageUnconditional) en vez de dejarlo huérfano
+// hasta guardar el formulario.
+function GalleryUploadField({ label, value, onChange }) {
+  const urls = value || [];
+  const [uploading, setUploading] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [dragOver, setDragOver] = React.useState(false);
+  const remaining = GALLERY_MAX - urls.length;
+
+  const processFiles = async (fileList) => {
+    const files = Array.from(fileList || []).slice(0, remaining);
+    if (files.length === 0) return;
+    setError('');
+    setUploading(true);
+    try {
+      const uploaded = [];
+      for (const file of files) {
+        uploaded.push(await storageService.uploadContentImage(file));
+      }
+      onChange([...urls, ...uploaded]);
+    } catch (err) {
+      setError(err.message || 'No se pudo subir una de las imágenes.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    processFiles(e.target.files);
+    e.target.value = '';
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    processFiles(e.dataTransfer.files);
+  };
+
+  const handleRemove = async (url) => {
+    onChange(urls.filter((u) => u !== url));
+    await storageService.deleteContentImageUnconditional(url);
+  };
+
+  return (
+    <Field label={`${label} (${urls.length}/${GALLERY_MAX})`}>
+      {urls.length > 0 && (
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:8, marginBottom:10 }}>
+          {urls.map((url) => (
+            <div key={url} style={{ position:'relative', borderRadius:8, overflow:'hidden', border:'1px solid var(--gray-200)', aspectRatio:'1' }}>
+              <img src={url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
+              <button
+                type="button"
+                onClick={() => handleRemove(url)}
+                title="Eliminar esta foto"
+                style={{
+                  position:'absolute', top:4, right:4, width:22, height:22, borderRadius:'50%',
+                  background:'rgba(2,12,36,0.7)', border:'none', color:'white', cursor:'pointer',
+                  display:'flex', alignItems:'center', justifyContent:'center', padding:0,
+                }}
+              >
+                <Icon name="x" style={{ width:12, height:12 }} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      {urls.length < GALLERY_MAX && (
+        <label
+          className="adm-upload"
+          style={{
+            display: 'block',
+            cursor: uploading ? 'default' : 'pointer',
+            borderColor: dragOver ? '#0050C8' : undefined,
+            background: dragOver ? 'rgba(0,80,200,0.03)' : undefined,
+          }}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+        >
+          <Icon name="upload-cloud" style={{ width:24, height:24, marginBottom:8 }} />
+          <div style={{ fontSize:13, fontWeight:600 }}>
+            {uploading ? 'Subiendo…' : `Arrastra fotos o haz clic para subir (hasta ${remaining} más)`}
+          </div>
+          <input type="file" accept="image/jpeg,image/png,image/webp" multiple style={{ display:'none' }} onChange={handleInputChange} disabled={uploading} />
+        </label>
+      )}
+      {error && <div style={{ fontSize:12, color:'#c0392b', marginTop:6 }}>{error}</div>}
+    </Field>
+  );
+}
+
 // Usado solo en noticias e infografías (ver pedido explícito de Braulio):
 // deja elegir entre subir un archivo o pegar una URL ya alojada en otro
 // lugar. Ambas vías terminan escribiendo el mismo valor (thumbnail_url) vía
@@ -353,8 +458,7 @@ export function NewContentModal({ section, item, onClose }) {
   const [visibility, setVisibility] = React.useState(item?.visibility || 'public');
   const [startDate, setStartDate] = React.useState(item?.startsAt ? item.startsAt.slice(0, 10) : '');
   const [startTime, setStartTime] = React.useState(item?.startsAt ? item.startsAt.slice(11, 16) : '');
-  const [endDate, setEndDate] = React.useState(item?.endsAt ? item.endsAt.slice(0, 10) : '');
-  const [endTime, setEndTime] = React.useState(item?.endsAt ? item.endsAt.slice(11, 16) : '');
+  const [gallery, setGallery] = React.useState(item?.gallery || []);
 
   const newTitles = { videos:'Nuevo video o webinar', infographics:'Nueva infografía', news:'Nueva noticia', events:'Nuevo evento' };
   const editTitles = { videos:'Editar video o webinar', infographics:'Editar infografía', news:'Editar noticia', events:'Editar evento' };
@@ -377,16 +481,6 @@ export function NewContentModal({ section, item, onClose }) {
     try {
       if (isEvent) {
         const startsAt = new Date(`${startDate}T${startTime}`).toISOString();
-        const endsAt = endDate && endTime ? new Date(`${endDate}T${endTime}`).toISOString() : null;
-        // Ajuste posterior (auditoría del panel admin): no había ninguna
-        // validación que impidiera guardar un evento con término anterior
-        // al inicio — ni acá ni en la base (la columna `ends_at` no tiene
-        // un check constraint para esto).
-        if (endsAt && endsAt <= startsAt) {
-          setSaveError('La fecha y hora de término deben ser posteriores al inicio.');
-          setSaving(false);
-          return;
-        }
         const fields = {
           title: title.trim(),
           summary: summary || null,
@@ -400,7 +494,7 @@ export function NewContentModal({ section, item, onClose }) {
           visibility,
           status,
           starts_at: startsAt,
-          ends_at: endsAt,
+          gallery,
         };
         if (item) await adminEventsService.updateEvent(item.id, fields);
         else await adminEventsService.createEvent(fields);
@@ -515,15 +609,11 @@ export function NewContentModal({ section, item, onClose }) {
                       <option value="hybrid">Híbrida</option>
                     </select>
                   </Field>
-                  <Field label="Lugar"><input type="text" placeholder="Microsoft Teams, Oficina TIBOX…" value={location} onChange={e => setLocation(e.target.value)} /></Field>
+                  <Field label="Lugar"><input type="text" placeholder="Curicó, Santiago…" value={location} onChange={e => setLocation(e.target.value)} /></Field>
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                   <Field label="Fecha de inicio"><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} /></Field>
                   <Field label="Hora de inicio"><input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} /></Field>
-                </div>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-                  <Field label="Fecha de término (opcional)"><input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} /></Field>
-                  <Field label="Hora de término (opcional)"><input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} /></Field>
                 </div>
                 <Field label="Resumen breve"><textarea placeholder="Descripción breve del evento…" value={summary} onChange={e => setSummary(e.target.value)}></textarea></Field>
                 <Field label="Reseña completa"><textarea placeholder="Descripción completa (se muestra en el detalle del evento)…" value={description} onChange={e => setDescription(e.target.value)}></textarea></Field>
@@ -533,6 +623,7 @@ export function NewContentModal({ section, item, onClose }) {
                   <Field label="Enlace de inscripción"><input type="url" placeholder="https://teams.microsoft.com/registration/…" value={registrationUrl} onChange={e => setRegistrationUrl(e.target.value)} /></Field>
                 </div>
                 <ImageUploadField label="Logo del colaborador (recomendado 300x100 px)" value={partnerLogoUrl} onChange={setPartnerLogoUrl} />
+                <GalleryUploadField label="Galería de fotos" value={gallery} onChange={setGallery} />
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                   <Field label="Visibilidad">
                     <select value={visibility} onChange={e => setVisibility(e.target.value)}>
@@ -544,8 +635,6 @@ export function NewContentModal({ section, item, onClose }) {
                     <select value={status} onChange={e => setStatus(e.target.value)}>
                       <option value="draft">Borrador</option>
                       <option value="published">Publicado</option>
-                      <option value="completed">Completado (evento realizado)</option>
-                      <option value="archived">Archivado</option>
                     </select>
                   </Field>
                 </div>
@@ -592,11 +681,13 @@ export function NewContentModal({ section, item, onClose }) {
 // por fecha de publicación descendente (ver ajuste posterior en
 // FASE-06-07-08-CONTENIDO-REAL.md), así que unas flechas de reordenar ahí
 // serían contradictorias con ese comportamiento ya definido. Eventos
-// realizados (status='completed') tampoco se reordenan manualmente — no fue
-// pedido y mantienen su propio orden por fecha (ver mismo documento).
+// realizados tampoco se reordenan manualmente — no fue pedido y mantienen
+// su propio orden por fecha (ver mismo documento). "Ya realizado" se
+// calcula por fecha de inicio (row.dateRaw), no por un estado manual — ver
+// ajuste posterior sobre eventService.isEventPast.
 function isReorderable(section, row) {
   if (section === 'news') return false;
-  if (section === 'events') return row.rawStatus !== 'completed';
+  if (section === 'events') return !row.dateRaw || new Date(row.dateRaw).getTime() >= Date.now();
   return true;
 }
 
@@ -798,7 +889,7 @@ export function ContentTable({ section, title }) {
             title: row.title + ' (copia)', summary: row.summary, description: row.description,
             modality: row.modality, location: row.location, thumbnail_url: row.thumbnailUrl || null,
             registration_url: row.registrationUrl || null, partner_name: row.partnerName || null,
-            visibility: row.visibility, status: 'draft', starts_at: row.startsAt, ends_at: row.endsAt,
+            visibility: row.visibility, status: 'draft', starts_at: row.startsAt, gallery: row.gallery || [],
           });
         } else {
           await adminContentService.createContentItem(SECTION_TO_TYPE[section], {
@@ -815,7 +906,6 @@ export function ContentTable({ section, title }) {
       if (action === 'publish') { await setStatusFn(row.id, 'published'); }
       else if (action === 'archive') { await setStatusFn(row.id, 'archived'); }
       else if (action === 'draft') { await setStatusFn(row.id, 'draft'); }
-      else if (action === 'complete') { await setStatusFn(row.id, 'completed'); }
       else if (action === 'feature') { await setFeaturedFn(row.id, true); }
       else if (action === 'unfeature') { await setFeaturedFn(row.id, false); }
       window.location.reload();

@@ -18,6 +18,15 @@ function matchPartnerSlug(partnerName) {
   return match ? match[0] : null;
 }
 
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): "¿ya se realizó?"
+// se calcula comparando starts_at con la hora actual, en vez de un estado
+// manual ('completed') — ver razón completa (incluye un bug real de RLS que
+// esto corrige) en el ajuste posterior del formulario de eventos. Exportada
+// para que Events.jsx/EventoDetailPage.jsx no dupliquen esta comparación.
+export function isEventPast(startsAtRaw) {
+  return new Date(startsAtRaw).getTime() < Date.now();
+}
+
 function mapEventRow(row) {
   const { day, month, year } = formatDayMonth(row.starts_at);
   return {
@@ -61,12 +70,20 @@ export async function getUpcomingEvents() {
   return (data || []).map(mapEventRow);
 }
 
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): antes filtraba
+// por status='completed' — un estado que la política de seguridad (RLS)
+// nunca permitió leer a un visitante público (events_select_public solo
+// autoriza status='published'), así que esta función en realidad nunca
+// devolvía nada en producción. Ahora filtra por status='published' (lo
+// único que RLS permite) y por fecha ya pasada, que es como se determina
+// "ya se realizó" en todo el sitio desde este ajuste.
 export async function getPastEvents() {
   const { data, error } = await supabase
     .from('events')
     .select('*')
-    .eq('status', 'completed')
+    .eq('status', 'published')
     .eq('visibility', 'public')
+    .lt('starts_at', new Date().toISOString())
     .order('starts_at', { ascending: false });
 
   if (error) throw error;
@@ -74,17 +91,17 @@ export async function getPastEvents() {
 }
 
 // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): usada por la
-// página de detalle /videoteca/:slug para eventos ya realizados — solo
-// eventos con status='completed' tienen página de detalle propia; los
-// próximos/publicados abren el popup existente (EventDetailModal) en vez de
-// navegar, así que no se buscan acá.
+// página de detalle /videoteca/:slug para eventos ya realizados — mismo
+// ajuste que getPastEvents (status='published' + fecha pasada, en vez de
+// un status='completed' que RLS nunca dejó leer al público).
 export async function getEventBySlug(slug) {
   const { data, error } = await supabase
     .from('events')
     .select('*')
     .eq('slug', slug)
-    .eq('status', 'completed')
+    .eq('status', 'published')
     .eq('visibility', 'public')
+    .lt('starts_at', new Date().toISOString())
     .maybeSingle();
 
   if (error) throw error;
@@ -94,14 +111,14 @@ export async function getEventBySlug(slug) {
 // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): usada por la
 // página propia /eventos/:slug — a diferencia de getEventBySlug (solo
 // realizados, para el caso de /videoteca/:slug), acá el detalle propio de
-// Eventos existe para próximos Y realizados, así que no se restringe el
-// status.
+// Eventos existe para próximos Y realizados, así que no se restringe por
+// fecha, solo por status='published' (único valor que RLS permite leer).
 export async function getEventDetailBySlug(slug) {
   const { data, error } = await supabase
     .from('events')
     .select('*')
     .eq('slug', slug)
-    .in('status', ['published', 'completed'])
+    .eq('status', 'published')
     .eq('visibility', 'public')
     .maybeSingle();
 
@@ -114,7 +131,7 @@ export async function getEventById(id) {
     .from('events')
     .select('*')
     .eq('id', id)
-    .in('status', ['published', 'completed'])
+    .eq('status', 'published')
     .eq('visibility', 'public')
     .maybeSingle();
 
