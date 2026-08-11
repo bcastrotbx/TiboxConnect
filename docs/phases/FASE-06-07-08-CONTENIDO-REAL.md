@@ -836,6 +836,19 @@ Pedido de Braulio: en el popup de "Ver detalles" de la sección Eventos del home
 
 **Commit y push directo a `origin/main`** — Braulio pidió verificar en distintos escenarios (descripción corta, larga, con galería y sin galería) y publicar una vez confirmado, sin pedir explícitamente una revisión previa en local.
 
+## Ajuste posterior — bug: la galería no se mostraba en la página completa de un evento real
+
+Braulio reportó que, tras cargar 2 enlaces de fotos en el admin para "IA y seguridad en la empresa" (confirmados guardados, "2/10" en el formulario), la sección de galería no aparecía en `/eventos/ia-y-seguridad-en-la-empresa-n8c25z`.
+
+- **Paso 1 — verificación directa en la base de datos**, como pidió Braulio: `select gallery from events where slug='ia-y-seguridad-en-la-empresa-n8c25z'` devolvió las 2 URLs completas y bien formadas (`https://www.tibox.cl/wp-content/uploads/...`), `status='published'`. Los datos estaban perfectamente guardados — el bug no estaba en el guardado ni en la migración.
+- **Causa real, encontrada en `src/services/eventService.js`:** `mapEventRow()` — la función que convierte cada fila de `events` al objeto que usan `EventoDetailPage.jsx`, `EventCard`, `VistaModal` y `EventDetailModal` — nunca incluía el campo `gallery` en el objeto que devuelve, a pesar de que la consulta SQL sí lo trae (`select('*')`). El dato llegaba bien de Supabase y se perdía en este mapeo, así que `event.gallery` siempre era `undefined` en el frontend público, sin importar lo que hubiera en la base. `adminEventsService.js` (el servicio que usa el panel admin) sí tenía este campo en su propio mapeo — por eso el admin mostraba "2/10" correctamente y el problema solo aparecía en el sitio público.
+- **Por qué no se detectó en la verificación anterior:** esa verificación usó un evento simulado (`localStorage`) inyectado directamente como el objeto que consume el componente, sin pasar por `eventService.getEventDetailBySlug()` ni por `mapEventRow()` — el mismo camino que en producción sí tiene el bug. La prueba confirmó que el componente sabe renderizar `event.gallery` cuando existe, pero no confirmó que `event.gallery` realmente llegara ahí con datos reales.
+- **Fix:** una línea agregada a `mapEventRow()` — `gallery: row.gallery || []`.
+- **Verificado con el evento real** que reportó Braulio: recargada la página, la sección "Galería del evento" apareció con las 2 fotos, ambas cargando correctamente (confirmado por `naturalWidth > 0` en cada `<img>` y visualmente en una pestaña nueva). `npm run lint` y `npm run build` limpios.
+- **Sin migración SQL** — el bug era de mapeo en el frontend, los datos ya estaban bien guardados desde el ajuste anterior.
+
+**Commit y push directo a `origin/main`** — Braulio pidió corregir y volver a probar con este mismo evento real antes de publicar.
+
 ## Próxima fase recomendada
 
 Fase 9 (o la que Braulio priorice después del evento de agosto) — guardado real de leads de infografías, mensajes de contacto y opiniones (conectar `formService.js` a Supabase), y evaluar `resources`/galería de eventos si siguen siendo necesarios. **No se avanza sin confirmación explícita de Braulio**, y sin que primero se hayan ejecutado las migraciones de esta fase y probado la creación de contenido real desde el panel admin.

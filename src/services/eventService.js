@@ -49,6 +49,7 @@ function mapEventRow(row) {
     resumen: row.summary || '',
     startsAtRaw: row.starts_at,
     rawStatus: row.status,
+    gallery: row.gallery || [],
   };
 }
 
