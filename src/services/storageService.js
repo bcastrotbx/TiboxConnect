@@ -50,28 +50,6 @@ export async function deleteContentImageIfUnused(url) {
   }
 }
 
-// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): borrado directo,
-// sin la comprobación de "¿algo más sigue usando esta imagen?" que hace
-// deleteContentImageIfUnused. Pensado para la galería de fotos de un
-// evento (events.gallery, un array — no una columna 1-a-1 como
-// thumbnail_url/partner_logo_url, así que esa comprobación no aplica de la
-// misma forma) en dos casos: (a) el admin sube una foto y la elimina de
-// nuevo antes de guardar el formulario — nunca llegó a guardarse en
-// ninguna fila, así que no hay nada que "esté usándola"; (b) al editar o
-// eliminar un evento, se compara la galería anterior contra la nueva y se
-// borran las fotos que ya no están (ver adminEventsService.updateEvent/
-// deleteEvent) — cada foto de galería es propia de su evento, no se
-// comparte entre filas como sí puede pasar con thumbnail_url al duplicar.
-export async function deleteContentImageUnconditional(url) {
-  const path = extractStoragePath(url);
-  if (!path) return;
-  try {
-    await supabase.storage.from(BUCKET).remove([path]);
-  } catch (err) {
-    console.error('No se pudo eliminar la imagen de la galería en Storage:', err);
-  }
-}
-
 export async function uploadContentImage(file) {
   if (!file) {
     throw new InvalidImageError('No se seleccionó ningún archivo.');

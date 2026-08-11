@@ -304,102 +304,97 @@ function ImageUploadField({ label, value, onChange }) {
   );
 }
 
-const GALLERY_MAX = 8;
+const GALLERY_MAX = 10;
+const IMAGE_EXTENSION_RE = /\.(jpe?g|png|webp|gif|avif|svg)(\?.*)?$/i;
 
-// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): galería de fotos
-// del evento — pedido explícito de Braulio, máximo 8 imágenes, mismo bucket
-// de Storage que el resto de las imágenes del admin (content-images, vía
-// storageService.uploadContentImage, reutilizado sin cambios). A diferencia
-// de ImageUploadField (un solo valor), acá `value`/`onChange` son un array
-// de URLs — cada foto tiene su propio botón de eliminar individual, que
-// borra el archivo de Storage de inmediato (ver
-// storageService.deleteContentImageUnconditional) en vez de dejarlo huérfano
-// hasta guardar el formulario.
-function GalleryUploadField({ label, value, onChange }) {
-  const urls = value || [];
-  const [uploading, setUploading] = React.useState(false);
-  const [error, setError] = React.useState('');
-  const [dragOver, setDragOver] = React.useState(false);
-  const remaining = GALLERY_MAX - urls.length;
+function isValidHttpUrl(str) {
+  try {
+    const u = new URL(str);
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
 
-  const processFiles = async (fileList) => {
-    const files = Array.from(fileList || []).slice(0, remaining);
-    if (files.length === 0) return;
-    setError('');
-    setUploading(true);
-    try {
-      const uploaded = [];
-      for (const file of files) {
-        uploaded.push(await storageService.uploadContentImage(file));
-      }
-      onChange([...urls, ...uploaded]);
-    } catch (err) {
-      setError(err.message || 'No se pudo subir una de las imágenes.');
-    } finally {
-      setUploading(false);
-    }
+// Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): la galería de
+// fotos del evento pasó de subir archivos a Supabase Storage a pegar
+// enlaces de imágenes ya alojadas en otro lugar (ej. WordPress) — pedido
+// explícito de Braulio para no seguir gastando espacio de Storage en fotos
+// de eventos. `value`/`onChange` siguen siendo un array de strings (ahora
+// URLs pegadas a mano, antes URLs devueltas por el upload) — el resto del
+// formulario y del schema de datos (`events.gallery`, `text[]`) no cambia.
+// Cada fila valida formato de URL al perder el foco; si la URL no termina
+// en una extensión de imagen conocida, se avisa pero no se bloquea (puede
+// ser una URL sin extensión que igual sirva una imagen).
+function GalleryLinksField({ label, value, onChange }) {
+  const urls = value && value.length > 0 ? value : [''];
+  const [touched, setTouched] = React.useState({});
+
+  const setAt = (idx, url) => {
+    const next = [...urls];
+    next[idx] = url;
+    onChange(next);
   };
 
-  const handleInputChange = (e) => {
-    processFiles(e.target.files);
-    e.target.value = '';
+  const removeAt = (idx) => {
+    const next = urls.filter((_, i) => i !== idx);
+    onChange(next.length > 0 ? next : ['']);
   };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragOver(false);
-    processFiles(e.dataTransfer.files);
+  const addRow = () => {
+    if (urls.length >= GALLERY_MAX) return;
+    onChange([...urls, '']);
   };
 
-  const handleRemove = async (url) => {
-    onChange(urls.filter((u) => u !== url));
-    await storageService.deleteContentImageUnconditional(url);
-  };
+  const filledCount = urls.filter((u) => u.trim()).length;
 
   return (
-    <Field label={`${label} (${urls.length}/${GALLERY_MAX})`}>
-      {urls.length > 0 && (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:8, marginBottom:10 }}>
-          {urls.map((url) => (
-            <div key={url} style={{ position:'relative', borderRadius:8, overflow:'hidden', border:'1px solid var(--gray-200)', aspectRatio:'1' }}>
-              <img src={url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
-              <button
-                type="button"
-                onClick={() => handleRemove(url)}
-                title="Eliminar esta foto"
-                style={{
-                  position:'absolute', top:4, right:4, width:22, height:22, borderRadius:'50%',
-                  background:'rgba(2,12,36,0.7)', border:'none', color:'white', cursor:'pointer',
-                  display:'flex', alignItems:'center', justifyContent:'center', padding:0,
-                }}
-              >
-                <Icon name="x" style={{ width:12, height:12 }} />
-              </button>
+    <Field label={`${label} (${filledCount}/${GALLERY_MAX})`}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+        {urls.map((url, idx) => {
+          const trimmed = url.trim();
+          const showError = touched[idx] && trimmed && !isValidHttpUrl(trimmed);
+          const showWarning = !showError && trimmed && isValidHttpUrl(trimmed) && !IMAGE_EXTENSION_RE.test(trimmed);
+          return (
+            <div key={idx}>
+              <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                <input
+                  type="url"
+                  placeholder="https://ejemplo.com/foto.jpg"
+                  value={url}
+                  onChange={(e) => setAt(idx, e.target.value)}
+                  onBlur={() => setTouched((t) => ({ ...t, [idx]: true }))}
+                  style={{ flex:1, borderColor: showError ? '#c0392b' : undefined }}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeAt(idx)}
+                  title="Eliminar este enlace"
+                  style={{
+                    flexShrink:0, width:30, height:30, borderRadius:8, border:'1px solid var(--gray-200)',
+                    background:'white', color:'var(--gray-500)', cursor:'pointer',
+                    display:'flex', alignItems:'center', justifyContent:'center', padding:0,
+                  }}
+                >
+                  <Icon name="x" style={{ width:14, height:14 }} />
+                </button>
+              </div>
+              {showError && <div style={{ fontSize:11.5, color:'#c0392b', marginTop:4 }}>Esa URL no es válida.</div>}
+              {showWarning && <div style={{ fontSize:11.5, color:'var(--gray-400)', marginTop:4 }}>No parece un enlace directo a una imagen — puede que igual funcione.</div>}
             </div>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
       {urls.length < GALLERY_MAX && (
-        <label
-          className="adm-upload"
-          style={{
-            display: 'block',
-            cursor: uploading ? 'default' : 'pointer',
-            borderColor: dragOver ? '#0050C8' : undefined,
-            background: dragOver ? 'rgba(0,80,200,0.03)' : undefined,
-          }}
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={handleDrop}
+        <button
+          type="button"
+          onClick={addRow}
+          className="adm-mini-btn"
+          style={{ marginTop:10 }}
         >
-          <Icon name="upload-cloud" style={{ width:24, height:24, marginBottom:8 }} />
-          <div style={{ fontSize:13, fontWeight:600 }}>
-            {uploading ? 'Subiendo…' : `Arrastra fotos o haz clic para subir (hasta ${remaining} más)`}
-          </div>
-          <input type="file" accept="image/jpeg,image/png,image/webp" multiple style={{ display:'none' }} onChange={handleInputChange} disabled={uploading} />
-        </label>
+          <Icon name="plus" style={{ width:13, height:13 }} />Agregar enlace
+        </button>
       )}
-      {error && <div style={{ fontSize:12, color:'#c0392b', marginTop:6 }}>{error}</div>}
     </Field>
   );
 }
@@ -477,6 +472,16 @@ export function NewContentModal({ section, item, onClose }) {
     if (!title.trim()) { setSaveError('El título es obligatorio.'); return; }
     if (isEvent && (!startDate || !startTime)) { setSaveError('La fecha y hora de inicio son obligatorias.'); return; }
 
+    // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): la galería
+    // ahora son enlaces pegados a mano, no archivos subidos — se limpian
+    // filas vacías y se bloquea el guardado si queda alguna URL mal
+    // formada, en vez de guardar strings inválidos en events.gallery.
+    const cleanGallery = isEvent ? gallery.map((u) => u.trim()).filter(Boolean) : [];
+    if (isEvent && cleanGallery.some((u) => !isValidHttpUrl(u))) {
+      setSaveError('Uno o más enlaces de la galería no son URLs válidas — revísalos antes de guardar.');
+      return;
+    }
+
     setSaving(true);
     try {
       if (isEvent) {
@@ -494,7 +499,7 @@ export function NewContentModal({ section, item, onClose }) {
           visibility,
           status,
           starts_at: startsAt,
-          gallery,
+          gallery: cleanGallery,
         };
         if (item) await adminEventsService.updateEvent(item.id, fields);
         else await adminEventsService.createEvent(fields);
@@ -623,7 +628,7 @@ export function NewContentModal({ section, item, onClose }) {
                   <Field label="Enlace de inscripción"><input type="url" placeholder="https://teams.microsoft.com/registration/…" value={registrationUrl} onChange={e => setRegistrationUrl(e.target.value)} /></Field>
                 </div>
                 <ImageUploadField label="Logo del colaborador (recomendado 300x100 px)" value={partnerLogoUrl} onChange={setPartnerLogoUrl} />
-                <GalleryUploadField label="Galería de fotos" value={gallery} onChange={setGallery} />
+                <GalleryLinksField label="Galería de fotos (enlaces)" value={gallery} onChange={setGallery} />
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                   <Field label="Visibilidad">
                     <select value={visibility} onChange={e => setVisibility(e.target.value)}>
