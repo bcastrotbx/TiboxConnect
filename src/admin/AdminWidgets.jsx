@@ -13,6 +13,7 @@ import * as adminMessagesService from '../services/adminMessagesService.js';
 import * as adminOpinionsService from '../services/adminOpinionsService.js';
 import * as categoryService from '../services/categoryService.js';
 import * as storageService from '../services/storageService.js';
+import * as wordpressUploadService from '../services/wordpressUploadService.js';
 import { getYouTubeThumbnailUrl } from '../lib/youtube.js';
 
 export function statusTone(s) {
@@ -321,14 +322,24 @@ function isValidHttpUrl(str) {
 // enlaces de imágenes ya alojadas en otro lugar (ej. WordPress) — pedido
 // explícito de Braulio para no seguir gastando espacio de Storage en fotos
 // de eventos. `value`/`onChange` siguen siendo un array de strings (ahora
-// URLs pegadas a mano, antes URLs devueltas por el upload) — el resto del
-// formulario y del schema de datos (`events.gallery`, `text[]`) no cambia.
-// Cada fila valida formato de URL al perder el foco; si la URL no termina
-// en una extensión de imagen conocida, se avisa pero no se bloquea (puede
-// ser una URL sin extensión que igual sirva una imagen).
+// URLs pegadas a mano o subidas, antes solo URLs devueltas por el upload a
+// Supabase) — el resto del formulario y del schema de datos
+// (`events.gallery`, `text[]`) no cambia. Cada fila valida formato de URL
+// al perder el foco; si la URL no termina en una extensión de imagen
+// conocida, se avisa pero no se bloquea (puede ser una URL sin extensión
+// que igual sirva una imagen).
+//
+// Ajuste posterior: se agrega "Subir imagen" — sube el archivo directo a
+// la Biblioteca de Medios de WordPress (tibox.cl) vía
+// wordpressUploadService (que a su vez pasa por /api/upload-event-image,
+// el endpoint intermedio de Vercel que guarda la clave secreta) y agrega
+// la URL resultante como una fila más, sin reemplazar la opción de pegar
+// un enlace a mano — ambas conviven en el mismo arreglo.
 function GalleryLinksField({ label, value, onChange }) {
   const urls = value && value.length > 0 ? value : [''];
   const [touched, setTouched] = React.useState({});
+  const [uploading, setUploading] = React.useState(false);
+  const [uploadError, setUploadError] = React.useState('');
 
   const setAt = (idx, url) => {
     const next = [...urls];
@@ -341,12 +352,37 @@ function GalleryLinksField({ label, value, onChange }) {
     onChange(next.length > 0 ? next : ['']);
   };
 
+  const filledCount = urls.filter((u) => u.trim()).length;
+  const remaining = GALLERY_MAX - filledCount;
+
   const addRow = () => {
-    if (urls.length >= GALLERY_MAX) return;
+    if (filledCount >= GALLERY_MAX) return;
     onChange([...urls, '']);
   };
 
-  const filledCount = urls.filter((u) => u.trim()).length;
+  const handleFilesSelected = async (fileList) => {
+    const files = Array.from(fileList || []).slice(0, remaining);
+    if (files.length === 0) return;
+    setUploadError('');
+    setUploading(true);
+    try {
+      const uploadedUrls = [];
+      for (const file of files) {
+        uploadedUrls.push(await wordpressUploadService.uploadEventImageToWordpress(file));
+      }
+      const nonEmpty = urls.filter((u) => u.trim());
+      onChange([...nonEmpty, ...uploadedUrls]);
+    } catch (err) {
+      setUploadError(err.message || 'No se pudo subir una de las imágenes.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileInputChange = (e) => {
+    handleFilesSelected(e.target.files);
+    e.target.value = '';
+  };
 
   return (
     <Field label={`${label} (${filledCount}/${GALLERY_MAX})`}>
@@ -385,16 +421,21 @@ function GalleryLinksField({ label, value, onChange }) {
           );
         })}
       </div>
-      {urls.length < GALLERY_MAX && (
-        <button
-          type="button"
-          onClick={addRow}
-          className="adm-mini-btn"
-          style={{ marginTop:10 }}
-        >
-          <Icon name="plus" style={{ width:13, height:13 }} />Agregar enlace
-        </button>
-      )}
+      <div style={{ display:'flex', gap:10, marginTop:10, flexWrap:'wrap', alignItems:'center' }}>
+        {filledCount < GALLERY_MAX && (
+          <button type="button" onClick={addRow} className="adm-mini-btn">
+            <Icon name="plus" style={{ width:13, height:13 }} />Agregar enlace
+          </button>
+        )}
+        {remaining > 0 && (
+          <label className="adm-mini-btn" style={{ cursor: uploading ? 'default' : 'pointer', opacity: uploading ? 0.7 : 1 }}>
+            <Icon name={uploading ? 'loader-2' : 'upload-cloud'} className={uploading ? 'tbx-spin' : undefined} style={{ width:13, height:13 }} />
+            {uploading ? 'Subiendo…' : 'Subir imagen'}
+            <input type="file" accept="image/jpeg,image/png,image/webp" multiple style={{ display:'none' }} onChange={handleFileInputChange} disabled={uploading} />
+          </label>
+        )}
+      </div>
+      {uploadError && <div style={{ fontSize:12, color:'#c0392b', marginTop:6 }}>{uploadError}</div>}
     </Field>
   );
 }

@@ -33,4 +33,18 @@ export default [
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     },
   },
+  {
+    // Vercel Serverless Functions (api/*.js) corren en Node, no en el
+    // navegador — sin este bloque, `Buffer`/`process`/`fetch`/`FormData`
+    // se marcan como no definidos (globals.browser no los incluye).
+    files: ['api/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: { ...globals.node },
+    },
+    rules: {
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    },
+  },
 ];
