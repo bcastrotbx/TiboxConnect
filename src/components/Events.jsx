@@ -14,6 +14,7 @@ import * as newsService from '../services/newsService.js';
 /* ── Detalle del evento (sin formulario propio: la inscripción ocurre
    en la URL externa de registrationUrl, abierta en una pestaña nueva) ── */
 export function EventDetailModal({ event, modalidadById, onClose }) {
+  const navigate = useNavigate();
   const mod = modalidadById[event.modalidad] || { color:'#0050C8', icon:'wifi' };
   return (
     <ModalShell onClose={onClose} maxWidth={460}>
@@ -52,12 +53,18 @@ export function EventDetailModal({ event, modalidadById, onClose }) {
         </div>
       </div>
 
-      {/* Reseña / descripción */}
+      {/* Reseña / descripción — ajuste posterior (ver
+          FASE-06-07-08-CONTENIDO-REAL.md): recortada a 4 líneas con
+          line-clamp, con "Ver más detalles" debajo que lleva a la página
+          propia del evento (única fuente de la descripción completa). */}
       <div style={{padding:'16px 24px 4px'}}>
         <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--brand-cyan-700,#0079a8)',marginBottom:8,display:'flex',alignItems:'center',gap:6}}>
           <Icon name="info" style={{width:13,height:13}} />Sobre el evento
         </div>
-        <p style={{fontSize:13.5,color:'var(--gray-600)',lineHeight:1.6,margin:0}}>{event.resena || event.desc}</p>
+        <p style={{fontSize:13.5,color:'var(--gray-600)',lineHeight:1.6,margin:0,display:'-webkit-box',WebkitLineClamp:4,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{event.resena || event.desc}</p>
+        <CtaLink onClick={() => navigate(`/eventos/${event.slug}`)} style={{marginTop:8}}>
+          Ver más detalles <Icon name="arrow-right" style={{width:13,height:13}} />
+        </CtaLink>
       </div>
 
       {/* Inscripción: enlace externo (registrationUrl), editable desde el
@@ -328,15 +335,11 @@ const navBtnGlassStyle = {
   transition:'background 150ms',
 };
 
-/* ── Vista modal (evento realizado + galería) ───── */
+/* ── Vista modal (evento realizado) ───── */
 // Exportado: reutilizado tanto por el carrusel combinado del inicio como
 // por la página /eventos para el detalle de eventos ya realizados.
 export function VistaModal({ event, onClose }) {
-  const [lightbox, setLightbox] = React.useState(null);
-  // Galería de eventos realizados fuera de alcance de la Fase 6/7/8 (ver
-  // docs/phases/FASE-06-07-08-CONTENIDO-REAL.md) — eventos reales no traen
-  // este campo, así que se oculta la sección entera en vez de crashear.
-  const gallery = event.gallery || [];
+  const navigate = useNavigate();
   return (
     <ModalShell onClose={onClose} maxWidth={560}>
       {/* Imagen principal */}
@@ -373,42 +376,24 @@ export function VistaModal({ event, onClose }) {
         </div>
       </div>
 
-      {/* Resumen + reseña */}
+      {/* Resumen + reseña — ajuste posterior (ver
+          FASE-06-07-08-CONTENIDO-REAL.md): la reseña larga se recorta a 4
+          líneas con line-clamp, con "Ver más detalles" debajo que lleva a
+          la página propia del evento (reseña completa + galería de fotos,
+          que se sacó de este popup — vive solo en esa página ahora). */}
       <div style={{padding:'16px 24px 4px'}}>
         <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.08em',textTransform:'uppercase',color:'#0079a8',marginBottom:8,display:'flex',alignItems:'center',gap:6}}>
           <Icon name="file-text" style={{width:13,height:13}} />Resumen
         </div>
         <p style={{fontSize:13.5,fontWeight:600,color:'var(--navy-900)',lineHeight:1.55,margin:'0 0 10px'}}>{event.resumen}</p>
-        <p style={{fontSize:13,color:'var(--gray-600)',lineHeight:1.65,margin:0}}>{event.resena}</p>
+        <p style={{fontSize:13,color:'var(--gray-600)',lineHeight:1.65,margin:0,display:'-webkit-box',WebkitLineClamp:4,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{event.resena}</p>
       </div>
 
-      {/* Galería fotográfica (si el evento tiene fotos cargadas) */}
-      {gallery.length > 0 && (
-      <div style={{padding:'18px 24px 24px'}}>
-        <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.08em',textTransform:'uppercase',color:'#FF6707',marginBottom:10,display:'flex',alignItems:'center',gap:6}}>
-          <Icon name="images" style={{width:13,height:13}} />Galería del evento
-        </div>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-          {gallery.map((src,i)=>(
-            <button key={i} onClick={()=>setLightbox(src)} style={{
-              position:'relative',aspectRatio:'4/3',borderRadius:11,overflow:'hidden',cursor:'pointer',
-              border:'1px solid var(--gray-200)',padding:0,background:'#0b1a3a',
-            }}
-              onMouseEnter={e=>{const im=e.currentTarget.querySelector('img');if(im)im.style.transform='scale(1.06)';}}
-              onMouseLeave={e=>{const im=e.currentTarget.querySelector('img');if(im)im.style.transform='none';}}
-            >
-              <img src={src} alt={`Foto ${i+1}`} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',transition:'transform 320ms'}} />
-            </button>
-          ))}
-        </div>
+      <div style={{padding:'2px 24px 24px'}}>
+        <CtaLink onClick={() => navigate(`/eventos/${event.slug}`)}>
+          Ver más detalles <Icon name="arrow-right" style={{width:13,height:13}} />
+        </CtaLink>
       </div>
-      )}
-
-      {lightbox && (
-        <div onClick={()=>setLightbox(null)} style={{position:'fixed',inset:0,zIndex:700,background:'rgba(2,12,36,0.86)',display:'flex',alignItems:'center',justifyContent:'center',padding:32,cursor:'zoom-out'}}>
-          <img src={lightbox} alt="Foto del evento" style={{maxWidth:'100%',maxHeight:'100%',borderRadius:12,boxShadow:'0 24px 64px rgba(0,0,0,0.5)'}} />
-        </div>
-      )}
     </ModalShell>
   );
 }

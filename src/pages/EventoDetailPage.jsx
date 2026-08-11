@@ -111,25 +111,33 @@ export function EventoDetailPage() {
           </div>
           <p style={{ fontSize: 14, color: 'var(--gray-600)', lineHeight: 1.7, margin: '0 0 20px' }}>{event.resena || event.desc || 'Sin descripción disponible.'}</p>
 
-          {isUpcoming ? (
-            <CtaPrimary as="a" href={event.registrationUrl} target="_blank" rel="noopener noreferrer">
+          {/* Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md):
+              "Inscríbete aquí" y la galería son independientes entre sí —
+              antes un if/else los mostraba de forma excluyente según
+              isUpcoming, así que un evento realizado con fotos igual podía
+              perder la galería si por algún motivo isUpcoming daba true, y
+              un evento próximo con fotos ya cargadas (poco común, pero
+              posible) nunca las habría mostrado. La galería ahora se
+              muestra siempre que tenga fotos, sin importar el estado. */}
+          {isUpcoming && (
+            <CtaPrimary as="a" href={event.registrationUrl} target="_blank" rel="noopener noreferrer" style={{ marginBottom: gallery.length > 0 ? 24 : 0 }}>
               <Icon name="external-link" style={{ width: 16, height: 16 }} />Inscríbete aquí
             </CtaPrimary>
-          ) : (
-            gallery.length > 0 && (
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#FF6707', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Icon name="images" style={{ width: 13, height: 13 }} />Galería del evento
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
-                  {gallery.map((src, i) => (
-                    <div key={i} style={{ position: 'relative', aspectRatio: '4/3', borderRadius: 11, overflow: 'hidden', border: '1px solid var(--gray-200)', background: '#0b1a3a' }}>
-                      <img src={src} alt={`Foto ${i + 1}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                    </div>
-                  ))}
-                </div>
+          )}
+
+          {gallery.length > 0 && (
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#FF6707', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Icon name="images" style={{ width: 13, height: 13 }} />Galería del evento
               </div>
-            )
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
+                {gallery.map((src, i) => (
+                  <div key={i} style={{ position: 'relative', aspectRatio: '4/3', borderRadius: 11, overflow: 'hidden', border: '1px solid var(--gray-200)', background: '#0b1a3a' }}>
+                    <img src={src} alt={`Foto ${i + 1}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </div>

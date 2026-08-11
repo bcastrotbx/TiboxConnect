@@ -820,6 +820,22 @@ Pedido de Braulio: la galería de fotos del evento (agregada en el ajuste anteri
 
 **Commit y push directo a `origin/main`** — Braulio pidió verificar todo (guardar, editar, eliminar enlaces, visualización pública) y publicar el cambio una vez confirmado, sin pedir explícitamente una revisión previa en local.
 
+## Ajuste posterior — popup de evento: descripción recortada + "Ver más detalles"; galería solo en la página completa
+
+Pedido de Braulio: en el popup de "Ver detalles" de la sección Eventos del home, la descripción larga debía recortarse a 4 líneas (con "…"), con un botón "Ver más detalles" debajo que lleve a la página propia del evento — y la página completa debía mostrar la descripción íntegra más la galería de fotos debajo.
+
+- **Dos popups distintos, mismo tratamiento en ambos** (`src/components/Events.jsx`): "Ver detalles" en el home abre `EventDetailModal` (eventos próximos) o `VistaModal` (eventos ya realizados) según la fecha — el pedido no distinguía entre ambos, así que se aplicó el mismo recorte + botón a los dos, para que el comportamiento sea consistente sin importar el estado del evento:
+  - `EventDetailModal`: el párrafo de "Sobre el evento" se recortó a 4 líneas (`WebkitLineClamp:4`, mismo mecanismo ya usado en otras tarjetas del sitio) y se agregó `CtaLink` "Ver más detalles" debajo, que navega a `/eventos/${event.slug}`. El botón "Inscríbete aquí" existente no se tocó.
+  - `VistaModal`: la reseña larga (`event.resena`) se recortó igual a 4 líneas, con el mismo botón "Ver más detalles" debajo. **La galería de fotos que este popup mostraba inline se quitó por completo** (junto con el lightbox de zoom que tenía) — según el pedido, la galería completa vive únicamente en la página propia del evento de ahora en adelante, no duplicada en el popup rápido.
+- **Bug real encontrado y corregido al tocar `EventoDetailPage.jsx`:** el botón "Inscríbete aquí" y la sección de galería se mostraban con un `if/else` mutuamente excluyente según `isUpcoming` — un evento realizado con fotos sí mostraba la galería (nunca el botón, correcto), pero un eventual evento próximo con fotos ya cargadas nunca las habría mostrado (rama `else` inalcanzable mientras `isUpcoming` sea true). Se separaron en dos condicionales independientes: "Inscríbete aquí" se muestra si el evento es próximo, la galería se muestra si tiene fotos — sin importar el estado del otro. Comportamiento sensato para los casos sin galería (sección oculta por completo, sin dejar un título "Galería del evento" vacío) y sin botón "Ver más detalles" en la descripción de esa página (no aplica ahí — esa página ya ES el detalle completo).
+- **Verificado en el navegador**, con datos reales y datos simulados (mismo patrón de rutas/mocks temporales ya usado en ajustes anteriores, revertido por completo — `git status`/`git diff` confirmaron cero residuos):
+  - Con un evento real ya realizado y reseña larga: el popup mostró el texto recortado a 4 líneas con "…" y el botón "Ver más detalles"; al hacer clic, navegó a la página completa y mostró la reseña íntegra sin recorte.
+  - Con datos simulados: un evento realizado con reseña larga + 3 fotos mostró la reseña completa y la galería en cuadrícula debajo; un evento próximo con "Inscríbete aquí" + 1 foto mostró **ambos** al mismo tiempo (confirma el fix del bug de exclusión mutua); un evento sin fotos no mostró ninguna sección de galería (ni vacía ni con título suelto).
+  - `npm run lint` y `npm run build` limpios.
+- **Sin migración SQL** — cambio puramente de frontend, no toca el modelo de datos.
+
+**Commit y push directo a `origin/main`** — Braulio pidió verificar en distintos escenarios (descripción corta, larga, con galería y sin galería) y publicar una vez confirmado, sin pedir explícitamente una revisión previa en local.
+
 ## Próxima fase recomendada
 
 Fase 9 (o la que Braulio priorice después del evento de agosto) — guardado real de leads de infografías, mensajes de contacto y opiniones (conectar `formService.js` a Supabase), y evaluar `resources`/galería de eventos si siguen siendo necesarios. **No se avanza sin confirmación explícita de Braulio**, y sin que primero se hayan ejecutado las migraciones de esta fase y probado la creación de contenido real desde el panel admin.
