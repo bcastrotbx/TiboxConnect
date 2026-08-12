@@ -29,7 +29,19 @@ export function HeroSlider() {
   // el "pointerup" y, si supera el umbral, se avanza/retrocede un slide.
   const dragRef = React.useRef({ dragging:false, startX:0 });
   const HERO_DRAG_THRESHOLD = 40;
+  // Bug encontrado al revisar por qué el CTA (link con button_url) y las
+  // flechas/puntos del carrusel no respondían al clic: este handler está
+  // en .hero-shell, que envuelve TODO el hero — incluidos el CTA, los
+  // puntos y las flechas. Como no distinguía el target, capturaba el
+  // puntero (setPointerCapture) en CADA pointerdown dentro del hero,
+  // incluido uno que empezaba sobre un <button>/<a> — esa captura en el
+  // contenedor interfiere con que el navegador dispare el 'click' nativo
+  // sobre el control real, así que el clic se perdía de forma intermitente
+  // (según navegador/dispositivo). Ahora se ignoran los pointerdown que
+  // empiezan sobre un control interactivo, dejando que ese elemento reciba
+  // su propio clic sin que el hero intente interpretarlo como arrastre.
   const onHeroPointerDown = (e) => {
+    if (e.target.closest('button, a')) return;
     dragRef.current = { dragging:true, startX:e.clientX };
     e.currentTarget.setPointerCapture(e.pointerId);
     // Evita que el arrastre se interprete como selección de texto (el
