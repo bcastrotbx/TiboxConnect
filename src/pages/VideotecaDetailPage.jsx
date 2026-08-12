@@ -4,6 +4,7 @@ import { Icon } from '../components/shared/Icon.jsx';
 import { LoadingState, EmptyState, ErrorState } from '../components/shared/AsyncState.jsx';
 import { YouTubePlayer } from '../components/shared/YouTubePlayer.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
+import { formatDayMonth } from '../lib/formatters.js';
 import * as videotecaService from '../services/videotecaService.js';
 import * as contentService from '../services/contentService.js';
 import * as eventService from '../services/eventService.js';
@@ -14,14 +15,22 @@ import { EventDetailModal } from '../components/Events.jsx';
 // un evento ya realizado. El slug puede pertenecer a cualquiera de las dos
 // tablas (content_items o events) — videotecaService.getVideotecaDetailBySlug
 // prueba ambas. Layout 70/30 (.videoteca-detail-grid en index.css):
-// contenido principal a la izquierda, "Mira también" (próximos eventos) a
-// la derecha, apilado en pantallas angostas.
+// contenido principal a la izquierda, "Mira también" a la derecha, apilado
+// en pantallas angostas.
+//
+// Ajuste posterior (ver FASE-09-... ajuste "CTA Ver Más en Videos"): "Mira
+// también" ahora depende de qué se está viendo — para un video/webinar
+// muestra otros videos/webinars (contentService.getVideos(), que ya incluye
+// la categoría Webinars — no es un tipo de contenido aparte); para un
+// evento ya realizado se mantiene sin cambios el comportamiento aprobado en
+// la tarea #74 (solo eventos próximos publicados).
 export function VideotecaDetailPage() {
   const { slug } = useParams();
   const { status, data: detail, error } = useAsyncData(() => videotecaService.getVideotecaDetailBySlug(slug), [slug]);
   const { data: cats } = useAsyncData(() => contentService.getVideoCategories(), []);
   const { data: upcoming } = useAsyncData(() => eventService.getUpcomingEvents(), []);
   const { data: modalidad } = useAsyncData(() => eventService.getModalidadConfig(), []);
+  const { data: allVideos } = useAsyncData(() => contentService.getVideos({}), []);
   const [openEvent, setOpenEvent] = React.useState(null);
 
   const catsById = React.useMemo(() => Object.fromEntries((cats || []).map((c) => [c.id, c])), [cats]);
@@ -59,12 +68,13 @@ export function VideotecaDetailPage() {
   const dateLabel = isVideo ? 'Fecha de publicación' : 'Fecha del evento';
   const dateValue = isVideo ? item.date : `${item.day} ${item.month} ${item.year}`;
   const description = isVideo ? item.summary : (item.resena || item.desc);
+  const recommendedVideos = isVideo ? (allVideos || []).filter((v) => v.id !== item.id).slice(0, 6) : [];
 
   return (
     <div className="videoteca-detail-grid">
       {/* Contenido principal — 70% */}
       <div className="section-card" style={{ padding: 0 }}>
-        <YouTubePlayer thumb={thumb} externalUrl={externalUrl} title={item.title} />
+        <YouTubePlayer thumb={thumb} externalUrl={externalUrl} title={item.title} className="detail-banner-image" />
         <div style={{ padding: '22px 26px 28px' }}>
           <h1 style={{ fontSize: 'clamp(1.3rem,2vw,1.6rem)', fontWeight: 700, color: 'var(--navy-900)', lineHeight: 1.3, margin: '0 0 12px' }}>{item.title}</h1>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBottom: 18 }}>
@@ -91,10 +101,38 @@ export function VideotecaDetailPage() {
         </div>
       </div>
 
-      {/* "Mira también" — 30% */}
+      {/* "Mira también" — 30%. Para un video/webinar: otros videos/webinars
+          (Link a su propia página, sin popup). Para un evento ya realizado:
+          se mantiene sin cambios el comportamiento aprobado en la tarea
+          #74 (próximos eventos publicados, abre EventDetailModal). */}
       <div className="section-card" style={{ padding: '20px 22px' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy-900)', marginBottom: 14 }}>Mira también</div>
-        {(upcoming || []).length === 0 ? (
+        {isVideo ? (
+          recommendedVideos.length === 0 ? (
+            <div style={{ fontSize: 13, color: 'var(--gray-400)' }}>No hay más videos por ahora.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {recommendedVideos.map((v) => {
+                const { day, month } = formatDayMonth(v.dateRaw);
+                return (
+                  <Link key={v.id} to={`/videoteca/${v.slug}`} style={{
+                    display: 'flex', gap: 10, alignItems: 'center', textDecoration: 'none',
+                    padding: '9px 10px', borderRadius: 10, border: '1px solid var(--gray-200)', transition: 'background 150ms',
+                  }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gray-50)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
+                  >
+                    <div style={{ minWidth: 40, textAlign: 'center', background: 'var(--navy-900)', borderRadius: 8, padding: '5px 4px', flexShrink: 0 }}>
+                      <div style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--brand-cyan)', lineHeight: 1.2 }}>{month}</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: 'white', lineHeight: 1 }}>{day}</div>
+                    </div>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--navy-900)', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{v.title}</div>
+                  </Link>
+                );
+              })}
+            </div>
+          )
+        ) : (upcoming || []).length === 0 ? (
           <div style={{ fontSize: 13, color: 'var(--gray-400)' }}>No hay próximos eventos por ahora.</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

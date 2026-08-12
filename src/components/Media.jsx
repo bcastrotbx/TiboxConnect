@@ -24,6 +24,7 @@ import { downloadImageWithFallback } from '../lib/download.js';
    extracción del ID. Si external_url no es un link de YouTube válido, no
    se finge un reproductor — se ofrece un enlace real a "Ver contenido". ── */
 function VideoModal({ video, catsById, onClose }) {
+  const navigate = useNavigate();
   const cat = catsById[video.cat] || { color:'var(--navy-900)', label:'' };
   const youtubeId = extractYouTubeVideoId(video.externalUrl);
 
@@ -47,6 +48,15 @@ function VideoModal({ video, catsById, onClose }) {
               ? 'Este contenido no está alojado en YouTube — usa "Ver contenido" para abrirlo en una pestaña nueva.'
               : 'Este video todavía no tiene un link asociado.'}
           </div>
+        )}
+        {/* Ajuste posterior (mismo patrón que NoticiaModal, Events.jsx): el
+            popup se mantiene igual, solo gana este botón hacia la página
+            propia del video. Solo aparece si el video trae slug (siempre
+            lo trae — contentService.mapContentRow ya lo expone). */}
+        {video.slug && (
+          <CtaLink onClick={() => navigate(`/videoteca/${video.slug}`)} style={{marginTop:12}}>
+            Ver Más <Icon name="arrow-right" style={{width:13,height:13}} />
+          </CtaLink>
         )}
       </div>
     </ModalShell>

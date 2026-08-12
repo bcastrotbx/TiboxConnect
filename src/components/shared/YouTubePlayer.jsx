@@ -11,12 +11,18 @@ import { extractYouTubeVideoId } from '../../lib/youtube.js';
 // clic — evita autoplay con sonido apenas se muestra. Si `externalUrl` no
 // es un link de YouTube válido, no finge un reproductor: ofrece "Ver
 // contenido" (si hay `externalUrl`) o un mensaje de "sin video disponible".
-export function YouTubePlayer({ thumb, externalUrl, title, badge, borderRadius = 0 }) {
+// Ajuste posterior: `className` es opcional — cuando se pasa (ver
+// VideotecaDetailPage.jsx, clase compartida `.detail-banner-image`) fija
+// una altura mayor que la relación 16/9 por defecto, para que las
+// miniaturas verticales/con personas de pie no queden tan recortadas en la
+// página de detalle. El popup de video (VideoModal, Media.jsx) no la usa —
+// se mantiene compacto en 16/9 como siempre.
+export function YouTubePlayer({ thumb, externalUrl, title, badge, borderRadius = 0, className }) {
   const [playing, setPlaying] = React.useState(false);
   const youtubeId = extractYouTubeVideoId(externalUrl);
 
   return (
-    <div style={{ position:'relative', aspectRatio:'16/9', background:'#040b22', overflow:'hidden', borderRadius }}>
+    <div className={className} style={{ position:'relative', aspectRatio: className ? undefined : '16/9', background:'#040b22', overflow:'hidden', borderRadius }}>
       {playing && youtubeId ? (
         <iframe
           src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`}

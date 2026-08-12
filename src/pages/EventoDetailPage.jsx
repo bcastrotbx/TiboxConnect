@@ -56,7 +56,7 @@ export function EventoDetailPage() {
         </div>
 
         {/* Imagen destacada */}
-        <div style={{ position: 'relative', height: 260, overflow: 'hidden', background: '#0b1a3a', margin: '14px 0 0' }}>
+        <div className="detail-banner-image" style={{ position: 'relative', overflow: 'hidden', background: '#0b1a3a', margin: '14px 0 0' }}>
           <img src={event.img} alt={event.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(2,12,36,0.25) 0%, rgba(2,12,36,0.5) 55%, rgba(2,12,36,0.92) 100%)' }}></div>
           {!isUpcoming && (

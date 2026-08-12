@@ -98,6 +98,16 @@ html, body { margin: 0; height: 100%; background: #F0F2F6; font-family: var(--fo
 @media (max-width: 860px) {
   .videoteca-detail-grid { grid-template-columns: 1fr; }
 }
+/* Banner de cabecera compartido por las 3 plantillas de detalle (Noticia,
+   Video/Webinar, Evento) — antes cada una tenía su propio `height: 260`
+   inline, muy bajo para fotos verticales/con personas de pie (quedaban
+   recortadas arriba y abajo). Una sola clase para que las tres suban de
+   altura a la vez si se vuelve a ajustar. Sigue siendo rectangular (no
+   cuadrado ni panorámico extremo) — solo más alto. */
+.detail-banner-image { height: 380px; }
+@media (max-width: 700px) {
+  .detail-banner-image { height: 260px; }
+}
 /* Responsividad, Bloque 1 (ver FASE-06-07-08-CONTENIDO-REAL.md): el hero
    nunca tuvo un punto de quiebre — a 375px, la columna fija de 220px para
    el contador/flechas (`.hero-grid`, `grid-template-columns:1fr 220px` por

@@ -50,7 +50,7 @@ export function NoticiaDetailPage() {
         </div>
 
         {/* Imagen destacada */}
-        <div style={{ position: 'relative', height: 260, overflow: 'hidden', background: '#0b1a3a', margin: '14px 0 0' }}>
+        <div className="detail-banner-image" style={{ position: 'relative', overflow: 'hidden', background: '#0b1a3a', margin: '14px 0 0' }}>
           {news.img && (
             <img src={news.img} alt={news.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           )}
