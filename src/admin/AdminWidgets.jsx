@@ -53,14 +53,16 @@ export function StatRow() {
 // dependen del estado actual de la fila (no tiene sentido ofrecer
 // "Publicar" sobre algo ya publicado) — ver ContentTable más abajo, que es
 // quien realmente ejecuta cada acción contra Supabase.
-function buildRowMenuItems(row, isEvent) {
+function buildRowMenuItems(row, isEvent, isNews) {
   const items = [
     { id:'view', icon:'eye', label:'Ver publicación' },
     { id:'edit', icon:'pencil', label:'Editar' },
     { id:'duplicate', icon:'copy', label:'Duplicar' },
   ];
   if (row.rawStatus !== 'published') items.push({ id:'publish', icon:'upload', label:'Publicar' });
-  if (!isEvent) items.push({ id: row.isFeatured ? 'unfeature' : 'feature', icon:'star', label: row.isFeatured ? 'Quitar destacado' : 'Marcar como destacado' });
+  // Ajuste posterior: "Destacado" es exclusivo de Noticias (ver misma nota
+  // en NewContentModal) — antes se ofrecía para cualquier tipo no-evento.
+  if (isNews) items.push({ id: row.isFeatured ? 'unfeature' : 'feature', icon:'star', label: row.isFeatured ? 'Quitar destacado' : 'Marcar como destacado' });
   // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): Eventos ya no
   // tiene "Archivar" ni "Marcar como realizado" — su Estado quedó reducido
   // a Borrador/Publicado (ver formulario más abajo), y "¿ya se realizó?"
@@ -80,7 +82,7 @@ function buildRowMenuItems(row, isEvent) {
 // vez de arriesgar un modal con campos equivocados, se limita a "Ver
 // publicación" (solo lectura) y se deja Editar/Eliminar/etc. para la
 // sección real de cada tipo.
-export function RowMenu({ row, isEvent, onAction, readOnly }) {
+export function RowMenu({ row, isEvent, isNews, onAction, readOnly }) {
   const [open, setOpen] = React.useState(false);
   const [pos, setPos] = React.useState({ top:0, left:0 });
   const btnRef = React.useRef(null);
@@ -89,7 +91,7 @@ export function RowMenu({ row, isEvent, onAction, readOnly }) {
     setPos({ top:r.bottom + 6, left:r.right - 200 });
     setOpen(o => !o);
   };
-  const items = readOnly ? [{ id:'view', icon:'eye', label:'Ver publicación' }] : buildRowMenuItems(row, isEvent);
+  const items = readOnly ? [{ id:'view', icon:'eye', label:'Ver publicación' }] : buildRowMenuItems(row, isEvent, isNews);
   return (
     <React.Fragment>
       <button ref={btnRef} onClick={toggle} title="Acciones" style={{ background:open?'var(--gray-100)':'none', border:'none', cursor:'pointer', padding:5, borderRadius:7, display:'inline-flex', color:'var(--gray-500)' }}>
@@ -555,7 +557,11 @@ export function NewContentModal({ section, item, onClose }) {
           duration_minutes: durationMinutes ? Number(durationMinutes) : null,
           visibility: 'public',
           status,
-          is_featured: isFeatured,
+          // Solo Noticias puede quedar destacada (ver ajuste posterior más
+          // abajo, checkbox oculto para Videos/Infografías) — se fuerza
+          // false para el resto en vez de confiar en que isFeatured nunca
+          // se haya activado antes de este ajuste.
+          is_featured: section === 'news' ? isFeatured : false,
         };
         if (status === 'published' && item?.rawStatus !== 'published') {
           fields.published_at = new Date().toISOString();
@@ -689,10 +695,18 @@ export function NewContentModal({ section, item, onClose }) {
 
             {!isEvent && (
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:14, paddingTop:4, borderTop:'1px solid var(--gray-100)' }}>
-                <label style={{ display:'flex', alignItems:'center', gap:9, fontSize:13, fontWeight:600, color:'var(--navy-900,#021233)', cursor:'pointer' }}>
-                  <input type="checkbox" checked={isFeatured} onChange={e => setIsFeatured(e.target.checked)} />
-                  Marcar como destacado
-                </label>
+                {/* Ajuste posterior: "Destacado" es exclusivo de Noticias
+                    (pedido de Braulio) — antes aparecía también en Videos e
+                    Infografías, sin que nada las mostrara en ningún bloque
+                    "destacado" del portal (solo NoticiasPanel/newsService lo
+                    usan). Para las otras dos secciones solo queda el select
+                    de Estado en esta misma fila. */}
+                {section === 'news' ? (
+                  <label style={{ display:'flex', alignItems:'center', gap:9, fontSize:13, fontWeight:600, color:'var(--navy-900,#021233)', cursor:'pointer' }}>
+                    <input type="checkbox" checked={isFeatured} onChange={e => setIsFeatured(e.target.checked)} />
+                    Marcar como destacado
+                  </label>
+                ) : <div />}
                 <Field label="Estado">
                   <select value={status} onChange={e => setStatus(e.target.value)}>
                     <option value="draft">Borrador</option>
@@ -782,6 +796,7 @@ const PAGE_SIZE = 10;
 export function ContentTable({ section, title }) {
   const isEvent = section === 'events';
   const isRecent = section === 'recent';
+  const isNews = section === 'news';
   const [searchParams] = useSearchParams();
   const query = (searchParams.get('q') || '').trim().toLowerCase();
   const allowReorder = section !== 'news' && !isRecent && !query;
@@ -1039,7 +1054,11 @@ export function ContentTable({ section, title }) {
               <SortableTh label="Título" sortKey="title" colSort={colSort} onSort={toggleSort} />
               <SortableTh label={isEvent ? 'Modalidad' : 'Categoría'} sortKey="cat" colSort={colSort} onSort={toggleSort} />
               <SortableTh label="Estado" sortKey="status" colSort={colSort} onSort={toggleSort} />
-              <SortableTh label="Destacado" sortKey="isFeatured" colSort={colSort} onSort={toggleSort} disabled={isEvent} />
+              {/* Ajuste posterior: columna "Destacado" exclusiva de
+                  Noticias (ver nota en NewContentModal/buildRowMenuItems) —
+                  antes se mostraba (vacía y sin ordenar) también para
+                  Videos/Infografías/Eventos. */}
+              {isNews && <SortableTh label="Destacado" sortKey="isFeatured" colSort={colSort} onSort={toggleSort} />}
               <SortableTh label="Fecha" sortKey="date" colSort={colSort} onSort={toggleSort} />
               <th></th>
             </tr>
@@ -1069,10 +1088,10 @@ export function ContentTable({ section, title }) {
                   <td style={{ fontWeight:600 }}>{r.title}</td>
                   <td style={{ color:'var(--gray-500)' }}>{r.cat}</td>
                   <td><StatusBadge status={r.status} /></td>
-                  <td>{!isEvent && r.isFeatured && <Icon name="star" style={{ width:14, height:14, color:'#FFC600', fill:'#FFC600' }} />}</td>
+                  {isNews && <td>{r.isFeatured && <Icon name="star" style={{ width:14, height:14, color:'#FFC600', fill:'#FFC600' }} />}</td>}
                   <td style={{ color:'var(--gray-500)' }}>{r.date}</td>
                   <td style={{ textAlign:'right' }}>
-                    <RowMenu row={r} isEvent={isEvent} readOnly={isRecent} onAction={a => handle(a, r)} />
+                    <RowMenu row={r} isEvent={isEvent} isNews={isNews} readOnly={isRecent} onAction={a => handle(a, r)} />
                   </td>
                 </tr>
               );
