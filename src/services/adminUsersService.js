@@ -35,6 +35,14 @@ export async function inviteAdmin({ email, fullName }) {
 // list_admin_profiles() (migración 20260812100000) en vez de un SELECT
 // directo sobre profiles porque el correo vive en auth.users, que
 // PostgREST no expone — ver el comentario completo en esa migración.
+//
+// Ajuste posterior (ver FASE-09D-VISIBILIDAD-INVITACION-ADMIN.md): se
+// agrega `hasSignedIn`, derivado de auth.users.last_sign_in_at (expuesto
+// por la migración 20260812120000) — permite distinguir en la UI una
+// cuenta que ya aceptó la invitación y definió su contraseña de una que
+// sigue con la invitación sin abrir. No cambia nada del momento en que se
+// otorga role='admin' (ver ADR-005) ni agrega ningún paso de aprobación —
+// es solo un dato de lectura.
 export async function listAdmins() {
   const { data, error } = await supabase.rpc('list_admin_profiles');
   if (error) throw error;
@@ -43,5 +51,6 @@ export async function listAdmins() {
     fullName: row.full_name || '',
     email: row.email || '',
     status: row.status === 'blocked' ? 'Bloqueado' : 'Activo',
+    hasSignedIn: row.last_sign_in_at != null,
   }));
 }

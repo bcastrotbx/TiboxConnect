@@ -16,6 +16,27 @@ function AdminStatusBadge({ status }) {
   );
 }
 
+// Ajuste posterior (ver FASE-09D-VISIBILIDAD-INVITACION-ADMIN.md): badge
+// separado de AdminStatusBadge a propósito — "Estado" (activo/bloqueado)
+// es sobre si la cuenta está habilitada, esto es sobre si la persona ya
+// aceptó la invitación (inició sesión al menos una vez) o sigue con el
+// enlace sin abrir. Mezclarlos bajo la misma palabra "Activo" habría sido
+// confuso, por eso "Aceptada"/"Invitación pendiente" en vez de reusar
+// "Activo"/"Inactivo".
+function InvitationBadge({ hasSignedIn }) {
+  return (
+    <span style={{
+      fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '3px 10px',
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      color: hasSignedIn ? '#0d8a4e' : '#a86a00',
+      background: hasSignedIn ? 'rgba(22,179,100,0.1)' : 'rgba(255,166,0,0.12)',
+    }}>
+      <Icon name={hasSignedIn ? 'check-circle-2' : 'clock'} style={{ width: 12, height: 12 }} />
+      {hasSignedIn ? 'Aceptada' : 'Invitación pendiente'}
+    </span>
+  );
+}
+
 // Ajuste posterior (ver FASE-09-NOTICIAS-DETALLE-Y-ADMIN.md, punto 2.3):
 // listado de solo lectura de todos los usuarios con rol admin — antes esta
 // página solo tenía el formulario de invitación, sin forma de ver quién ya
@@ -36,13 +57,14 @@ function AdminsList() {
       )}
       {status === 'success' && (data || []).length > 0 && (
         <table className="adm-table">
-          <thead><tr><th>Nombre completo</th><th>Correo</th><th>Estado</th></tr></thead>
+          <thead><tr><th>Nombre completo</th><th>Correo</th><th>Estado</th><th>Invitación</th></tr></thead>
           <tbody>
             {data.map((a) => (
               <tr key={a.id}>
                 <td style={{ fontWeight: 600 }}>{a.fullName || '—'}</td>
                 <td style={{ color: 'var(--gray-500)' }}>{a.email}</td>
                 <td><AdminStatusBadge status={a.status} /></td>
+                <td><InvitationBadge hasSignedIn={a.hasSignedIn} /></td>
               </tr>
             ))}
           </tbody>
