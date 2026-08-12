@@ -121,10 +121,23 @@ export function HeroSlider() {
             ))}
           </div>
           <div style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}}>
-            <CtaPrimary>
-              <Icon name={slide.ctaIcon} style={{width:15,height:15}} />
-              {slide.cta}
-            </CtaPrimary>
+            {/* Ajuste posterior: antes era un <button> sin href/onClick — el
+                CTA del hero nunca llevó a ningún lado, con o sin URL
+                guardada en el admin. Si el slide trae button_url, se
+                renderiza como enlace real; si no, se mantiene como botón
+                inerte (mismo aspecto) para no romper slides ya creados sin
+                URL. */}
+            {slide.ctaUrl ? (
+              <CtaPrimary as="a" href={slide.ctaUrl} target="_blank" rel="noopener noreferrer">
+                <Icon name={slide.ctaIcon} style={{width:15,height:15}} />
+                {slide.cta}
+              </CtaPrimary>
+            ) : (
+              <CtaPrimary>
+                <Icon name={slide.ctaIcon} style={{width:15,height:15}} />
+                {slide.cta}
+              </CtaPrimary>
+            )}
           </div>
         </div>
 

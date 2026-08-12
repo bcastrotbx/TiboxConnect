@@ -22,7 +22,13 @@ export async function getHeroSlides() {
     titleAccent: row.highlight_text || '',
     desc: row.description || '',
     cta: row.button_label || '',
-    ctaIcon: 'arrow-right', // sin columna equivalente — el botón es decorativo (sin onClick) desde la Fase 1
+    // Ajuste posterior: el botón era decorativo (sin href/onClick) desde la
+    // Fase 1 — se descubrió al revisar por qué un button_url guardado desde
+    // /admin/portada no producía ningún clic funcional en el home. Ahora se
+    // expone el campo real; Hero.jsx decide si renderiza como enlace o como
+    // botón inerte según si viene vacío.
+    ctaUrl: row.button_url || '',
+    ctaIcon: 'arrow-right',
     tag: '', // sin columna equivalente — Hero.jsx omite el separador si está vacío
     bg: row.image_url,
   }));
