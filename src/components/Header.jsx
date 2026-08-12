@@ -72,7 +72,7 @@ const CATEGORY_ROUTES = {
 // y Webinars") casi ninguno cabría de forma legible en una fila de celular,
 // así que ocultarlos todos detrás de un solo control conocido es más
 // predecible para el usuario que una fila parcial más un "+2 más".
-export function Header({ onSoporte }) {
+export function Header({ onContacto }) {
   const [showNotif, setShowNotif] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const { isAdmin, profile, signOut } = useAuth();
@@ -109,9 +109,9 @@ export function Header({ onSoporte }) {
     }
     navigate(categoryRoute);
   };
-  const handleSoporteClick = () => {
+  const handleContactoClick = () => {
     setMobileOpen(false);
-    onSoporte && onSoporte();
+    onContacto && onContacto();
   };
   const notifs = [
     { id: 1, text: 'Nuevo webinar: Ciberseguridad para PYMES 2025', time: 'hace 1 h', unread: true },
@@ -155,8 +155,8 @@ export function Header({ onSoporte }) {
             {link.label}
           </button>
         ))}
-        {onSoporte && (
-          <button onClick={handleSoporteClick} style={{
+        {onContacto && (
+          <button onClick={handleContactoClick} style={{
             background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
             fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'white',
             padding: '7px 10px', borderRadius: 8, transition: 'background 150ms, opacity 150ms',
@@ -164,7 +164,7 @@ export function Header({ onSoporte }) {
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
           >
-            Soporte
+            Contacto
           </button>
         )}
       </nav>
@@ -330,9 +330,9 @@ export function Header({ onSoporte }) {
                 {link.label}
               </button>
             ))}
-            {onSoporte && (
-              <button onClick={handleSoporteClick} className="header-mobile-link">
-                Soporte
+            {onContacto && (
+              <button onClick={handleContactoClick} className="header-mobile-link">
+                Contacto
               </button>
             )}
             {isAdmin && (
