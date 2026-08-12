@@ -9,6 +9,7 @@ import { VideotecaDetailPage } from '../pages/VideotecaDetailPage.jsx';
 // renombran al importar para evitar el choque, sin tocar ninguna de las dos.
 import { InfografiasPage as InfografiasPublicPage } from '../pages/InfografiasPage.jsx';
 import { TendenciasPage } from '../pages/TendenciasPage.jsx';
+import { NoticiaDetailPage } from '../pages/NoticiaDetailPage.jsx';
 import { EventosPage as EventosPublicPage } from '../pages/EventosPage.jsx';
 import { EventoDetailPage } from '../pages/EventoDetailPage.jsx';
 import { NotFound } from '../pages/NotFound.jsx';
@@ -66,6 +67,7 @@ const router = createBrowserRouter([
       // anteriores.
       { path: 'infografias', element: <InfografiasPublicPage /> },
       { path: 'tendencias', element: <TendenciasPage /> },
+      { path: 'tendencias/:slug', element: <NoticiaDetailPage /> },
       { path: 'eventos', element: <EventosPublicPage /> },
       { path: 'eventos/:slug', element: <EventoDetailPage /> },
     ],

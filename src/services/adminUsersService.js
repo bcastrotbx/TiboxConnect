@@ -7,6 +7,12 @@ import { supabase } from '../lib/supabase.js';
 // supabase/functions/invite-admin, que es la única pieza con privilegios
 // para crear cuentas (requiere la service_role key, que nunca puede vivir
 // en el frontend).
+//
+// Ajuste posterior (ver FASE-05-AUTENTICACION.md): la Edge Function ahora
+// devuelve `actionLink` — el enlace de invitación en sí, para que la UI lo
+// muestre con un botón "Copiar" en vez de depender únicamente de que el
+// correo automático de Supabase llegue (ver razón completa en el comentario
+// de la Edge Function).
 export async function inviteAdmin({ email, fullName }) {
   const { data, error } = await supabase.functions.invoke('invite-admin', {
     body: { email, fullName },
@@ -22,4 +28,20 @@ export async function inviteAdmin({ email, fullName }) {
     return { data: null, error: data.error };
   }
   return { data, error: null };
+}
+
+// Fase 9 (ver FASE-09-NOTICIAS-DETALLE-Y-ADMIN.md, punto 2.3) — listado de
+// administradores registrados, solo lectura por ahora. Usa el RPC
+// list_admin_profiles() (migración 20260812100000) en vez de un SELECT
+// directo sobre profiles porque el correo vive en auth.users, que
+// PostgREST no expone — ver el comentario completo en esa migración.
+export async function listAdmins() {
+  const { data, error } = await supabase.rpc('list_admin_profiles');
+  if (error) throw error;
+  return (data || []).map((row) => ({
+    id: row.id,
+    fullName: row.full_name || '',
+    email: row.email || '',
+    status: row.status === 'blocked' ? 'Bloqueado' : 'Activo',
+  }));
 }

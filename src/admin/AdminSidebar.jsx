@@ -7,6 +7,22 @@ import { useAuth } from '../context/AuthContext.jsx';
 // de un setState local. Ver la tabla de mapeo completa en
 // docs/phases/FASE-02-RUTAS-Y-DATOS.md. "Administradores" se agrega en la
 // Fase 5 (invitar administradores adicionales, ver ADR-004).
+//
+// Ajuste posterior (ver FASE-09-NOTICIAS-DETALLE-Y-ADMIN.md):
+// - "Servicios TIBOX" se quita del menú — ese bloque ya no existe en el
+//   home público (ver #47, "Portal: ocultar bloque de Servicios"), así que
+//   no tenía sentido dejar una sección de admin para algo invisible en el
+//   sitio. La ruta /admin/contenidos/servicios y su CRUD siguen existiendo
+//   sin cambios (datos reales conectados a Supabase, ver #71) — solo se
+//   dejó de listar en el menú, por si se necesita reactivar el bloque
+//   público más adelante sin perder el trabajo ya hecho.
+// - "Configuración" (contenido de hero_slides/carrusel) se renombra a
+//   "Portada" y se mueve de "Cuenta" a "Contenidos" — mismo nombre que ya
+//   usa la ruta (/admin/portada) y el servicio (adminPortadaService.js),
+//   así que no genera un nombre nuevo que aprender.
+// - "Negocio" se renombra a "Mensajes" — el grupo ya solo contiene
+//   secciones de mensajería (contacto + opiniones de clientes), el nombre
+//   anterior no describía bien su contenido.
 const NAV = [
   { label:'General', items:[
     { path:'/admin', icon:'layout-dashboard', label:'Dashboard' },
@@ -17,14 +33,13 @@ const NAV = [
     { path:'/admin/contenidos/infografias/leads', icon:'download', label:'Leads de infografías' },
     { path:'/admin/contenidos/noticias', icon:'rss', label:'Noticias' },
     { path:'/admin/eventos', icon:'calendar-check', label:'Eventos' },
+    { path:'/admin/portada', icon:'layout-template', label:'Portada' },
   ]},
-  { label:'Negocio', items:[
-    { path:'/admin/contenidos/servicios', icon:'briefcase', label:'Servicios TIBOX' },
+  { label:'Mensajes', items:[
     { path:'/admin/mensajes', icon:'mail', label:'Mensajes de contacto' },
     { path:'/admin/mensajes/opiniones', icon:'star', label:'Opiniones de clientes' },
   ]},
   { label:'Cuenta', items:[
-    { path:'/admin/portada', icon:'settings', label:'Configuración' },
     { path:'/admin/usuarios', icon:'users', label:'Administradores' },
   ]},
 ];

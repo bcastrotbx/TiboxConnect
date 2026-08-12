@@ -406,6 +406,7 @@ export function VistaModal({ event, onClose }) {
 // mantener consistencia visual. Exportado: la página /tendencias reutiliza
 // este mismo popup en vez de duplicarlo.
 export function NoticiaModal({ noticia, onClose }) {
+  const navigate = useNavigate();
   return (
     <ModalShell onClose={onClose} maxWidth={640}>
       <div style={{ position:'relative', background: noticia.img ? '#0b1a3a' : 'var(--grad-corporate)' }}>
@@ -426,6 +427,17 @@ export function NoticiaModal({ noticia, onClose }) {
       <div style={{ padding:'22px 26px 26px' }}>
         <div style={{ fontSize:17, fontWeight:700, color:'var(--navy-900)', lineHeight:1.32, marginBottom:14 }}>{noticia.title}</div>
         <p style={{ fontSize:13.5, color:'var(--gray-600)', lineHeight:1.7, margin:0, whiteSpace:'pre-wrap' }}>{noticia.body}</p>
+        {/* Ajuste posterior (ver FASE-09-NOTICIAS-DETALLE-Y-ADMIN.md): el
+            popup se mantiene igual, solo gana este botón hacia la página
+            propia de la noticia — mismo patrón que "Ver más detalles" en
+            EventDetailModal/VistaModal. Solo aparece si la noticia trae slug
+            (siempre lo trae desde que se abre este modal, ver
+            NoticiasPanel/TendenciasPage). */}
+        {noticia.slug && (
+          <CtaLink onClick={() => navigate(`/tendencias/${noticia.slug}`)} style={{ marginTop:12 }}>
+            Ver Más <Icon name="arrow-right" style={{ width:13, height:13 }} />
+          </CtaLink>
+        )}
       </div>
     </ModalShell>
   );
@@ -523,7 +535,7 @@ export function NoticiasPanel() {
                 {fadeItems.map((n,idx) => {
                   const c = catsById[n.cat] || {};
                   return (
-                    <div key={n.id} onClick={() => setOpenNews({ title:n.title, img:n.img, body:n.body, catLabel:c.label, catColor:c.color })}
+                    <div key={n.id} onClick={() => setOpenNews({ title:n.title, img:n.img, body:n.body, slug:n.slug, catLabel:c.label, catColor:c.color })}
                       style={{display:'flex',gap:13,padding:'13px 0',borderTop: idx===0?'none':'1px solid var(--gray-100)',cursor:'pointer'}}
                       onMouseEnter={e=>e.currentTarget.style.opacity='0.72'}
                       onMouseLeave={e=>e.currentTarget.style.opacity='1'}
@@ -566,7 +578,10 @@ export function NoticiasPanel() {
             </div>
             <h3 style={{fontSize:17,fontWeight:700,color:'var(--navy-900)',lineHeight:1.3,margin:'0 0 9px'}}>{featuredNews.title}</h3>
             <p style={{fontSize:13,color:'var(--gray-600)',lineHeight:1.6,margin:'0 0 18px'}}>{featuredNews.excerpt}</p>
-            <CtaPrimary onClick={() => setOpenNews({ title:featuredNews.title, img:featuredNews.img, body:featuredNews.body, catLabel:fc?.label, catColor:fc?.color })} style={{alignSelf:'flex-start'}}>
+            {/* Ajuste posterior (ver FASE-09-NOTICIAS-DETALLE-Y-ADMIN.md):
+                antes abría el mismo popup que la lista de la izquierda; ahora
+                navega directo a la página propia de la noticia destacada. */}
+            <CtaPrimary onClick={() => navigate(`/tendencias/${featuredNews.slug}`)} style={{alignSelf:'flex-start'}}>
               Ver publicación <Icon name="arrow-right" style={{width:15,height:15}} />
             </CtaPrimary>
           </div>

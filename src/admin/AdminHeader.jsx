@@ -14,7 +14,7 @@ const TITLES = {
   '/admin/eventos': 'Eventos',
   '/admin/mensajes': 'Mensajes de contacto',
   '/admin/mensajes/opiniones': 'Opiniones de clientes',
-  '/admin/portada': 'Configuración',
+  '/admin/portada': 'Portada',
   '/admin/perfil': 'Mi Perfil',
   '/admin/usuarios': 'Administradores',
 };

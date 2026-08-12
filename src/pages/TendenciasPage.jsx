@@ -103,7 +103,7 @@ export function TendenciasPage() {
             {pageItems.map((n) => (
               <NoticiaGridCard key={n.id} n={n} catsById={catsById} onOpen={() => {
                 const c = catsById[n.cat];
-                setOpenNews({ title: n.title, img: n.img, body: n.body, catLabel: c?.label, catColor: c?.color });
+                setOpenNews({ title: n.title, img: n.img, body: n.body, slug: n.slug, catLabel: c?.label, catColor: c?.color });
               }} />
             ))}
           </div>

@@ -1,14 +1,23 @@
 import { supabase } from '../lib/supabase.js';
 import { getActiveCategories } from './categoryService.js';
-import { formatShortDateEs, estimateReadTime } from '../lib/formatters.js';
+import { formatShortDateEs, formatDayMonth, estimateReadTime } from '../lib/formatters.js';
 
 // Fase 6/7/8 — conectado a Supabase (content_items, type='news'). Mismas
 // firmas que en la Fase 2, ver contentService.js para el detalle de por qué
 // la taxonomía de categorías se unificó en una sola tabla real.
 
 function mapNewsRow(row) {
+  const { day, month } = formatDayMonth(row.published_at || row.created_at);
   return {
     id: row.id,
+    // Ajuste posterior (ver FASE-09-NOTICIAS-DETALLE-Y-ADMIN.md): agregado
+    // para la página de detalle propia /tendencias/:slug — antes no se
+    // exponía porque nada lo necesitaba (el popup del inicio no navega a
+    // ningún lado). day/month siguen el mismo formato que eventService, para
+    // reutilizar el mismo bloque visual de "Mira también".
+    slug: row.slug,
+    day,
+    month,
     cat: row.category?.slug || null,
     source: row.source_name || '',
     date: formatShortDateEs(row.published_at || row.created_at),
@@ -64,6 +73,10 @@ export async function getFeaturedNews() {
   if (!row) return null;
 
   return {
+    id: row.id,
+    // Ajuste posterior (ver FASE-09-NOTICIAS-DETALLE-Y-ADMIN.md): el CTA
+    // "Ver publicación" del inicio ahora navega directo a esta noticia.
+    slug: row.slug,
     cat: row.category?.slug || null,
     img: row.thumbnail_url,
     date: formatShortDateEs(row.published_at || row.created_at),
@@ -73,4 +86,21 @@ export async function getFeaturedNews() {
     body: row.body || row.summary || '',
     url: row.external_url || null,
   };
+}
+
+// Ajuste posterior (ver FASE-09-NOTICIAS-DETALLE-Y-ADMIN.md): usada por la
+// página propia /tendencias/:slug — mismo patrón que
+// eventService.getEventDetailBySlug / contentService.getVideoBySlug.
+export async function getNewsBySlug(slug) {
+  const { data, error } = await supabase
+    .from('content_items')
+    .select('*, category:categories(slug, name, color)')
+    .eq('type', 'news')
+    .eq('slug', slug)
+    .eq('status', 'published')
+    .eq('visibility', 'public')
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? mapNewsRow(data) : null;
 }
