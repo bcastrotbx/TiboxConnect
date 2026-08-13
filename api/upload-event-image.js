@@ -12,7 +12,7 @@
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MAX_BYTES = 8 * 1024 * 1024; // 8MB — mismo límite en el snippet de WordPress y en el frontend
-const WP_ENDPOINT = 'https://www.tibox.cl/wp-json/tibox/v1/upload-image';
+const WP_ENDPOINT = 'https://comunidad.tiboxlab.cl/upload-image.php';
 
 function readRawBody(req) {
   return new Promise((resolve, reject) => {
@@ -99,3 +99,5 @@ export default async function handler(req, res) {
     res.status(502).json({ error: 'No se pudo conectar con WordPress para subir la imagen.' });
   }
 }
+
+// Cambiar destino de subida de imágenes a comunidad.tiboxlab.cl
