@@ -100,13 +100,14 @@ function VideoCard({ v, catsById, onOpen }) {
         </div>
         {/* Duration badge */}
         <span style={{position:'absolute',bottom:8,right:8,fontSize:10.5,fontWeight:700,color:'white',background:'rgba(2,12,36,0.7)',borderRadius:6,padding:'2px 7px',fontVariantNumeric:'tabular-nums'}}>{v.dur}</span>
+        {/* Ajuste posterior (pedido de Braulio): cápsula de categoría movida
+            del cuerpo (pegada al CTA) a la esquina superior derecha de la
+            miniatura. */}
+        <span style={{position:'absolute',top:8,right:8,fontSize:9.5,fontWeight:700,letterSpacing:'0.02em',color:cat.color,background:'white',borderRadius:999,padding:'3px 9px',boxShadow:'0 1px 4px rgba(0,0,0,0.25)'}}>{cat.label}</span>
       </div>
       {/* Body */}
       <div style={{padding:'11px 12px 13px',display:'flex',flexDirection:'column',gap:8}}>
         <div style={{fontSize:13,fontWeight:700,color:'white',lineHeight:1.32,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden',minHeight:'2.6em'}}>{v.title}</div>
-        <div>
-          <span style={{display:'inline-block',fontSize:9.5,fontWeight:700,letterSpacing:'0.02em',color:cat.color,background:'white',borderRadius:999,padding:'2px 8px',boxShadow:'0 1px 3px rgba(0,0,0,0.12)'}}>{cat.label}</span>
-        </div>
         <div style={{display:'flex',alignItems:'center',gap:12,fontSize:11,color:'rgba(255,255,255,0.5)'}}>
           <span style={{display:'inline-flex',alignItems:'center',gap:4}}><Icon name="clock" style={{width:11,height:11}} />{v.dur}</span>
           <span style={{display:'inline-flex',alignItems:'center',gap:4}}><Icon name="calendar" style={{width:11,height:11}} />{v.date}</span>
@@ -365,15 +366,13 @@ export function InfoCard({ inf, channelsById, onOpen }) {
     >
         <div style={{position:'relative', aspectRatio:'4 / 3', overflow:'hidden', background:'#0b1a3a'}}>
         <img src={inf.img} alt={inf.title} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',transform:hov?'scale(1.04)':'none',transition:'transform 340ms'}} />
+        <span style={{position:'absolute',top:10,left:10,display:'inline-flex',alignItems:'center',gap:5,fontSize:10.5,fontWeight:700,color:'white',background:ch.color,borderRadius:999,padding:'3px 10px',boxShadow:'0 1px 4px rgba(0,0,0,0.25)'}}>
+          <Icon name={ch.icon} style={{width:12,height:12}} />{ch.label}
+        </span>
+        <span style={{position:'absolute',top:10,right:10,fontSize:9.5,fontWeight:700,color:'var(--navy-900)',background:'white',borderRadius:999,padding:'3px 9px',textTransform:'capitalize',boxShadow:'0 1px 4px rgba(0,0,0,0.25)'}}>{inf.cat}</span>
       </div>
       <div style={{padding:'13px 15px 16px'}}>
-        <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:9,flexWrap:'wrap'}}>
-          <span style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:10.5,fontWeight:700,color:'white',background:ch.color,borderRadius:999,padding:'3px 10px'}}>
-            <Icon name={ch.icon} style={{width:12,height:12}} />{ch.label}
-          </span>
-          <span style={{fontSize:9.5,fontWeight:700,color:'var(--gray-600)',background:'var(--gray-100)',border:'1px solid var(--gray-200)',borderRadius:999,padding:'3px 9px',textTransform:'capitalize'}}>{inf.cat}</span>
-        </div>
-        <div style={{fontSize:13.5,fontWeight:700,color:'var(--navy-900)',lineHeight:1.32,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden',minHeight:'2.7em'}}>{inf.title}</div>
+        <div style={{fontSize:13.5,fontWeight:700,color:'var(--navy-900)',lineHeight:1.32,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden',minHeight:'2.7em',marginBottom:2}}>{inf.title}</div>
         <CtaCard onClick={(e) => { e.stopPropagation(); onOpen(inf); }} style={{marginTop:10}}>Ver infografía</CtaCard>
       </div>
     </div>

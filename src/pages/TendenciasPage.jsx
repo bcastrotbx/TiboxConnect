@@ -31,7 +31,7 @@ function NoticiaGridCard({ n, catsById, onOpen }) {
     >
       <div style={{ position: 'relative', aspectRatio: '16/10', overflow: 'hidden', background: '#0b1a3a' }}>
         {n.img && <img src={n.img} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', transform: hov ? 'scale(1.04)' : 'none', transition: 'transform 340ms' }} />}
-        <span style={{ position: 'absolute', top: 10, left: 10, fontSize: 10, fontWeight: 700, color: 'white', background: c.color, borderRadius: 999, padding: '3px 10px' }}>{c.label}</span>
+        <span style={{ position: 'absolute', top: 10, right: 10, fontSize: 10, fontWeight: 700, color: 'white', background: c.color, borderRadius: 999, padding: '3px 10px' }}>{c.label}</span>
       </div>
       <div style={{ padding: '13px 15px 16px' }}>
         <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--navy-900)', lineHeight: 1.32, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: '2.7em' }}>{n.title}</div>

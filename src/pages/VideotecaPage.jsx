@@ -35,6 +35,13 @@ const selectStyle = {
   padding: '8px 12px', borderRadius: 9, border: '1px solid var(--gray-200)', background: 'white', cursor: 'pointer',
 };
 
+// Ajuste posterior (pedido de Braulio): la cápsula de categoría/tipo vivía
+// en el cuerpo de la tarjeta, en la misma fila que la fecha y justo arriba
+// del CTA ("Ver video"/"Ver detalles") — quedaba visualmente pegada al
+// botón y confundía. Se movió a la esquina superior derecha de la
+// miniatura (mismo patrón que ya usa "Próximamente", solo que en la
+// esquina opuesta para no chocar con esa etiqueta ni con la duración,
+// que vive abajo a la derecha).
 function VideotecaCard({ item, catsById, onOpen }) {
   const [hov, setHov] = React.useState(false);
   const cat = item.kind === 'video' ? (catsById[item.cat] || { color: 'var(--navy-900)', label: '' }) : null;
@@ -67,22 +74,18 @@ function VideotecaCard({ item, catsById, onOpen }) {
             Próximamente
           </span>
         )}
+        <span style={{ position: 'absolute', top: 8, right: 8, fontSize: 9.5, fontWeight: 700, letterSpacing: '0.02em', color: cat ? cat.color : 'var(--navy-900)', background: 'white', borderRadius: 999, padding: '3px 9px', boxShadow: '0 1px 4px rgba(0,0,0,0.25)' }}>
+          {cat ? cat.label : 'Evento'}
+        </span>
         {item.kind === 'video' && item.dur && (
           <span style={{ position: 'absolute', bottom: 8, right: 8, fontSize: 10.5, fontWeight: 700, color: 'white', background: 'rgba(2,12,36,0.7)', borderRadius: 6, padding: '2px 7px' }}>{item.dur}</span>
         )}
       </div>
       <div style={{ padding: '11px 12px 13px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: 'white', lineHeight: 1.32, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: '2.6em' }}>{item.title}</div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          {cat ? (
-            <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '0.02em', color: cat.color, background: 'white', borderRadius: 999, padding: '2px 8px' }}>{cat.label}</span>
-          ) : (
-            <span style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,0.55)' }}>Evento</span>
-          )}
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            <Icon name="calendar" style={{ width: 11, height: 11 }} />{item.date}
-          </span>
-        </div>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <Icon name="calendar" style={{ width: 11, height: 11 }} />{item.date}
+        </span>
         <CtaCard onClick={(e) => { e.stopPropagation(); onOpen(); }} style={{ alignSelf: 'flex-start' }}>
           {item.kind === 'event' ? 'Ver detalles' : 'Ver video'}
         </CtaCard>
