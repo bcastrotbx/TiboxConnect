@@ -1,10 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Icon } from '../components/shared/Icon.jsx';
 import { Breadcrumb } from '../components/shared/Breadcrumb.jsx';
 import { LoadingState, EmptyState, ErrorState } from '../components/shared/AsyncState.jsx';
 import { CtaCard } from '../components/shared/CtaStyles.jsx';
 import { Pagination } from '../components/shared/Pagination.jsx';
-import { NoticiaModal } from '../components/Events.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import * as newsService from '../services/newsService.js';
 
@@ -14,8 +14,7 @@ const PAGE_SIZE = 12;
 // noticia reutilizable (NoticiasPanel usa una lista vertical con scroll
 // propio, pensada para la columna angosta del inicio, no para una grilla de
 // página completa), así que se creó una nueva liviana en vez de forzar la
-// lista existente a un layout que no era el suyo. Reutiliza NoticiaModal
-// (Events.jsx) para el popup, igual que en el inicio.
+// lista existente a un layout que no era el suyo.
 function NoticiaGridCard({ n, catsById, onOpen }) {
   const c = catsById[n.cat] || { color: 'var(--navy-900)', label: '' };
   const [hov, setHov] = React.useState(false);
@@ -49,12 +48,18 @@ function NoticiaGridCard({ n, catsById, onOpen }) {
 // Ajuste posterior — página propia de Tendencias (ver nota extensa en
 // FASE-06-07-08-CONTENIDO-REAL.md): mismo patrón de /videoteca (miga de
 // pan, título, reseña, filtro por categoría, grilla 12/página con
-// paginación). El clic en una noticia abre el mismo NoticiaModal que ya
-// existe en el inicio, sin cambios de comportamiento.
+// paginación).
+//
+// Ajuste posterior: el clic en una tarjeta navegaba antes a NoticiaModal
+// (el mismo popup del inicio), que a su vez tenía un botón "Ver Más" para
+// llegar recién ahí a /tendencias/:slug — paso redundante en una página
+// que ya es un listado dedicado. Ahora navega directo al detalle. El
+// popup en sí (NoticiaModal, Events.jsx) no se tocó — sigue siendo la
+// vista rápida de NoticiasPanel en el inicio.
 export function TendenciasPage() {
+  const navigate = useNavigate();
   const [category, setCategory] = React.useState('all');
   const [page, setPage] = React.useState(1);
-  const [openNews, setOpenNews] = React.useState(null);
 
   const { data: cats } = useAsyncData(() => newsService.getNewsCategories(), []);
   const { status, data: items, error } = useAsyncData(() => newsService.getNews({ category }), [category]);
@@ -101,18 +106,13 @@ export function TendenciasPage() {
         ) : (
           <div className="videoteca-grid">
             {pageItems.map((n) => (
-              <NoticiaGridCard key={n.id} n={n} catsById={catsById} onOpen={() => {
-                const c = catsById[n.cat];
-                setOpenNews({ title: n.title, img: n.img, body: n.body, slug: n.slug, catLabel: c?.label, catColor: c?.color });
-              }} />
+              <NoticiaGridCard key={n.id} n={n} catsById={catsById} onOpen={() => navigate('/tendencias/' + n.slug)} />
             ))}
           </div>
         )
       )}
 
       <Pagination page={page} totalPages={totalPages} onChange={setPage} />
-
-      {openNews && <NoticiaModal noticia={openNews} onClose={() => setOpenNews(null)} />}
     </div>
   );
 }

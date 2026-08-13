@@ -103,8 +103,17 @@ export function Header({ onContacto }) {
       navigate('/', { state: { scrollTo: target } });
       return;
     }
-    if (location.pathname === categoryRoute || location.pathname.startsWith(categoryRoute + '/')) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Ajuste posterior: antes también hacía match con una subruta
+    // (`categoryRoute + '/'`), lo que incluía por error las páginas de
+    // detalle (/tendencias/:slug, /eventos/:slug, /videoteca/:slug) — el
+    // clic ahí no navegaba a la categoría, solo intentaba un scroll en
+    // `window`, que en este layout no es el contenedor que realmente
+    // scrollea (.portal-content tiene overflow-y:auto; el body/#root no).
+    // Resultado: clic sin efecto. Ahora solo cuenta "ya estoy en la
+    // categoría" el match exacto — cualquier subruta cae al navigate()
+    // final, que sí lleva al listado completo.
+    if (location.pathname === categoryRoute) {
+      document.querySelector('.portal-content')?.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     navigate(categoryRoute);
