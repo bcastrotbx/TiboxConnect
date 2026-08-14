@@ -50,6 +50,7 @@ function mapEventRow(row) {
     startsAtRaw: row.starts_at,
     rawStatus: row.status,
     gallery: row.gallery || [],
+    videoUrl: row.video_url || '',
   };
 }
 

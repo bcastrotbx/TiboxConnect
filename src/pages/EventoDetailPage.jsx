@@ -4,8 +4,11 @@ import { Icon } from '../components/shared/Icon.jsx';
 import { LoadingState, EmptyState, ErrorState } from '../components/shared/AsyncState.jsx';
 import { CtaPrimary } from '../components/shared/CtaStyles.jsx';
 import { Breadcrumb } from '../components/shared/Breadcrumb.jsx';
+import { ModalShell } from '../components/shared/ModalShell.jsx';
+import { YouTubePlayer } from '../components/shared/YouTubePlayer.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import * as eventService from '../services/eventService.js';
+import { getYouTubeThumbnailUrl } from '../lib/youtube.js';
 
 // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): página propia de
 // detalle de un evento — mismo patrón 70/30 que /videoteca/:slug
@@ -22,6 +25,14 @@ import * as eventService from '../services/eventService.js';
 // .videoteca-grid, definido en index.css) y cada miniatura abre la foto a
 // tamaño completo en un lightbox superpuesto, con navegación anterior/
 // siguiente y cierre con click afuera, botón X o tecla Escape.
+//
+// Ajuste posterior (pedido de Braulio): bloque nuevo "Ver video del evento"
+// en la columna derecha, arriba de "Eventos recomendados" — solo si el
+// evento trae `videoUrl` (campo nuevo del formulario admin, opcional).
+// Muestra la miniatura de YouTube; el clic abre un popup con el reproductor
+// (mismo patrón que VideoModal en Media.jsx, pero sin categoría/duración —
+// un evento no tiene esos datos). Exclusivo de esta página: /videoteca no
+// se toca.
 export function EventoDetailPage() {
   const { slug } = useParams();
   const { status, data: event, error } = useAsyncData(() => eventService.getEventDetailBySlug(slug), [slug]);
@@ -29,6 +40,7 @@ export function EventoDetailPage() {
   const { data: partners } = useAsyncData(() => eventService.getPartners(), []);
   const { data: upcoming } = useAsyncData(() => eventService.getUpcomingEvents(), []);
   const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [showVideo, setShowVideo] = useState(false);
 
   const gallery = event?.gallery || [];
 
@@ -69,6 +81,7 @@ export function EventoDetailPage() {
   const partnerLogo = event.partnerLogoUrl || partner.logo;
   const isUpcoming = !eventService.isEventPast(event.startsAtRaw);
   const recommended = (upcoming || []).filter((ev) => ev.id !== event.id).slice(0, 6);
+  const videoThumb = event.videoUrl ? getYouTubeThumbnailUrl(event.videoUrl) : null;
 
   return (
     <>
@@ -172,30 +185,63 @@ export function EventoDetailPage() {
           </div>
         </div>
 
-        {/* "Eventos recomendados" — 30% */}
-        <div className="section-card" style={{ padding: '20px 22px' }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy-900)', marginBottom: 14 }}>Eventos recomendados</div>
-          {recommended.length === 0 ? (
-            <div style={{ fontSize: 13, color: 'var(--gray-400)' }}>No hay más eventos próximos por ahora.</div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {recommended.map((ev) => (
-                <Link key={ev.id} to={`/eventos/${ev.slug}`} style={{
-                  display: 'flex', gap: 10, alignItems: 'center', textDecoration: 'none',
-                  padding: '9px 10px', borderRadius: 10, border: '1px solid var(--gray-200)', transition: 'background 150ms',
+        {/* Columna derecha — 30%: "Ver video del evento" (si hay) arriba de
+            "Eventos recomendados". Se envuelven ambos bloques en un
+            contenedor con gap en vez de ser cada uno directamente el hijo
+            del grid, para poder apilarlos. */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {event.videoUrl && (
+            <div className="section-card" style={{ padding: '20px 22px' }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy-900)', marginBottom: 14 }}>Ver video del evento</div>
+              <button
+                type="button"
+                onClick={() => setShowVideo(true)}
+                aria-label="Reproducir video del evento"
+                style={{
+                  position: 'relative', display: 'block', width: '100%', aspectRatio: '16/9',
+                  borderRadius: 12, overflow: 'hidden', border: 'none', padding: 0, cursor: 'pointer', background: '#0b1a3a',
                 }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gray-50)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
-                >
-                  <div style={{ minWidth: 40, textAlign: 'center', background: 'var(--navy-900)', borderRadius: 8, padding: '5px 4px', flexShrink: 0 }}>
-                    <div style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--brand-cyan)', lineHeight: 1.2 }}>{ev.month}</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: 'white', lineHeight: 1 }}>{ev.day}</div>
+              >
+                {videoThumb && <img src={videoThumb} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(2,12,36,0.15),rgba(2,12,36,0.55))' }}></div>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{
+                    width: 56, height: 56, borderRadius: '50%',
+                    background: 'linear-gradient(135deg,#FF6707,#FF8C3A)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 4px 16px rgba(255,103,7,0.5)',
+                  }}>
+                    <Icon name="play" style={{ width: 22, height: 22, color: 'white', marginLeft: 2 }} />
                   </div>
-                  <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--navy-900)', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ev.title}</div>
-                </Link>
-              ))}
+                </div>
+              </button>
             </div>
           )}
+
+          <div className="section-card" style={{ padding: '20px 22px' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy-900)', marginBottom: 14 }}>Eventos recomendados</div>
+            {recommended.length === 0 ? (
+              <div style={{ fontSize: 13, color: 'var(--gray-400)' }}>No hay más eventos próximos por ahora.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {recommended.map((ev) => (
+                  <Link key={ev.id} to={`/eventos/${ev.slug}`} style={{
+                    display: 'flex', gap: 10, alignItems: 'center', textDecoration: 'none',
+                    padding: '9px 10px', borderRadius: 10, border: '1px solid var(--gray-200)', transition: 'background 150ms',
+                  }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gray-50)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
+                  >
+                    <div style={{ minWidth: 40, textAlign: 'center', background: 'var(--navy-900)', borderRadius: 8, padding: '5px 4px', flexShrink: 0 }}>
+                      <div style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--brand-cyan)', lineHeight: 1.2 }}>{ev.month}</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: 'white', lineHeight: 1 }}>{ev.day}</div>
+                    </div>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--navy-900)', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ev.title}</div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -243,6 +289,22 @@ export function EventoDetailPage() {
             </button>
           )}
         </div>
+      )}
+
+      {/* Popup del video del evento — mismo patrón que VideoModal (Media.jsx)
+          pero sin categoría/duración (un evento no tiene esos datos). */}
+      {showVideo && event.videoUrl && (
+        <ModalShell onClose={() => setShowVideo(false)} maxWidth={680}>
+          <div style={{ position: 'relative' }}>
+            <YouTubePlayer thumb={videoThumb} externalUrl={event.videoUrl} title={event.title} />
+            <button onClick={() => setShowVideo(false)} style={{ position: 'absolute', top: 12, right: 12, zIndex: 3, width: 34, height: 34, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="x" style={{ width: 17, height: 17 }} />
+            </button>
+          </div>
+          <div style={{ padding: '18px 22px 20px' }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--navy-900)', lineHeight: 1.3 }}>{event.title}</div>
+          </div>
+        </ModalShell>
       )}
     </>
   );

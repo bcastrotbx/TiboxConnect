@@ -497,6 +497,7 @@ export function NewContentModal({ section, item, onClose }) {
   const [startDate, setStartDate] = React.useState(item?.startsAt ? item.startsAt.slice(0, 10) : '');
   const [startTime, setStartTime] = React.useState(item?.startsAt ? item.startsAt.slice(11, 16) : '');
   const [gallery, setGallery] = React.useState(item?.gallery || []);
+  const [videoUrl, setVideoUrl] = React.useState(item?.videoUrl || '');
 
   const newTitles = { videos:'Nuevo video o webinar', infographics:'Nueva infografía', news:'Nueva noticia', events:'Nuevo evento' };
   const editTitles = { videos:'Editar video o webinar', infographics:'Editar infografía', news:'Editar noticia', events:'Editar evento' };
@@ -543,6 +544,7 @@ export function NewContentModal({ section, item, onClose }) {
           status,
           starts_at: startsAt,
           gallery: cleanGallery,
+          video_url: videoUrl.trim() || null,
         };
         if (item) await adminEventsService.updateEvent(item.id, fields);
         else await adminEventsService.createEvent(fields);
@@ -670,6 +672,14 @@ export function NewContentModal({ section, item, onClose }) {
                 <Field label="Resumen breve"><textarea placeholder="Descripción breve del evento…" value={summary} onChange={e => setSummary(e.target.value)}></textarea></Field>
                 <Field label="Reseña completa"><textarea placeholder="Descripción completa (se muestra en el detalle del evento)…" value={description} onChange={e => setDescription(e.target.value)}></textarea></Field>
                 <ImageUploadField label="Banner del evento" value={thumbnailUrl} onChange={setThumbnailUrl} />
+                <Field label="Video del evento (YouTube, opcional)">
+                  <input type="url" placeholder="https://youtube.com/watch?v=… (opcional)" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} />
+                </Field>
+                {getYouTubeThumbnailUrl(videoUrl) && (
+                  <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid var(--gray-200)', maxHeight: 140 }}>
+                    <img src={getYouTubeThumbnailUrl(videoUrl)} alt="" style={{ width: '100%', maxHeight: 140, objectFit: 'cover', display: 'block' }} />
+                  </div>
+                )}
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                   <Field label="Nombre del colaborador"><input type="text" placeholder="Microsoft, Veeam…" value={partnerName} onChange={e => setPartnerName(e.target.value)} /></Field>
                   <Field label="Enlace de inscripción"><input type="url" placeholder="https://teams.microsoft.com/registration/…" value={registrationUrl} onChange={e => setRegistrationUrl(e.target.value)} /></Field>

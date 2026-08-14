@@ -31,6 +31,7 @@ function mapAdminRow(row) {
     startsAt: row.starts_at,
     dateRaw: row.starts_at,
     gallery: row.gallery || [],
+    videoUrl: row.video_url || '',
     sortOrder: row.sort_order ?? 0,
   };
 }
