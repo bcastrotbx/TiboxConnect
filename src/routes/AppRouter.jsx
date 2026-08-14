@@ -18,6 +18,7 @@ import { UpdatePasswordPage } from '../pages/UpdatePasswordPage.jsx';
 import { Unauthorized } from '../pages/Unauthorized.jsx';
 import { AdminRoute } from './AdminRoute.jsx';
 import { DashboardPage } from '../admin/pages/DashboardPage.jsx';
+import { AnaliticaPage } from '../admin/pages/AnaliticaPage.jsx';
 import { VideosPage } from '../admin/pages/VideosPage.jsx';
 import { InfografiasPage } from '../admin/pages/InfografiasPage.jsx';
 import { InfografiaLeadsPage } from '../admin/pages/InfografiaLeadsPage.jsx';
@@ -80,6 +81,7 @@ const router = createBrowserRouter([
     element: <AdminRoute><AdminLayout /></AdminRoute>,
     children: [
       { index: true, element: <DashboardPage /> },
+      { path: 'analitica', element: <AnaliticaPage /> },
       {
         path: 'contenidos',
         children: [

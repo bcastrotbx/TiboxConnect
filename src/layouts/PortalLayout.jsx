@@ -4,6 +4,7 @@ import { Icon } from '../components/shared/Icon.jsx';
 import { ModalShell } from '../components/shared/ModalShell.jsx';
 import { CosmicBg } from '../components/shared/CosmicBg.jsx';
 import { Header } from '../components/Header.jsx';
+import { trackPageView } from '../lib/analytics.js';
 
 // Ajuste posterior: renombrado de "Soporte" a "Contacto" (pedido de
 // Braulio) — el popup dejó de apuntar al portal de tickets de soporte
@@ -98,6 +99,16 @@ export function PortalLayout() {
       scrollToSection(location.state.scrollTo);
     }
   }, [location, scrollToSection]);
+
+  // Fase Analítica 1 (ver docs/phases/FASE-10-ANALITICA-FASE1.md): un
+  // page_view por cada ruta pública distinta. Vive acá (no en cada página
+  // individual) porque PortalLayout es el único punto por el que pasa
+  // toda la navegación del portal público — /admin/* usa AdminLayout, un
+  // componente distinto, así que ese tráfico queda excluido sin necesidad
+  // de un flag adicional.
+  React.useEffect(() => {
+    trackPageView(location.pathname);
+  }, [location.pathname]);
 
   return (
     <React.Fragment>

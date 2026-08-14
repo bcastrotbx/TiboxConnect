@@ -23,9 +23,15 @@ import { useAuth } from '../context/AuthContext.jsx';
 // - "Negocio" se renombra a "Mensajes" — el grupo ya solo contiene
 //   secciones de mensajería (contacto + opiniones de clientes), el nombre
 //   anterior no describía bien su contenido.
+//
+// Ajuste posterior (Fase Analítica 1, ver docs/phases/FASE-10-ANALITICA-FASE1.md):
+// "Analítica" se agrega en "General", junto a Dashboard — es una vista de
+// insights transversal (comportamiento de todo el portal), no pertenece a
+// ninguna de las secciones de Contenidos/Mensajes/Cuenta existentes.
 const NAV = [
   { label:'General', items:[
     { path:'/admin', icon:'layout-dashboard', label:'Dashboard' },
+    { path:'/admin/analitica', icon:'bar-chart-2', label:'Analítica' },
   ]},
   { label:'Contenidos', items:[
     { path:'/admin/contenidos', icon:'film', label:'Videos y Webinars' },

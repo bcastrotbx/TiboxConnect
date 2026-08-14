@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 
 const TITLES = {
   '/admin': 'Dashboard',
+  '/admin/analitica': 'Analítica',
   '/admin/contenidos': 'Videos y Webinars',
   '/admin/contenidos/infografias': 'Infografías',
   '/admin/contenidos/noticias': 'Noticias',

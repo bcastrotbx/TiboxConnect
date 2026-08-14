@@ -195,6 +195,24 @@ Leads capturados por `InfografiaLeadModal` antes de descargar una infografía.
 
 **RLS:** inserción pública sin sesión; solo admins pueden leer.
 
+### `analytics_events`
+
+Eventos de comportamiento anónimo del portal público (Fase Analítica 1, ver [FASE-10-ANALITICA-FASE1.md](phases/FASE-10-ANALITICA-FASE1.md)). Solo `page_view` está en uso — el resto de `event_type` queda previsto para fases siguientes (video, CTAs, formularios) sin necesitar un `ALTER` del constraint.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | `bigint` | PK, `generated always as identity` |
+| `event_type` | `text` | not null, `check` con los tipos previstos por el documento de análisis; solo `'page_view'` en uso |
+| `anonymous_id` | `uuid` | not null — persistido en `localStorage`, no vinculado a datos personales |
+| `session_id` | `uuid` | not null — expira por inactividad (30 min), ver `src/lib/analytics.js` |
+| `page_path`, `section`, `content_id`, `content_title` | `text` | nullable salvo `page_path` |
+| `metadata` | `jsonb` | not null, default `'{}'` |
+| `referrer` | `text` | nullable |
+| `device_type` | `text` | `check` `'mobile' \| 'tablet' \| 'desktop'`, nullable |
+| `created_at` | `timestamptz` | — |
+
+**RLS:** inserción pública (`anon`+`authenticated`) sin restricciones — cualquier visitante registra su propio comportamiento; solo admins leen (`is_admin()`). Sin tabla `admin_profiles` separada, mismo patrón que el resto del esquema. **No se rastrea por IP** — ver la nota de privacidad en la migración.
+
 ## Funciones y triggers
 
 - **`public.set_updated_at()`** — trigger genérico `BEFORE UPDATE` que fija `updated_at = now()`. Usado por `profiles`, `categories`, `content_items`, `hero_slides` y `events`.
