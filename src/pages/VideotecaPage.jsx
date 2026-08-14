@@ -9,6 +9,7 @@ import { useAsyncData } from '../hooks/useAsyncData.js';
 import * as videotecaService from '../services/videotecaService.js';
 import * as eventService from '../services/eventService.js';
 import { EventDetailModal } from '../components/Events.jsx';
+import { VideoModal } from '../components/Media.jsx';
 
 const PAGE_SIZE = 12;
 
@@ -98,6 +99,19 @@ function VideotecaCard({ item, catsById, onOpen }) {
 // popup VideoLibraryModal — "Ver todos los videos" ahora navega acá en vez
 // de abrir un popup. Combina content_items(type='video') + events
 // (próximos y realizados) en un solo listado paginado.
+//
+// Ajuste posterior (pedido de Braulio): "Ver video" en un video real
+// (kind==='video') dejó de navegar a /videoteca/:slug — ahora abre
+// VideoModal (mismo popup reproductor que ya usa el carrusel "Explora
+// Videos y Webinars" del inicio, ver Media.jsx) directo sobre este
+// listado, para que el usuario pueda cerrar y pasar al siguiente video sin
+// ida y vuelta de página. Se le pasa el ítem sin `slug` (`{...item,
+// slug: undefined}`) para que el botón "Ver Más" del popup (que llevaría a
+// la página de detalle) no aparezca — los videos ya no tienen página de
+// detalle con texto ni galería, solo el reproductor. Eventos (próximos y
+// realizados) NO cambiaron: siguen su comportamiento de siempre (popup
+// EventDetailModal para próximos, página /videoteca/:slug para
+// realizados).
 export function VideotecaPage() {
   const navigate = useNavigate();
   const [category, setCategory] = React.useState('all');
@@ -105,6 +119,7 @@ export function VideotecaPage() {
   const [statusFilter, setStatusFilter] = React.useState('all');
   const [page, setPage] = React.useState(1);
   const [openEvent, setOpenEvent] = React.useState(null);
+  const [openVideo, setOpenVideo] = React.useState(null);
 
   const { data: cats } = useAsyncData(() => videotecaService.getVideotecaCategories(), []);
   const { data: modalidad } = useAsyncData(() => eventService.getModalidadConfig(), []);
@@ -121,11 +136,11 @@ export function VideotecaPage() {
   const totalPages = Math.max(1, Math.ceil(allItems.length / PAGE_SIZE));
   const pageItems = allItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // Los eventos "PRÓXIMAMENTE" no tienen página de detalle propia — abren
-  // el mismo popup que ya usa la sección de Eventos (EventDetailModal), en
-  // vez de navegar. Videos reales y eventos ya realizados sí navegan a
-  // /videoteca/:slug.
+  // Videos reales: popup reproductor (VideoModal), sin navegar. Eventos
+  // "PRÓXIMAMENTE": popup existente (EventDetailModal). Eventos ya
+  // realizados: siguen navegando a /videoteca/:slug — sin cambios.
   const handleOpen = (item) => {
+    if (item.kind === 'video') { setOpenVideo(item); return; }
     if (item.kind === 'event' && item.isUpcoming) { setOpenEvent(item.eventData); return; }
     navigate(`/videoteca/${item.slug}`);
   };
@@ -195,6 +210,7 @@ export function VideotecaPage() {
       <Pagination page={page} totalPages={totalPages} onChange={setPage} />
 
       {openEvent && <EventDetailModal event={openEvent} modalidadById={modalidad || {}} onClose={() => setOpenEvent(null)} />}
+      {openVideo && <VideoModal video={{ ...openVideo, slug: undefined }} catsById={catsById} onClose={() => setOpenVideo(null)} />}
     </div>
   );
 }

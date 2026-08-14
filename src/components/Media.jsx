@@ -23,7 +23,7 @@ import { downloadImageWithFallback } from '../lib/download.js';
    extractYouTubeVideoId() (src/lib/youtube.js) en vez de duplicar la
    extracción del ID. Si external_url no es un link de YouTube válido, no
    se finge un reproductor — se ofrece un enlace real a "Ver contenido". ── */
-function VideoModal({ video, catsById, onClose }) {
+export function VideoModal({ video, catsById, onClose }) {
   const navigate = useNavigate();
   const cat = catsById[video.cat] || { color:'var(--navy-900)', label:'' };
   const youtubeId = extractYouTubeVideoId(video.externalUrl);
