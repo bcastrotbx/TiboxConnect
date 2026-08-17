@@ -149,7 +149,7 @@ export function LoginPage() {
   return (
     <CardShell>
       <div style={{ textAlign: 'center', marginBottom: 24 }}>
-        <img src="/assets/logo-tibox.png" alt="TIBOX" style={{ height: 26, marginBottom: 18 }} />
+        <img src="/assets/logo-tibox-dark.png" alt="TIBOX" style={{ height: 26, marginBottom: 18 }} />
         {mode === 'login' && (
           <React.Fragment>
             <div style={{ fontSize: 19, fontWeight: 700, color: 'var(--navy-900)' }}>Panel de administración</div>
