@@ -1,41 +1,57 @@
-# Subida de imágenes de galería de eventos a WordPress
+# Subida de imágenes del portal a comunidad.tiboxlab.cl
 
-Pedido de Braulio (ver `docs/phases/FASE-06-07-08-CONTENIDO-REAL.md`): la galería de fotos de un evento (`events.gallery`) dejó de subir archivos a Supabase Storage y pasó a aceptar enlaces pegados a mano — esta pieza agrega, además, un botón "Subir imagen" que sube el archivo directo a la Biblioteca de Medios de WordPress (tibox.cl) y pega la URL resultante automáticamente.
+Mecanismo único de subida de imágenes para todo el contenido del admin: Noticias, Videos y Webinars (donde exista un campo de imagen manual), Infografías, Portada, y galería/banner/logo de Eventos. Reemplaza la subida directa a Supabase Storage que usaban Noticias/Infografías/Portada — un solo destino administrado por Braulio, sin gastar cuota de Storage del proyecto Supabase.
 
-Se descartó Application Passwords de WordPress (problemas para activarlas en el sitio). En su lugar: un endpoint REST propio en WordPress, autenticado con una clave secreta fija — no ligada a ningún usuario.
+Origen: nació en la Fase 6-7-8 como una pieza exclusiva de la galería de fotos de eventos (`events.gallery`) — ver `docs/phases/FASE-06-07-08-CONTENIDO-REAL.md`. Se generalizó después (ver `docs/phases/` la fase que agrega este documento) para servir a cualquier imagen de contenido del admin, no solo eventos.
+
+Se descartó Application Passwords de WordPress (problemas para activarlas en el sitio). En su lugar: un endpoint REST propio, autenticado con una clave secreta fija — no ligada a ningún usuario.
 
 ## Arquitectura (tres piezas)
 
 ```
-Admin (navegador)  →  /api/upload-event-image  →  wp-json/tibox/v1/upload-image  →  Biblioteca de Medios
-   (React)             (Vercel Serverless Fn)         (snippet en Code Snippets)
+Admin (navegador)  →  /api/upload-image  →  comunidad.tiboxlab.cl/upload-image.php  →  imagenes-portal/
+   (React)             (Vercel Serverless Fn)
 ```
 
-1. **Snippet de WordPress** (`docs/integrations/wordpress-upload-image-snippet.php`) — se pega en el plugin Code Snippets de tibox.cl. Expone `POST /wp-json/tibox/v1/upload-image`, valida el header `X-Tibox-Secret` contra una clave fija definida en el propio snippet, y si coincide sube el archivo con `media_handle_upload()` y devuelve `{ "url": "..." }`.
-2. **Endpoint intermedio** (`api/upload-event-image.js`, Vercel Serverless Function) — recibe el archivo del formulario, arma el `multipart/form-data` que WordPress espera, agrega la clave secreta (leída de una variable de entorno, nunca expuesta al navegador) y reenvía la respuesta al frontend.
-3. **Frontend** (`src/services/wordpressUploadService.js` + botón "Subir imagen" en `GalleryLinksField`, `src/admin/AdminWidgets.jsx`) — valida tipo (JPG/PNG/WEBP) y tamaño (máx. 8MB) antes de subir, y agrega la URL resultante como una fila más del arreglo de enlaces (máximo 10 en total, junto con los pegados a mano).
+1. **Endpoint en comunidad.tiboxlab.cl** — `POST https://comunidad.tiboxlab.cl/upload-image.php`, valida el header `X-Tibox-Secret` contra la misma clave que `WP_UPLOAD_SECRET` en Vercel, y si coincide guarda el archivo en `imagenes-portal/` y devuelve `{ "url": "https://comunidad.tiboxlab.cl/imagenes-portal/..." }`. Este script vive fuera de este repositorio (lo administra Braulio en ese subdominio) — no hay código fuente propio que versionar acá.
+   - **Nota de discrepancia con `wordpress-upload-image-snippet.php`**: ese archivo (que sigue en este directorio) documenta una arquitectura anterior — un snippet de WordPress en `tibox.cl` exponiendo `wp-json/tibox/v1/upload-image`. El endpoint real en producción (confirmado en vivo, ver abajo) es `comunidad.tiboxlab.cl/upload-image.php`, no ese. El snippet queda de referencia histórica; si `comunidad.tiboxlab.cl` corre sobre ese mismo snippet migrado a un subdominio distinto o es un script nuevo, no hay forma de confirmarlo desde este repo — Braulio es quien sabe qué corre ahí.
+2. **Endpoint intermedio** (`api/upload-image.js`, Vercel Serverless Function — renombrado desde `api/upload-event-image.js`) — recibe el archivo del formulario, arma el `multipart/form-data` que ese endpoint espera, agrega la clave secreta (leída de la variable de entorno `WP_UPLOAD_SECRET`, nunca expuesta al navegador) y reenvía la respuesta al frontend.
+3. **Frontend** (`src/services/portalImageUploadService.js`, renombrado desde `wordpressUploadService.js`) — valida tipo (JPG/PNG/WEBP) y tamaño (máx. 8MB) antes de subir. Dos puntos de uso:
+   - `ImageUploadInner` (`src/admin/AdminWidgets.jsx`) — pieza compartida por `ImageUploadField` (banner de evento, logo de colaborador) y `ImageUploadOrUrlField` (Noticias, Infografías — mantiene la alternativa de pegar una URL a mano).
+   - `ImageUploadField` propio de `src/admin/PortadaWidgets.jsx` (imagen de fondo de cada slide del hero) — solo subida, sin alternativa de URL (no la tenía antes de este ajuste, no se agregó).
+   - `GalleryLinksField` (`src/admin/AdminWidgets.jsx`) — galería de fotos de eventos, botón "Subir imagen" junto a los enlaces pegados a mano (sin cambios respecto al mecanismo original).
+
+**Videos y Webinars** no tiene un campo de imagen manual — la miniatura se obtiene automáticamente del link de YouTube (`getYouTubeThumbnailUrl`), no hay nada que migrar ahí. **Servicios TIBOX** (`/admin/contenidos/servicios`) tampoco: su logo es un campo de solo texto ("URL del logo"), sin mecanismo de subida propio desde el que migrar — fuera de alcance de este ajuste.
 
 ## Qué falta para que funcione (acción de Braulio)
 
-1. **Pegar el snippet** en WordPress → Code Snippets → Add New → pegar el contenido completo de `docs/integrations/wordpress-upload-image-snippet.php` → guardar como "Solo funciones" → activar con "Run snippet everywhere".
-2. **Elegir una clave secreta propia** (larga y aleatoria, ej. 40+ caracteres) y reemplazar el valor de ejemplo en la línea `$expected_secret = '...'` del snippet, antes de guardarlo.
-3. **Copiar esa misma clave** a Vercel: Project Settings → Environment Variables → agregar `WP_UPLOAD_SECRET` con exactamente el mismo valor (en los tres entornos: Production, Preview, Development, si se va a probar en preview deploys también).
-4. **Redesplegar** (un nuevo deploy en Vercel, para que la función lea la variable de entorno nueva — las variables de entorno no se aplican a deploys ya existentes).
+Ya confirmado funcionando en producción (ver "Verificado en vivo" abajo) — estos pasos ya están completos, se dejan documentados por si hay que repetirlos en otro entorno:
+
+1. **Configurar el endpoint** en `comunidad.tiboxlab.cl/upload-image.php` con una clave secreta propia.
+2. **Copiar esa misma clave** a Vercel: Project Settings → Environment Variables → `WP_UPLOAD_SECRET` (Production, Preview, Development si corresponde).
+3. **Redesplegar** tras cualquier cambio de la variable de entorno — no se aplica a deploys ya existentes.
 
 ## Límites y validaciones
 
-- Tipos permitidos: JPG, PNG, WEBP (validado en el frontend, en el endpoint intermedio y en el snippet de WordPress — las tres capas, no solo una).
-- Tamaño máximo: 8MB (mismo criterio en las tres capas).
-- Máximo 10 imágenes en la galería en total, combinando enlaces pegados a mano y subidas — mismo límite que ya tenía la galería de solo-enlaces.
-- Errores (clave inválida, WordPress caído, archivo muy grande, tipo no permitido) se muestran como mensaje en rojo dentro del formulario, sin bloquear el resto del formulario.
+- Tipos permitidos: JPG, PNG, WEBP (validado en el frontend y en el endpoint intermedio).
+- Tamaño máximo: 8MB.
+- Máximo 10 imágenes en la galería de eventos en total, combinando enlaces pegados a mano y subidas.
+- Errores (clave inválida, servidor caído, archivo muy grande, tipo no permitido) se muestran como mensaje en rojo dentro del formulario, sin bloquear el resto del formulario.
+
+## Verificado en vivo (fecha de este ajuste)
+
+Subida de prueba real contra el endpoint ya desplegado en producción (`tibox-connect.vercel.app`, antes de que el rename a `/api/upload-image` estuviera desplegado — se probó `/api/upload-event-image`, mismo handler):
+
+- `POST /api/upload-event-image` con una imagen PNG 1×1 → `200 { "url": "https://comunidad.tiboxlab.cl/imagenes-portal/<hash>.png" }`.
+- La URL resultante se cargó directamente en el navegador y sirvió la imagen real (sin problema de hotlinking) — confirma que `WP_UPLOAD_SECRET` está configurada en Vercel y que el endpoint de `comunidad.tiboxlab.cl` está activo y guardando en `imagenes-portal/`, tal como se pedía.
+
+Wiring de Noticias e Infografías verificado localmente (interceptando `fetch`): el botón "Subir archivo" de ambos formularios llama a `/api/upload-image` con el `Content-Type` y `X-Filename` correctos — no se pudo probar el flujo completo (subir → guardar → ver publicado) en local porque Vite no sirve rutas `/api/*`; requiere probarse contra un deploy real (ver "Cómo probar de punta a punta").
 
 ## Cómo probar de punta a punta
 
-Una vez completados los 4 pasos de arriba:
+1. Ir a `/admin/contenidos/noticias` (o `/admin/contenidos/infografias`, o `/admin/portada`) → editar o crear un ítem.
+2. En el campo de imagen, clic en "Subir archivo" (o el botón de subida en Portada) y elegir un archivo JPG/PNG/WEBP.
+3. Confirmar que aparece "Subiendo…" y luego la vista previa con la URL de `comunidad.tiboxlab.cl/imagenes-portal/...`.
+4. Guardar y confirmar en la página pública correspondiente que la imagen aparece.
 
-1. Ir a `/admin/eventos` → editar o crear un evento.
-2. En "Galería de fotos (enlaces)", clic en "Subir imagen" y elegir un archivo JPG/PNG/WEBP.
-3. Confirmar que aparece "Subiendo…" y luego la URL de `tibox.cl/wp-content/uploads/...` como una fila nueva.
-4. Guardar el evento y confirmar en la página pública (`/eventos/:slug`) que la foto aparece en "Galería del evento".
-
-Si el paso 2 muestra un error, revisar primero que la clave en el snippet y en `WP_UPLOAD_SECRET` sean idénticas (un espacio de más o una comilla distinta ya lo rompe) y que el snippet esté activo.
+Si el paso 2 muestra un error, revisar primero que la clave en `comunidad.tiboxlab.cl` y en `WP_UPLOAD_SECRET` (Vercel) sean idénticas.

@@ -12,8 +12,7 @@ import * as adminLeadsService from '../services/adminLeadsService.js';
 import * as adminMessagesService from '../services/adminMessagesService.js';
 import * as adminOpinionsService from '../services/adminOpinionsService.js';
 import * as categoryService from '../services/categoryService.js';
-import * as storageService from '../services/storageService.js';
-import * as wordpressUploadService from '../services/wordpressUploadService.js';
+import * as portalImageUploadService from '../services/portalImageUploadService.js';
 import { getYouTubeThumbnailUrl } from '../lib/youtube.js';
 
 export function statusTone(s) {
@@ -227,8 +226,13 @@ export function ContentViewModal({ item, section, onClose }) {
 const SECTION_TO_TYPE = { videos: 'video', infographics: 'infographic', news: 'news' };
 
 // Pieza de subida de archivo en sí (sin el <Field> envolvente), reutilizada
-// tanto por ImageUploadField (subida-solamente, para el banner de eventos)
-// como por ImageUploadOrUrlField (subida + URL, para noticias/infografías).
+// tanto por ImageUploadField (subida-solamente, para el banner/logo de
+// eventos) como por ImageUploadOrUrlField (subida + URL, para
+// noticias/infografías). Ajuste posterior: sube a
+// comunidad.tiboxlab.cl/imagenes-portal/ (portalImageUploadService, mismo
+// mecanismo que ya usaba la galería de fotos de eventos) en vez de a
+// Supabase Storage — un solo destino para toda imagen de contenido del
+// admin.
 function ImageUploadInner({ value, onChange }) {
   const [uploading, setUploading] = React.useState(false);
   const [error, setError] = React.useState('');
@@ -239,7 +243,7 @@ function ImageUploadInner({ value, onChange }) {
     setUploading(true);
     setError('');
     try {
-      const url = await storageService.uploadContentImage(file);
+      const url = await portalImageUploadService.uploadPortalImage(file);
       onChange(url);
     } catch (err) {
       setError(err.message || 'No se pudo subir la imagen.');
@@ -366,11 +370,11 @@ function isValidHttpUrl(str) {
 // que igual sirva una imagen).
 //
 // Ajuste posterior: se agrega "Subir imagen" — sube el archivo directo a
-// la Biblioteca de Medios de WordPress (tibox.cl) vía
-// wordpressUploadService (que a su vez pasa por /api/upload-event-image,
-// el endpoint intermedio de Vercel que guarda la clave secreta) y agrega
-// la URL resultante como una fila más, sin reemplazar la opción de pegar
-// un enlace a mano — ambas conviven en el mismo arreglo.
+// comunidad.tiboxlab.cl/imagenes-portal/ vía portalImageUploadService (que
+// a su vez pasa por /api/upload-image, el endpoint intermedio de Vercel que
+// guarda la clave secreta) y agrega la URL resultante como una fila más,
+// sin reemplazar la opción de pegar un enlace a mano — ambas conviven en el
+// mismo arreglo.
 function GalleryLinksField({ label, value, onChange }) {
   const urls = value && value.length > 0 ? value : [''];
   const [touched, setTouched] = React.useState({});
@@ -404,7 +408,7 @@ function GalleryLinksField({ label, value, onChange }) {
     try {
       const uploadedUrls = [];
       for (const file of files) {
-        uploadedUrls.push(await wordpressUploadService.uploadEventImageToWordpress(file));
+        uploadedUrls.push(await portalImageUploadService.uploadPortalImage(file));
       }
       const nonEmpty = urls.filter((u) => u.trim());
       onChange([...nonEmpty, ...uploadedUrls]);

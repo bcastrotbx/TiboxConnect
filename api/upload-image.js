@@ -1,13 +1,21 @@
 // Endpoint intermedio (Vercel Serverless Function) — reenvía la subida de
-// una imagen de galería de evento al endpoint REST personalizado de
-// WordPress (ver docs/integrations/wordpress-upload-image-snippet.php),
-// sin que la clave secreta (WP_UPLOAD_SECRET) llegue nunca al navegador.
-// El frontend manda el archivo en crudo (no multipart) con su tipo real
-// en el header Content-Type y el nombre en X-Filename; acá se arma el
-// multipart/form-data que WordPress espera y se agrega la clave.
+// cualquier imagen de contenido del portal (Noticias, Videos y Webinars,
+// Infografías, Portada, banner/logo/galería de eventos) al endpoint REST
+// personalizado en comunidad.tiboxlab.cl (ver
+// docs/integrations/wordpress-upload-image-snippet.php), sin que la clave
+// secreta (WP_UPLOAD_SECRET) llegue nunca al navegador. El frontend manda
+// el archivo en crudo (no multipart) con su tipo real en el header
+// Content-Type y el nombre en X-Filename; acá se arma el multipart/form-data
+// que ese endpoint espera y se agrega la clave.
+//
+// Renombrado desde upload-event-image.js (ver
+// portalImageUploadService.js): antes era exclusivo de la galería de fotos
+// de eventos, ahora es el destino único para toda imagen de contenido del
+// admin, reemplazando la subida directa a Supabase Storage que usaban
+// Noticias/Infografías/Portada.
 //
 // Se descartó Application Passwords de WordPress por problemas para
-// activarlas en tibox.cl (pedido de Braulio) — este endpoint + clave
+// activarlas en el sitio (pedido de Braulio) — este endpoint + clave
 // secreta fija es la alternativa.
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -89,15 +97,13 @@ export default async function handler(req, res) {
     const data = await wpResponse.json().catch(() => null);
 
     if (!wpResponse.ok || !data?.url) {
-      const message = data?.message || 'WordPress no pudo procesar la imagen.';
+      const message = data?.message || 'No se pudo procesar la imagen.';
       res.status(502).json({ error: message });
       return;
     }
 
     res.status(200).json({ url: data.url });
   } catch {
-    res.status(502).json({ error: 'No se pudo conectar con WordPress para subir la imagen.' });
+    res.status(502).json({ error: 'No se pudo conectar con el servidor de imágenes para subir la imagen.' });
   }
 }
-
-// Cambiar destino de subida de imágenes a comunidad.tiboxlab.cl

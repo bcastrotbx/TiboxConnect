@@ -4,13 +4,16 @@ import { LoadingState, ErrorState } from '../components/shared/AsyncState.jsx';
 import { useAsyncData } from '../hooks/useAsyncData.js';
 import * as adminService from '../services/adminService.js';
 import * as adminPortadaService from '../services/adminPortadaService.js';
-import { uploadContentImage, InvalidImageError } from '../services/storageService.js';
+import { uploadPortalImage, InvalidImageError } from '../services/portalImageUploadService.js';
 import { Field, ConfirmDialog } from './AdminWidgets.jsx';
 
 // Fase 6/7/8 (Portada real) — los 3 tabs de /admin/portada ahora persisten
 // contra Supabase. Antes leían datos de ejemplo y "Guardar cambios" no
 // tenía onClick — cualquier edición se perdía al recargar.
 
+// Ajuste posterior: sube a comunidad.tiboxlab.cl/imagenes-portal/
+// (portalImageUploadService, mismo destino que ya usaba la galería de
+// eventos) en vez de a Supabase Storage.
 function ImageUploadField({ label, value, onChange }) {
   const [uploading, setUploading] = React.useState(false);
   const [uploadError, setUploadError] = React.useState('');
@@ -23,7 +26,7 @@ function ImageUploadField({ label, value, onChange }) {
     setUploadError('');
     setUploading(true);
     try {
-      const url = await uploadContentImage(file);
+      const url = await uploadPortalImage(file);
       onChange(url);
     } catch (err) {
       setUploadError(err instanceof InvalidImageError ? err.message : 'No se pudo subir la imagen.');
