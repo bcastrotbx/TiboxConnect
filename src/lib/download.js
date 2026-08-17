@@ -33,8 +33,16 @@ function guessExtension(url) {
   return match ? match[1].toLowerCase() : 'jpg';
 }
 
+// Ajuste posterior (auditoría de bugs, ver docs/AUDITORIA-2026-08-17.md): el
+// llamador mostraba "Descarga iniciada" de forma incondicional, sin esperar
+// a que esta función terminara ni revisar si de verdad funcionó — con el
+// fallback de pestaña nueva bloqueado por el navegador (posible: al haber
+// un `await` de por medio, algunos navegadores retiran el "user activation"
+// que permite abrir pestañas sin tratarlo como popup), el usuario veía un
+// check de éxito sin haber recibido nada. Ahora devuelve `{ ok, method }`
+// para que el llamador pueda reflejar el resultado real.
 export async function downloadImageWithFallback(url, title) {
-  if (!url) return;
+  if (!url) return { ok: false, method: 'none' };
   const filename = `${sanitizeFilename(title)}.${guessExtension(url)}`;
   try {
     const res = await fetch(url, { mode: 'cors' });
@@ -48,7 +56,9 @@ export async function downloadImageWithFallback(url, title) {
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+    return { ok: true, method: 'blob' };
   } catch {
-    window.open(url, '_blank', 'noopener,noreferrer');
+    const win = window.open(url, '_blank', 'noopener,noreferrer');
+    return { ok: Boolean(win), method: 'tab' };
   }
 }

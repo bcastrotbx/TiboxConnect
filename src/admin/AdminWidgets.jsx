@@ -512,6 +512,12 @@ export function NewContentModal({ section, item, onClose }) {
   const [categoryId, setCategoryId] = React.useState(item?.categoryId || '');
   const [summary, setSummary] = React.useState(item?.summary || '');
   const [description, setDescription] = React.useState(item?.description || '');
+  // Solo Noticias — el cuerpo completo del artículo que muestra
+  // /tendencias/:slug (newsService.mapNewsRow cae a `summary` si `body` está
+  // vacío, ver ese archivo). Antes de este ajuste, "Información" (summary)
+  // era el único campo del formulario de Noticias, así que `body` nunca se
+  // guardaba — cualquier noticia publicada quedaba sin cuerpo completo.
+  const [body, setBody] = React.useState(item?.body || '');
   const [thumbnailUrl, setThumbnailUrl] = React.useState(item?.thumbnailUrl || '');
   const [externalUrl, setExternalUrl] = React.useState(item?.externalUrl || '');
   const [sourceName, setSourceName] = React.useState(item?.sourceName || '');
@@ -598,6 +604,7 @@ export function NewContentModal({ section, item, onClose }) {
           // false para el resto en vez de confiar en que isFeatured nunca
           // se haya activado antes de este ajuste.
           is_featured: section === 'news' ? isFeatured : false,
+          body: section === 'news' ? (body.trim() || null) : null,
         };
         if (status === 'published' && item?.rawStatus !== 'published') {
           fields.published_at = new Date().toISOString();
@@ -683,6 +690,9 @@ export function NewContentModal({ section, item, onClose }) {
                   <Field label="Fuente"><input type="text" placeholder="Microsoft, Gartner…" value={sourceName} onChange={e => setSourceName(e.target.value)} /></Field>
                 </div>
                 <Field label="Información"><textarea placeholder="Resumen de la noticia…" style={{ minHeight:130 }} value={summary} onChange={e => setSummary(e.target.value)}></textarea></Field>
+                <Field label="Cuerpo completo del artículo">
+                  <textarea placeholder="Texto completo que se muestra en la página de la noticia…" style={{ minHeight:220 }} value={body} onChange={e => setBody(e.target.value)}></textarea>
+                </Field>
               </React.Fragment>
             )}
 

@@ -68,11 +68,21 @@ export function EventDetailModal({ event, modalidadById, onClose }) {
       </div>
 
       {/* Inscripción: enlace externo (registrationUrl), editable desde el
-          admin en una fase futura */}
+          admin en una fase futura. registrationUrl es opcional en el
+          formulario admin — sin este chequeo, un evento sin URL de
+          inscripción renderizaba el botón igual, con href={null} (React lo
+          omite del <a>, quedando un botón que parece funcional pero no
+          lleva a ningún lado). */}
       <div style={{padding:'18px 24px 24px'}}>
-        <CtaPrimary as="a" href={event.registrationUrl} target="_blank" rel="noopener noreferrer" style={{width:'100%'}}>
-          <Icon name="external-link" style={{width:16,height:16}} />Inscríbete aquí
-        </CtaPrimary>
+        {event.registrationUrl ? (
+          <CtaPrimary as="a" href={event.registrationUrl} target="_blank" rel="noopener noreferrer" style={{width:'100%'}}>
+            <Icon name="external-link" style={{width:16,height:16}} />Inscríbete aquí
+          </CtaPrimary>
+        ) : (
+          <div style={{width:'100%',textAlign:'center',fontSize:13,fontWeight:600,color:'var(--gray-500)',background:'var(--gray-50)',border:'1px solid var(--gray-200)',borderRadius:12,padding:'13px 20px'}}>
+            Inscripción próximamente
+          </div>
+        )}
       </div>
     </ModalShell>
   );

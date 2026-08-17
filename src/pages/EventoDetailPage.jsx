@@ -156,10 +156,20 @@ export function EventoDetailPage() {
                 un evento próximo con fotos ya cargadas (poco común, pero
                 posible) nunca las habría mostrado. La galería ahora se
                 muestra siempre que tenga fotos, sin importar el estado. */}
+            {/* registrationUrl es opcional en el formulario admin — sin este
+                chequeo, un evento próximo sin URL de inscripción mostraba el
+                botón igual, con href={null} (React lo omite del <a>, un
+                botón que parece funcional pero no lleva a ningún lado). */}
             {isUpcoming && (
-              <CtaPrimary as="a" href={event.registrationUrl} target="_blank" rel="noopener noreferrer" style={{ marginBottom: gallery.length > 0 ? 24 : 0 }}>
-                <Icon name="external-link" style={{ width: 16, height: 16 }} />Inscríbete aquí
-              </CtaPrimary>
+              event.registrationUrl ? (
+                <CtaPrimary as="a" href={event.registrationUrl} target="_blank" rel="noopener noreferrer" style={{ marginBottom: gallery.length > 0 ? 24 : 0 }}>
+                  <Icon name="external-link" style={{ width: 16, height: 16 }} />Inscríbete aquí
+                </CtaPrimary>
+              ) : (
+                <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 600, color: 'var(--gray-500)', background: 'var(--gray-50)', border: '1px solid var(--gray-200)', borderRadius: 12, padding: '13px 20px', marginBottom: gallery.length > 0 ? 24 : 0 }}>
+                  Inscripción próximamente
+                </div>
+              )
             )}
 
             {gallery.length > 0 && (

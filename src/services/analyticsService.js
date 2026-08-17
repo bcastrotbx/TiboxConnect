@@ -130,7 +130,10 @@ export async function getMostWatchedVideos({ days = 30, limit = 10 } = {}) {
   }
 
   return Object.values(byVideo)
-    .map((v) => ({ ...v, completionRate: v.completes > 0 ? Math.round((v.completes / v.plays) * 100) : null }))
+    // v.plays > 0 (no solo v.completes > 0): un video_complete sin su
+    // video_play correspondiente (evento perdido por red/adblocker) dejaba
+    // completes>0 con plays=0, dividiendo por cero → Infinity% en pantalla.
+    .map((v) => ({ ...v, completionRate: v.plays > 0 ? Math.min(100, Math.round((v.completes / v.plays) * 100)) : null }))
     .sort((a, b) => b.plays - a.plays)
     .slice(0, limit);
 }

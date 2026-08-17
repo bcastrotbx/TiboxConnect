@@ -307,15 +307,18 @@ function InfografiaLeadModal({ contentItemId, onSuccess, onClose }) {
 export function InfografiaModal({ info, channelsById, onClose }) {
   const ch = channelsById[info.channel] || { color:'var(--navy-900)', label:'', icon:'link' };
   const [showLead, setShowLead] = React.useState(false);
-  const [justDownloaded, setJustDownloaded] = React.useState(false);
+  // 'idle' | 'downloading' | 'success' | 'error' — ajuste posterior
+  // (auditoría de bugs, ver docs/AUDITORIA-2026-08-17.md): antes se
+  // mostraba "Descarga iniciada" de forma incondicional, sin esperar el
+  // resultado real de downloadImageWithFallback. Ahora refleja si la
+  // descarga (o su fallback de pestaña nueva) realmente funcionó.
+  const [downloadState, setDownloadState] = React.useState('idle');
 
-  // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): descarga real
-  // en vez del estado visual simulado — ver lib/download.js para el
-  // fallback a pestaña nueva cuando el fetch por blob falla (CORS).
-  const startDownload = () => {
-    setJustDownloaded(true);
-    setTimeout(() => setJustDownloaded(false), 2200);
-    downloadImageWithFallback(info.img, info.title);
+  const startDownload = async () => {
+    setDownloadState('downloading');
+    const result = await downloadImageWithFallback(info.img, info.title);
+    setDownloadState(result.ok ? 'success' : 'error');
+    setTimeout(() => setDownloadState('idle'), 2600);
   };
 
   const handleDownloadClick = () => {
@@ -338,8 +341,16 @@ export function InfografiaModal({ info, channelsById, onClose }) {
       <div style={{padding:'20px 24px 24px'}}>
         <div style={{fontSize:16.5,fontWeight:700,color:'var(--navy-900)',lineHeight:1.32,marginBottom:9}}>{info.title}</div>
         <p style={{fontSize:13.5,color:'var(--gray-600)',lineHeight:1.65,margin:'0 0 18px'}}>{info.summary}</p>
-        <CtaPrimary onClick={handleDownloadClick} style={{width:'100%'}}>
-          <Icon name={justDownloaded ? 'check' : 'download'} style={{width:15,height:15}} />{justDownloaded ? 'Descarga iniciada' : 'Descargar'}
+        <CtaPrimary onClick={handleDownloadClick} disabled={downloadState === 'downloading'} style={{width:'100%'}}>
+          <Icon
+            name={downloadState === 'success' ? 'check' : downloadState === 'error' ? 'alert-triangle' : downloadState === 'downloading' ? 'loader-2' : 'download'}
+            className={downloadState === 'downloading' ? 'tbx-spin' : undefined}
+            style={{width:15,height:15}}
+          />
+          {downloadState === 'success' ? 'Descarga iniciada'
+            : downloadState === 'error' ? 'No se pudo descargar — reintenta'
+            : downloadState === 'downloading' ? 'Descargando…'
+            : 'Descargar'}
         </CtaPrimary>
       </div>
       {showLead && (
