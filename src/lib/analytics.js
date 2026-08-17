@@ -13,6 +13,13 @@ import { supabase } from './supabase.js';
 // debe romper la navegación real del visitante, así que se captura y se
 // descarta en silencio (no hay nada útil que mostrarle a un visitante por
 // un fallo de tracking).
+//
+// Ajuste posterior (Fase Analítica 1, verificación en producción): no
+// alcanza con que PortalLayout.jsx no instrumente /admin/*, porque un
+// administrador logueado puede navegar el portal público con la misma
+// sesión (por ejemplo desde "Ir al Portal"). logEvent verifica si hay una
+// sesión de Supabase Auth activa y, si la hay, no envía el evento — sin
+// importar en qué ruta esté.
 
 const ANON_ID_KEY = 'tbx_analytics_anon_id';
 const SESSION_ID_KEY = 'tbx_analytics_session_id';
@@ -81,6 +88,9 @@ function sectionFromPath(pathname) {
 
 async function logEvent(eventType, fields) {
   try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) return;
+
     await supabase.from('analytics_events').insert({
       event_type: eventType,
       anonymous_id: getAnonymousId(),

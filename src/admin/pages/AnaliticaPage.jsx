@@ -33,6 +33,10 @@ function StatCard({ icon, label, value }) {
 export function AnaliticaPage() {
   const [days, setDays] = React.useState(30);
   const { status, data, error } = useAsyncData(() => analyticsService.getPageViewStats({ days }), [days]);
+  // Histórico mensual: independiente del selector de rango de arriba (7/30/90
+  // días no alcanzan para mostrar tendencia mes a mes) — ventana fija de 6
+  // meses, ver analyticsService.getMonthlyPageViews.
+  const monthly = useAsyncData(() => analyticsService.getMonthlyPageViews({ months: 6 }), []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -63,6 +67,27 @@ export function AnaliticaPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 18 }}>
             <StatCard icon="eye" label="Visitas totales" value={data.totalViews.toLocaleString('es-CL')} />
             <StatCard icon="users" label="Visitantes únicos" value={data.uniqueVisitors.toLocaleString('es-CL')} />
+          </div>
+
+          <div className="adm-card" style={{ padding: 20 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy-900,#021233)', marginBottom: 16 }}>Histórico mensual</div>
+            {monthly.status === 'loading' && <LoadingState label="Cargando histórico…" />}
+            {monthly.status === 'error' && <ErrorState label="No pudimos cargar el histórico mensual." error={monthly.error} />}
+            {monthly.status === 'success' && (
+              monthly.data.every((m) => m.views === 0) ? (
+                <EmptyState label="Todavía no hay visitas registradas en los últimos meses." icon="bar-chart-2" />
+              ) : (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={monthly.data} margin={{ left: 8, right: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--gray-200)" />
+                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--gray-500)' }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--gray-500)' }} />
+                    <Tooltip formatter={(value) => [value, 'Visitas']} />
+                    <Bar dataKey="views" fill="#0050C8" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )
+            )}
           </div>
 
           <div className="adm-card" style={{ padding: 20 }}>

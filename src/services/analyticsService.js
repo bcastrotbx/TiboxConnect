@@ -17,6 +17,8 @@ const SECTION_LABELS = {
   otro: 'Otro',
 };
 
+const MONTH_LABEL_FORMATTER = new Intl.DateTimeFormat('es-CL', { month: 'short', year: 'numeric' });
+
 async function fetchPageViews(days) {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
   const { data, error } = await supabase
@@ -48,4 +50,46 @@ export async function getPageViewStats({ days = 30 } = {}) {
     .sort((a, b) => b.views - a.views);
 
   return { totalViews: rows.length, uniqueVisitors, topSections };
+}
+
+// Histórico mensual para el bloque "Resumen general". Se agrupa por
+// año-mes en el cliente en vez de crear una vista/función SQL — mismo
+// criterio que fetchPageViews/getPageViewStats más arriba: con el volumen
+// actual del portal no hace falta infraestructura de agregación en la base
+// (equivalente a `date_trunc('month', created_at)`, solo que calculado acá
+// en vez de en Postgres). Incluye meses sin visitas en 0, para que el
+// gráfico no salte fechas.
+async function fetchPageViewsSince(sinceIso) {
+  const { data, error } = await supabase
+    .from('analytics_events')
+    .select('created_at')
+    .eq('event_type', 'page_view')
+    .gte('created_at', sinceIso);
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getMonthlyPageViews({ months = 6 } = {}) {
+  const firstMonth = new Date();
+  firstMonth.setDate(1);
+  firstMonth.setHours(0, 0, 0, 0);
+  firstMonth.setMonth(firstMonth.getMonth() - (months - 1));
+
+  const rows = await fetchPageViewsSince(firstMonth.toISOString());
+
+  const countsByMonth = {};
+  for (const row of rows) {
+    const d = new Date(row.created_at);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    countsByMonth[key] = (countsByMonth[key] || 0) + 1;
+  }
+
+  const result = [];
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(firstMonth.getFullYear(), firstMonth.getMonth() + (months - 1 - i), 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    result.push({ month: key, label: MONTH_LABEL_FORMATTER.format(d), views: countsByMonth[key] || 0 });
+  }
+  return result;
 }

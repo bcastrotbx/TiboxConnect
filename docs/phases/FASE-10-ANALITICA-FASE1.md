@@ -43,10 +43,18 @@ Alcance confirmado para esta entrega (decisión explícita: arrancar solo con la
 - Con la tabla ausente, se confirmó que el insert de `trackPageView` falla en silencio (404 de red visible en consola, sin excepción no capturada) — el portal público sigue funcionando con normalidad.
 - Se verificó el render de `/admin/analitica` mediante una ruta temporal de desarrollo (agregada y revertida en el mismo lote, confirmado con `git diff`): header, selector de rango y el estado de error (`EmptyState`/`ErrorState`) se ven correctamente. Faltará una verificación con datos reales una vez ejecutada la migración.
 
+## Ajustes posteriores (mismo día, ya en producción)
+
+Tras ejecutar la migración en producción y confirmar que `trackPageView` insertaba filas reales, se agregaron dos ajustes antes de pasar a la Fase 2:
+
+1. **Histórico mensual**: `analyticsService.getMonthlyPageViews({ months })` agrupa `analytics_events` por año-mes (equivalente a `date_trunc('month', created_at)`, calculado en el cliente en vez de una vista/función SQL — mismo criterio que el resto del servicio: con el volumen actual no hace falta infraestructura de agregación en la base). Nuevo bloque "Histórico mensual" en `/admin/analitica`, dentro de "Resumen general", con una ventana fija de 6 meses (incluye meses en 0 para no saltar fechas en el gráfico).
+2. **Excluir tráfico de administradores logueados**: se detectó que un admin puede navegar el portal público con su propia sesión activa (por ejemplo desde "Ir al Portal"), y `PortalLayout.jsx` no distingue eso — solo excluye por *ruta* (`/admin/*`), no por *sesión*. `logEvent()` en `src/lib/analytics.js` ahora llama a `supabase.auth.getSession()` antes de insertar y descarta el evento si hay una sesión activa, sin importar la ruta.
+
+**Verificación**: se confirmó con un `supabase.auth.getSession()` monkey-parcheado en el navegador (simulando una sesión activa sin necesitar credenciales reales) que el número de requests de red a `analytics_events` no aumenta cuando hay sesión, y sí aumenta cuando no la hay — mismo mecanismo, dos resultados opuestos, antes/después comparado por conteo de requests. El bloque "Histórico mensual" se verificó por código/build (lint + build limpios) y por render de sus tres estados (`loading`/`error`/`success` vía ruta temporal revertida); mostrar números reales requiere una sesión de admin real, que Braulio debe confirmar.
+
 ## Pendiente para Braulio
 
-- Ejecutar la migración `20260815100000_analytics_events.sql` en el SQL Editor de Supabase antes de que la analítica empiece a registrar datos.
-- Una vez con datos reales, confirmar visualmente que "Resumen general" y "Secciones más visitadas" muestran números coherentes.
+- Confirmar logueado como admin que "Resumen general", "Histórico mensual" y "Secciones más visitadas" muestran datos reales coherentes en `/admin/analitica`.
 - Evaluar la creación de la cuenta de Microsoft Clarity (paso independiente, mencionado en el documento de análisis) cuando se aborde esa fase.
 
 ## Qué queda para fases siguientes
