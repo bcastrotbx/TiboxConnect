@@ -23,6 +23,33 @@ export function statusTone(s) {
   return 'gray';
 }
 
+// Ajuste posterior ("Mi Perfil" real): antes AdminHeader.jsx y
+// AdminSidebar.jsx cada uno definía su propio initialsFor() y su propio
+// círculo con degradado — ninguno mostraba una foto real porque
+// profiles.avatar_url no existía. Ahora que sí existe (ver migración
+// 20260817100000), se centraliza acá: si hay avatar_url se muestra la
+// imagen, si no, las iniciales de siempre — un solo lugar que lo decide,
+// usado por AdminHeader, AdminSidebar y PerfilPage.
+export function initialsFor(profile) {
+  const name = profile?.full_name?.trim();
+  if (!name) return 'AD';
+  const parts = name.split(/\s+/).filter(Boolean);
+  const initials = parts.slice(0, 2).map(p => p[0]).join('');
+  return initials.toUpperCase() || 'AD';
+}
+
+export function Avatar({ profile, size = 32, fontSize = 12 }) {
+  const style = {
+    width: size, height: size, borderRadius: '50%', flexShrink: 0,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize, fontWeight: 700, color: 'white', overflow: 'hidden',
+  };
+  if (profile?.avatar_url) {
+    return <img src={profile.avatar_url} alt="" style={{ ...style, objectFit: 'cover' }} />;
+  }
+  return <div style={{ ...style, background: 'var(--grad-title)' }}>{initialsFor(profile)}</div>;
+}
+
 export function Field({ label, children }) {
   return <div className="adm-field"><label>{label}</label>{children}</div>;
 }

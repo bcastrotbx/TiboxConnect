@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Icon } from '../components/shared/Icon.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { Avatar } from './AdminWidgets.jsx';
 
 // Misma estructura visual y agrupación que en la Fase 1 (General/Contenidos/
 // Negocio/Cuenta) — solo cambia que cada ítem ahora es una ruta real en vez
@@ -50,14 +51,6 @@ const NAV = [
   ]},
 ];
 
-function initialsFor(profile) {
-  const name = profile?.full_name?.trim();
-  if (!name) return 'AD';
-  const parts = name.split(/\s+/).filter(Boolean);
-  const initials = parts.slice(0, 2).map(p => p[0]).join('');
-  return initials.toUpperCase() || 'AD';
-}
-
 export function AdminSidebar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -91,7 +84,7 @@ export function AdminSidebar() {
         ))}
       </div>
       <div style={{ padding:'12px 16px', borderTop:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:9 }}>
-        <div style={{ width:32, height:32, borderRadius:'50%', flexShrink:0, background:'var(--grad-title)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:700, color:'white' }}>{initialsFor(profile)}</div>
+        <Avatar profile={profile} size={32} fontSize={12} />
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ fontSize:13, fontWeight:600, color:'white', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{profile?.full_name || 'Administrador'}</div>
           <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)' }}>TIBOX Connect</div>
