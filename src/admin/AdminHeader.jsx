@@ -30,24 +30,34 @@ function initialsFor(profile) {
 
 const NEWABLE_PATHS = ['/admin/contenidos', '/admin/contenidos/infografias', '/admin/contenidos/noticias', '/admin/eventos'];
 
+// Ajuste posterior (auditoría del panel admin, luego reemplazado por datos
+// reales): la campanita mostraba notificaciones de ejemplo
+// (adminService.getNotifications(), datos de adminSeed.js) sin relación con
+// nada real del portal. Ahora suma mensajes de contacto sin leer + opiniones
+// recientes (ver adminService.getPendingNotifications) — misma fuente que
+// ya usan MessagesTable/OpinionsPanel y las tarjetas del Dashboard, sin
+// duplicar la lógica de conteo. No hay "marcar todas como leídas": un
+// mensaje se marca leído al abrirlo (MessagesTable ya lo hace) y una opinión
+// no tiene un estado propio que marcar (ver nota en adminService.js) — el
+// desplegable ofrece ir directo a cada bandeja en su lugar.
 function NotificationBell() {
   const [open, setOpen] = React.useState(false);
-  const { data } = useAsyncData(() => adminService.getNotifications(), []);
-  // Ajuste posterior (auditoría del panel admin): "Marcar todas como leídas"
-  // no tenía onClick — no hacía absolutamente nada. Las notificaciones
-  // siguen siendo datos de ejemplo (adminService.getNotifications() no está
-  // conectado a eventos reales todavía, ver informe de auditoría), pero el
-  // control ya no debe quedar muerto — se lleva localmente qué índices se
-  // marcaron leídos sobre los datos que sí llegan.
-  const [readIds, setReadIds] = React.useState(() => new Set());
-  const notifications = (data || []).map((n, i) => (readIds.has(i) ? { ...n, unread: false } : n));
-  const unread = notifications.filter(n => n.unread).length;
-  const markAllRead = () => setReadIds(new Set((data || []).map((_, i) => i)));
+  const navigate = useNavigate();
+  const { data } = useAsyncData(() => adminService.getPendingNotifications(), []);
+  const count = data?.count || 0;
+  const messages = data?.messages || [];
+  const opinions = data?.opinions || [];
+
+  const goTo = (path) => {
+    setOpen(false);
+    navigate(path);
+  };
+
   return (
     <div style={{ position:'relative' }}>
       <button onClick={() => setOpen(o => !o)} title="Notificaciones" style={{ position:'relative', width:38, height:38, borderRadius:10, border:'1px solid var(--gray-200)', background:open?'var(--gray-50)':'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--gray-600)' }}>
         <Icon name="bell" style={{ width:17, height:17 }} />
-        {unread > 0 && <span style={{ position:'absolute', top:6, right:6, minWidth:15, height:15, padding:'0 4px', borderRadius:999, background:'#FF6707', border:'2px solid white', color:'white', fontSize:9, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center' }}>{unread}</span>}
+        {count > 0 && <span style={{ position:'absolute', top:6, right:6, minWidth:15, height:15, padding:'0 4px', borderRadius:999, background:'#FF6707', border:'2px solid white', color:'white', fontSize:9, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center' }}>{count}</span>}
       </button>
       {open && (
         <React.Fragment>
@@ -55,27 +65,46 @@ function NotificationBell() {
           <div style={{ position:'absolute', top:46, right:0, width:340, background:'white', borderRadius:14, border:'1px solid var(--gray-200)', boxShadow:'0 14px 40px rgba(2,18,55,0.2)', zIndex:401, overflow:'hidden' }}>
             <div style={{ padding:'14px 16px', borderBottom:'1px solid var(--gray-100)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
               <span style={{ fontSize:14, fontWeight:700, color:'var(--navy-900,#021233)' }}>Notificaciones</span>
-              <span style={{ fontSize:11, fontWeight:700, color:'#0050C8' }}>{unread} sin leer</span>
+              <span style={{ fontSize:11, fontWeight:700, color:'#0050C8' }}>{count} pendientes</span>
             </div>
             <div style={{ maxHeight:360, overflowY:'auto' }}>
-              {notifications.map((n,i) => (
-                <div key={i} style={{ display:'flex', gap:11, padding:'12px 16px', borderBottom:'1px solid var(--gray-100)', background: n.unread ? 'rgba(0,80,200,0.03)' : 'white', cursor:'pointer' }}
+              {count === 0 && (
+                <div style={{ padding:'24px 16px', textAlign:'center', fontSize:12.5, color:'var(--gray-400)' }}>No hay nada pendiente por ahora.</div>
+              )}
+              {messages.map((m) => (
+                <div key={`msg-${m.id}`} onClick={() => goTo('/admin/mensajes')}
+                  style={{ display:'flex', gap:11, padding:'12px 16px', borderBottom:'1px solid var(--gray-100)', cursor:'pointer' }}
                   onMouseEnter={e => e.currentTarget.style.background = 'var(--gray-50)'}
-                  onMouseLeave={e => e.currentTarget.style.background = n.unread ? 'rgba(0,80,200,0.03)' : 'white'}>
-                  <div style={{ width:34, height:34, borderRadius:9, flexShrink:0, background:n.tone+'1a', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                    <Icon name={n.icon} style={{ width:16, height:16, color:n.tone }} />
+                  onMouseLeave={e => e.currentTarget.style.background = 'white'}>
+                  <div style={{ width:34, height:34, borderRadius:9, flexShrink:0, background:'rgba(255,103,7,0.1)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <Icon name="mail" style={{ width:16, height:16, color:'#FF6707' }} />
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:12.5, fontWeight:700, color:'var(--navy-900,#021233)' }}>{n.title}</div>
-                    <div style={{ fontSize:12, color:'var(--gray-500)', margin:'1px 0 3px', lineHeight:1.4 }}>{n.desc}</div>
-                    <div style={{ fontSize:10.5, color:'var(--gray-400)', fontWeight:600 }}>{n.time}</div>
+                    <div style={{ fontSize:12.5, fontWeight:700, color:'var(--navy-900,#021233)' }}>{m.name}</div>
+                    <div style={{ fontSize:12, color:'var(--gray-500)', margin:'1px 0 3px', lineHeight:1.4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{m.mensaje}</div>
+                    <div style={{ fontSize:10.5, color:'var(--gray-400)', fontWeight:600 }}>{m.fecha}</div>
                   </div>
-                  {n.unread && <div style={{ width:7, height:7, borderRadius:'50%', background:'#0050C8', flexShrink:0, marginTop:5 }}></div>}
+                </div>
+              ))}
+              {opinions.map((o) => (
+                <div key={`op-${o.id}`} onClick={() => goTo('/admin/mensajes/opiniones')}
+                  style={{ display:'flex', gap:11, padding:'12px 16px', borderBottom:'1px solid var(--gray-100)', cursor:'pointer' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--gray-50)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'white'}>
+                  <div style={{ width:34, height:34, borderRadius:9, flexShrink:0, background:'rgba(255,198,0,0.14)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <Icon name="star" style={{ width:16, height:16, color:'#FFC600' }} />
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:12.5, fontWeight:700, color:'var(--navy-900,#021233)' }}>{o.name} — {o.rating}/5</div>
+                    <div style={{ fontSize:12, color:'var(--gray-500)', margin:'1px 0 3px', lineHeight:1.4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{o.mensaje || 'Sin comentario.'}</div>
+                    <div style={{ fontSize:10.5, color:'var(--gray-400)', fontWeight:600 }}>{o.fecha}</div>
+                  </div>
                 </div>
               ))}
             </div>
-            <div style={{ padding:'11px 16px', textAlign:'center' }}>
-              <span onClick={markAllRead} style={{ fontSize:12.5, fontWeight:700, color:'#0050C8', cursor:'pointer' }}>Marcar todas como leídas</span>
+            <div style={{ padding:'11px 16px', display:'flex', justifyContent:'space-between', gap:10 }}>
+              <span onClick={() => goTo('/admin/mensajes')} style={{ fontSize:12, fontWeight:700, color:'#0050C8', cursor:'pointer' }}>Mensajes de contacto</span>
+              <span onClick={() => goTo('/admin/mensajes/opiniones')} style={{ fontSize:12, fontWeight:700, color:'#0050C8', cursor:'pointer' }}>Opiniones de clientes</span>
             </div>
           </div>
         </React.Fragment>

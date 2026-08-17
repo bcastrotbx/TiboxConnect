@@ -1,5 +1,5 @@
 import {
-  CONTENT_ITEMS, NOTIFICATIONS,
+  CONTENT_ITEMS,
   ICON_LIBRARY, CONTENT_TYPE_CATEGORIES,
 } from '../data/seed/adminSeed.js';
 import { simulateDelay } from './simulateDelay.js';
@@ -59,8 +59,34 @@ export function getContentItems(section) {
   return simulateDelay(CONTENT_ITEMS[section] || []);
 }
 
-export function getNotifications() {
-  return simulateDelay(NOTIFICATIONS);
+// Campanita del header del admin (ver AdminHeader.jsx): antes datos de
+// ejemplo (NOTIFICATIONS, adminSeed.js) que no reflejaban nada real. Suma
+// dos fuentes ya existentes en el admin, sin duplicar su lógica de conteo:
+// - Mensajes de contacto sin leer: misma condición que la tarjeta del
+//   Dashboard (contact_messages.status === 'new').
+// - Opiniones "nuevas": `feedback` no tiene un estado de revisada/leída (a
+//   diferencia de contact_messages) y agregar uno implicaría una migración
+//   + wiring de "marcar como revisada" en OpinionsPanel, fuera del alcance
+//   de este ajuste. Se usa antigüedad reciente (últimos 7 días) como proxy
+//   de "pendiente de revisar" — alternativa explícitamente aceptada para
+//   este caso en vez de la migración.
+const RECENT_OPINION_MS = 7 * 24 * 60 * 60 * 1000;
+
+export async function getPendingNotifications() {
+  const [messages, opinions] = await Promise.all([
+    adminMessagesService.listMessages(),
+    adminOpinionsService.listOpinions(),
+  ]);
+
+  const unreadMessages = messages.filter((m) => m.rawStatus === 'new');
+  const now = Date.now();
+  const recentOpinions = opinions.filter((o) => o.dateRaw && now - new Date(o.dateRaw).getTime() <= RECENT_OPINION_MS);
+
+  return {
+    count: unreadMessages.length + recentOpinions.length,
+    messages: unreadMessages.slice(0, 5),
+    opinions: recentOpinions.slice(0, 5),
+  };
 }
 
 export function getIconLibrary() {

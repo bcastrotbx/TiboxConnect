@@ -26,10 +26,9 @@ function StatCard({ icon, label, value }) {
 }
 
 // Ruta /admin/analitica — Fase Analítica 1 (ver
-// docs/phases/FASE-10-ANALITICA-FASE1.md). Solo "Resumen general" y
-// "Secciones más visitadas" por ahora; video/CTAs/formularios/Clarity
-// quedan para fases siguientes, una vez que esta base esté probada en
-// producción.
+// docs/phases/FASE-10-ANALITICA-FASE1.md) + Fase Analítica 2 ("Videos más
+// vistos", tracking de video). CTAs/formularios/Clarity quedan para fases
+// siguientes.
 export function AnaliticaPage() {
   const [days, setDays] = React.useState(30);
   const { status, data, error } = useAsyncData(() => analyticsService.getPageViewStats({ days }), [days]);
@@ -37,6 +36,7 @@ export function AnaliticaPage() {
   // días no alcanzan para mostrar tendencia mes a mes) — ventana fija de 6
   // meses, ver analyticsService.getMonthlyPageViews.
   const monthly = useAsyncData(() => analyticsService.getMonthlyPageViews({ months: 6 }), []);
+  const videos = useAsyncData(() => analyticsService.getMostWatchedVideos({ days }), [days]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -104,6 +104,39 @@ export function AnaliticaPage() {
                   <Bar dataKey="views" fill="#0050C8" radius={[0, 6, 6, 0]} />
                 </BarChart>
               </ResponsiveContainer>
+            )}
+          </div>
+
+          <div className="adm-card" style={{ padding: 20 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy-900,#021233)', marginBottom: 4 }}>Videos más vistos</div>
+            <p style={{ fontSize: 12, color: 'var(--gray-500)', margin: '0 0 16px' }}>Ranking por reproducciones — la finalización es aproximada (ver documentación).</p>
+            {videos.status === 'loading' && <LoadingState label="Cargando ranking de videos…" />}
+            {videos.status === 'error' && <ErrorState label="No pudimos cargar el ranking de videos." error={videos.error} />}
+            {videos.status === 'success' && (
+              videos.data.length === 0 ? (
+                <EmptyState label="Todavía no hay reproducciones registradas en este rango." icon="film" />
+              ) : (
+                <table className="adm-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 40 }}>#</th>
+                      <th>Video</th>
+                      <th>Reproducciones</th>
+                      <th>Finalización aprox.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {videos.data.map((v, i) => (
+                      <tr key={v.videoId}>
+                        <td style={{ color: 'var(--gray-400)', fontWeight: 700 }}>{i + 1}</td>
+                        <td style={{ fontWeight: 600 }}>{v.title}</td>
+                        <td>{v.plays.toLocaleString('es-CL')}</td>
+                        <td style={{ color: 'var(--gray-500)' }}>{v.completionRate === null ? '—' : `${v.completionRate}%`}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )
             )}
           </div>
         </React.Fragment>

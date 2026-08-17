@@ -93,3 +93,44 @@ export async function getMonthlyPageViews({ months = 6 } = {}) {
   }
   return result;
 }
+
+// Fase Analítica 2 (tracking de video, ver docs/phases/): ranking de
+// "Videos más vistos". Agrupa por `content_id` (el ID de YouTube, ver
+// trackVideoPlay en src/lib/analytics.js) — `content_title` viene
+// denormalizado en cada evento, así que no hace falta un join contra
+// content_items para mostrar el título. La tasa de finalización es
+// aproximada a propósito (video_complete / video_play, ver comentario en
+// YouTubePlayer.jsx sobre los milestones de progreso) — queda en null
+// cuando no hay ninguna reproducción completada todavía, para no mostrar
+// "0%" como si fuera un dato real.
+async function fetchVideoEvents(days) {
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from('analytics_events')
+    .select('event_type, content_id, content_title')
+    .in('event_type', ['video_play', 'video_complete'])
+    .gte('created_at', since);
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getMostWatchedVideos({ days = 30, limit = 10 } = {}) {
+  const rows = await fetchVideoEvents(days);
+
+  const byVideo = {};
+  for (const row of rows) {
+    if (!row.content_id) continue;
+    if (!byVideo[row.content_id]) {
+      byVideo[row.content_id] = { videoId: row.content_id, title: row.content_title || row.content_id, plays: 0, completes: 0 };
+    }
+    if (row.content_title) byVideo[row.content_id].title = row.content_title;
+    if (row.event_type === 'video_play') byVideo[row.content_id].plays += 1;
+    else if (row.event_type === 'video_complete') byVideo[row.content_id].completes += 1;
+  }
+
+  return Object.values(byVideo)
+    .map((v) => ({ ...v, completionRate: v.completes > 0 ? Math.round((v.completes / v.plays) * 100) : null }))
+    .sort((a, b) => b.plays - a.plays)
+    .slice(0, limit);
+}

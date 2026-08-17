@@ -104,13 +104,55 @@ async function logEvent(eventType, fields) {
   }
 }
 
-// Única función pública de esta fase. `pathname` opcional: por defecto usa
-// la ruta actual, pero se puede pasar explícito si el llamador ya la tiene
-// (evita depender de que window.location esté actualizado en el momento
-// exacto de la llamada).
+// `pathname` opcional: por defecto usa la ruta actual, pero se puede pasar
+// explícito si el llamador ya la tiene (evita depender de que
+// window.location esté actualizado en el momento exacto de la llamada).
 export function trackPageView(pathname = window.location.pathname) {
   logEvent('page_view', {
     page_path: pathname,
     section: sectionFromPath(pathname),
+  });
+}
+
+// Fase Analítica 2 (tracking de video, ver docs/phases/): instrumentadas
+// solo en VideoModal (src/components/Media.jsx) vía YouTubePlayer.jsx —
+// mismo popup que abren tanto el inicio como /videoteca. `videoId` es el ID
+// de YouTube (no el id interno de content_items): estable, único por video,
+// y ya disponible sin tener que resolver a qué fila de content_items
+// corresponde — analyticsService agrupa por este mismo valor para el
+// ranking "Videos más vistos" usando `content_title` (denormalizado en cada
+// evento) para mostrar el nombre, sin necesitar un join. Pasan por
+// logEvent como cualquier otro evento, así que la exclusión de sesiones de
+// administrador activas ya aplica acá sin código adicional.
+export function trackVideoPlay(videoId, title) {
+  if (!videoId) return;
+  logEvent('video_play', {
+    page_path: window.location.pathname,
+    section: 'videoteca',
+    content_id: videoId,
+    content_title: title || null,
+  });
+}
+
+// `percent` es un milestone aproximado (25/50/75, ver YouTubePlayer.jsx),
+// no un porcentaje continuo — suficiente para una "tasa de finalización
+// aproximada" en el ranking, sin pedirle más granularidad a la IFrame API
+// de la que /admin/analitica necesita.
+export function trackVideoProgress(videoId, percent) {
+  if (!videoId) return;
+  logEvent('video_progress', {
+    page_path: window.location.pathname,
+    section: 'videoteca',
+    content_id: videoId,
+    metadata: { percent },
+  });
+}
+
+export function trackVideoComplete(videoId) {
+  if (!videoId) return;
+  logEvent('video_complete', {
+    page_path: window.location.pathname,
+    section: 'videoteca',
+    content_id: videoId,
   });
 }

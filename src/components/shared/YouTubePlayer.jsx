@@ -1,6 +1,14 @@
 import React from 'react';
 import { Icon } from './Icon.jsx';
-import { extractYouTubeVideoId } from '../../lib/youtube.js';
+import { extractYouTubeVideoId, loadYouTubeIframeAPI } from '../../lib/youtube.js';
+
+// Milestones de progreso reportados una sola vez cada uno por reproducción
+// (ver PROGRESS_POLL_MS más abajo) — "tasa de finalización aproximada" en
+// vez de un porcentaje exacto continuo, suficiente para el ranking de
+// /admin/analitica sin pedirle a la YouTube IFrame API más granularidad de
+// la que este panel necesita.
+const PROGRESS_MILESTONES = [25, 50, 75];
+const PROGRESS_POLL_MS = 5000;
 
 // Reproductor embebido de YouTube — extraído del popup de video
 // (VideoModal, src/components/Media.jsx) para reutilizarlo tal cual en la
@@ -17,27 +25,97 @@ import { extractYouTubeVideoId } from '../../lib/youtube.js';
 // miniaturas verticales/con personas de pie no queden tan recortadas en la
 // página de detalle. El popup de video (VideoModal, Media.jsx) no la usa —
 // se mantiene compacto en 16/9 como siempre.
-export function YouTubePlayer({ thumb, externalUrl, title, badge, borderRadius = 0, className }) {
+// Ajuste posterior (Fase Analítica 2, tracking de video): `onPlay`/
+// `onProgress`/`onComplete` son opcionales — solo VideoModal (Media.jsx) los
+// pasa. Sin ellos, el reproductor se comporta exactamente igual que antes
+// (iframe crudo, sin la IFrame API de YouTube ni tracking) — la página de
+// detalle (VideotecaDetailPage.jsx) no los pasa y no cambia en nada. `onPlay`
+// se dispara al hacer clic en el botón de reproducir, sin depender de que la
+// IFrame API cargue (no debería fallar solo porque un adblocker bloquee ese
+// script). `onProgress`/`onComplete` sí necesitan la IFrame API real (para
+// leer tiempo/duración de un iframe de otro origen) — solo se carga cuando
+// alguno de los dos está presente.
+export function YouTubePlayer({ thumb, externalUrl, title, badge, borderRadius = 0, className, onPlay, onProgress, onComplete }) {
   const [playing, setPlaying] = React.useState(false);
   const youtubeId = extractYouTubeVideoId(externalUrl);
+  const tracked = Boolean(onProgress || onComplete);
+  const containerRef = React.useRef(null);
+  const playerRef = React.useRef(null);
+  const pollRef = React.useRef(null);
+  const reportedRef = React.useRef(new Set());
+
+  const handlePlayClick = () => {
+    setPlaying(true);
+    if (onPlay) onPlay(youtubeId);
+  };
+
+  React.useEffect(() => {
+    if (!playing || !youtubeId || !tracked) return undefined;
+    let cancelled = false;
+    reportedRef.current = new Set();
+
+    loadYouTubeIframeAPI().then((YT) => {
+      if (cancelled || !containerRef.current) return;
+      playerRef.current = new YT.Player(containerRef.current, {
+        videoId: youtubeId,
+        playerVars: { autoplay: 1 },
+        events: {
+          onStateChange: (e) => {
+            if (e.data === YT.PlayerState.PLAYING) {
+              if (pollRef.current) return;
+              pollRef.current = window.setInterval(() => {
+                const player = playerRef.current;
+                if (!player || typeof player.getDuration !== 'function') return;
+                const duration = player.getDuration();
+                const current = player.getCurrentTime();
+                if (!duration) return;
+                const percent = Math.min(100, Math.round((current / duration) * 100));
+                PROGRESS_MILESTONES.forEach((m) => {
+                  if (percent >= m && !reportedRef.current.has(m)) {
+                    reportedRef.current.add(m);
+                    if (onProgress) onProgress(youtubeId, m);
+                  }
+                });
+              }, PROGRESS_POLL_MS);
+            } else if (pollRef.current) {
+              window.clearInterval(pollRef.current);
+              pollRef.current = null;
+            }
+            if (e.data === YT.PlayerState.ENDED && onComplete) onComplete(youtubeId);
+          },
+        },
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      if (pollRef.current) { window.clearInterval(pollRef.current); pollRef.current = null; }
+      if (playerRef.current && typeof playerRef.current.destroy === 'function') playerRef.current.destroy();
+      playerRef.current = null;
+    };
+  }, [playing, youtubeId, tracked, onProgress, onComplete]);
 
   return (
     <div className={className} style={{ position:'relative', aspectRatio: className ? undefined : '16/9', background:'#040b22', overflow:'hidden', borderRadius }}>
       {playing && youtubeId ? (
-        <iframe
-          src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`}
-          title={title}
-          style={{ position:'absolute', inset:0, width:'100%', height:'100%', border:'none' }}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-        />
+        tracked ? (
+          <div ref={containerRef} style={{ position:'absolute', inset:0, width:'100%', height:'100%' }} />
+        ) : (
+          <iframe
+            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`}
+            title={title}
+            style={{ position:'absolute', inset:0, width:'100%', height:'100%', border:'none' }}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+          />
+        )
       ) : (
         <React.Fragment>
           {thumb && <img src={thumb} alt="" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }} />}
           <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg,rgba(2,12,36,0.25),rgba(2,12,36,0.82))' }}></div>
           <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
             {youtubeId ? (
-              <button onClick={() => setPlaying(true)} title="Reproducir" style={{
+              <button onClick={handlePlayClick} title="Reproducir" style={{
                 width:74, height:74, borderRadius:'50%', border:'none', padding:0,
                 background:'linear-gradient(135deg,#FF6707,#FF8C3A)',
                 display:'flex', alignItems:'center', justifyContent:'center',

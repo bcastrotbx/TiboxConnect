@@ -13,6 +13,7 @@ import * as contentService from '../services/contentService.js';
 import * as formService from '../services/formService.js';
 import { extractYouTubeVideoId } from '../lib/youtube.js';
 import { downloadImageWithFallback } from '../lib/download.js';
+import { trackVideoPlay, trackVideoProgress, trackVideoComplete } from '../lib/analytics.js';
 
 /* ── Video player modal — Fase 6/7/8, ajuste posterior: reproductor real de
    YouTube en vez del reproductor decorativo heredado del prototipo original
@@ -31,7 +32,12 @@ export function VideoModal({ video, catsById, onClose }) {
   return (
     <ModalShell onClose={onClose} maxWidth={680}>
       <div style={{position:'relative'}}>
-        <YouTubePlayer thumb={video.thumb} externalUrl={video.externalUrl} title={video.title} badge={cat} />
+        <YouTubePlayer
+          thumb={video.thumb} externalUrl={video.externalUrl} title={video.title} badge={cat}
+          onPlay={(id) => trackVideoPlay(id, video.title)}
+          onProgress={(id, percent) => trackVideoProgress(id, percent)}
+          onComplete={(id) => trackVideoComplete(id)}
+        />
         <button onClick={onClose} style={{position:'absolute',top:12,right:12,zIndex:3,width:34,height:34,borderRadius:'50%',background:'rgba(0,0,0,0.45)',border:'1px solid rgba(255,255,255,0.2)',color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
           <Icon name="x" style={{width:17,height:17}} />
         </button>
