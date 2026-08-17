@@ -27,19 +27,26 @@ export function Field({ label, children }) {
   return <div className="adm-field"><label>{label}</label>{children}</div>;
 }
 
+// Ajuste posterior (rediseño del Dashboard): de 4 a 3 bloques (se quita
+// "Nuevas inscripciones a eventos"), cada uno con datos reales (ver
+// adminService.getDashboardStats) y un acento de color propio — los tres
+// colores del cubo de la marca (--brand-cyan/--brand-orange/--brand-yellow,
+// ver tokens/colors.css), no colores genéricos de librería. El acento se
+// aplica al ícono y a un borde superior de 3px, en vez de una franja de
+// fondo completa, para no competir con el resto del panel (blanco/gris).
 export function StatRow() {
   const { status, data, error } = useAsyncData(() => adminService.getDashboardStats(), []);
   if (status === 'loading') return <LoadingState label="Cargando estadísticas…" />;
   if (status === 'error') return <ErrorState label="No pudimos cargar las estadísticas del dashboard." onRetry={() => window.location.reload()} error={error} />;
   const stats = data || [];
   return (
-    <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:18 }}>
+    <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:18 }}>
       {stats.map((s,i) => (
-        <div key={i} className="adm-card" style={{ padding:'18px 20px', display:'flex', flexDirection:'column', gap:8 }}>
+        <div key={i} className="adm-card" style={{ padding:'18px 20px', display:'flex', flexDirection:'column', gap:8, borderTop:`3px solid ${s.accent || '#0050C8'}` }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'var(--gray-400)' }}>{s.label}</span>
-            <div style={{ width:30, height:30, borderRadius:8, background:'rgba(0,80,200,0.08)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <Icon name={s.icon} style={{ width:14, height:14, color:'#0050C8' }} />
+            <div style={{ width:30, height:30, borderRadius:8, background: s.tint || 'rgba(0,80,200,0.08)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <Icon name={s.icon} style={{ width:14, height:14, color: s.accent || '#0050C8' }} />
             </div>
           </div>
           <div style={{ fontSize:26, fontWeight:700, color:'var(--navy-900,#021233)' }}>{s.value}</div>
@@ -803,19 +810,20 @@ function SortableTh({ label, sortKey, colSort, onSort, disabled }) {
 
 const PAGE_SIZE = 10;
 
-export function ContentTable({ section, title }) {
+// `readOnly`: permite reusar ContentTable con una sección real
+// (videos/infographics/news/events) en modo solo-lectura — sin reordenar,
+// sin editar/eliminar desde acá (ver RowMenu). Usado por las pestañas del
+// Dashboard (ver RecentContentTabs) para no duplicar la gestión completa que
+// ya vive en /admin/contenidos/*.
+export function ContentTable({ section, title, readOnly = false }) {
   const isEvent = section === 'events';
-  const isRecent = section === 'recent';
   const isNews = section === 'news';
   const [searchParams] = useSearchParams();
   const query = (searchParams.get('q') || '').trim().toLowerCase();
-  const allowReorder = section !== 'news' && !isRecent && !query;
+  const allowReorder = section !== 'news' && !readOnly && !query;
   const fetcher = React.useCallback(
-    () => {
-      if (isRecent) return adminContentService.listRecentContentItems();
-      return isEvent ? adminEventsService.listEvents() : adminContentService.listContentItems(SECTION_TO_TYPE[section]);
-    },
-    [section, isEvent, isRecent]
+    () => (isEvent ? adminEventsService.listEvents() : adminContentService.listContentItems(SECTION_TO_TYPE[section])),
+    [section, isEvent]
   );
   const { status, data, error } = useAsyncData(fetcher, [section]);
   const [rows, setRows] = React.useState([]);
@@ -1101,7 +1109,7 @@ export function ContentTable({ section, title }) {
                   {isNews && <td>{r.isFeatured && <Icon name="star" style={{ width:14, height:14, color:'#FFC600', fill:'#FFC600' }} />}</td>}
                   <td style={{ color:'var(--gray-500)' }}>{r.date}</td>
                   <td style={{ textAlign:'right' }}>
-                    <RowMenu row={r} isEvent={isEvent} isNews={isNews} readOnly={isRecent} onAction={a => handle(a, r)} />
+                    <RowMenu row={r} isEvent={isEvent} isNews={isNews} readOnly={readOnly} onAction={a => handle(a, r)} />
                   </td>
                 </tr>
               );
@@ -1118,6 +1126,50 @@ export function ContentTable({ section, title }) {
           onCancel={() => setConfirming(null)}
           onConfirm={confirmDelete} />
       )}
+    </div>
+  );
+}
+
+const RECENT_TABS = [
+  { key: 'videos', label: 'Videos y Webinars' },
+  { key: 'infographics', label: 'Infografías' },
+  // Mismo modelo de datos que alimenta "Noticias" en el sidebar del admin
+  // (content_items con type='news') — en el portal público se muestra como
+  // "Tendencias" (ver TendenciasPage.jsx), pero es la misma tabla/sección.
+  { key: 'news', label: 'Noticias / Tendencias' },
+  { key: 'events', label: 'Eventos' },
+];
+
+// Ajuste posterior (rediseño del Dashboard): "Publicaciones recientes"
+// mezclaba los 4 tipos de contenido en una sola lista larga sin paginación
+// visible por tipo. Ahora son 4 pestañas, cada una una ContentTable en modo
+// solo-lectura (readOnly, ver nota en su definición) filtrada a un tipo real
+// — reusa la paginación de 10/página que ContentTable ya trae, sin
+// duplicarla acá. `key={tab}` fuerza un remount completo al cambiar de
+// pestaña (misma idea que las páginas reales de /admin/contenidos/*, cada
+// una su propia instancia) para no arrastrar colSort/page de la pestaña
+// anterior.
+export function RecentContentTabs() {
+  const [tab, setTab] = React.useState('videos');
+  const active = RECENT_TABS.find((t) => t.key === tab);
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+      <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+        {RECENT_TABS.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            style={{
+              fontFamily:'inherit', fontSize:12.5, fontWeight:700, cursor:'pointer',
+              padding:'8px 14px', borderRadius:9, border:'1px solid ' + (tab === t.key ? '#0050C8' : 'var(--gray-200)'),
+              background: tab === t.key ? '#0050C8' : 'white', color: tab === t.key ? 'white' : 'var(--gray-600)',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <ContentTable key={tab} section={tab} title={`Publicaciones recientes — ${active.label}`} readOnly />
     </div>
   );
 }

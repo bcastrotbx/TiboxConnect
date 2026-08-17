@@ -60,25 +60,6 @@ export async function listContentItems(type) {
 // `fields` usa nombres de columna reales (snake_case) — el formulario del
 // admin arma este objeto directamente, así no hay una segunda capa de
 // traducción de nombres entre el form y la base.
-// Ajuste posterior (auditoría del panel admin): "Publicaciones recientes"
-// del Dashboard usaba `ContentTable section="recent"`, pero `SECTION_TO_TYPE`
-// (AdminWidgets.jsx) no tiene una entrada 'recent' — `listContentItems(undefined)`
-// terminaba filtrando por `type=undefined`, así que la tabla siempre se veía
-// vacía sin importar cuánto contenido real hubiera. Esta función sí trae
-// contenido real, combinando los 3 tipos por fecha de creación — se usa
-// solo para ese widget de resumen (de solo lectura, ver ContentTable).
-export async function listRecentContentItems(limit = 8) {
-  const { data, error } = await supabase
-    .from('content_items')
-    .select('*, category:categories(id, slug, name)')
-    .in('type', ['video', 'infographic', 'news'])
-    .order('created_at', { ascending: false })
-    .limit(limit);
-
-  if (error) throw error;
-  return (data || []).map(mapAdminRow);
-}
-
 export async function createContentItem(type, fields) {
   const { error } = await supabase.from('content_items').insert({
     type,
