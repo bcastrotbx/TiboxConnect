@@ -117,7 +117,7 @@ export function PortalLayout() {
         <div className="portal-content">
           <div className="content-wrap">
             <Outlet />
-            <div style={{ textAlign: 'center', padding: '4px 0 14px', fontSize: 12.5, fontWeight: 600, color: 'var(--gray-400)', letterSpacing: '0.02em' }}>
+            <div style={{ textAlign: 'center', padding: '4px 0 14px', fontSize: 12.5, fontWeight: 600, color: 'var(--gray-600)', letterSpacing: '0.02em' }}>
               Desarrollado por TIBOX 2026
             </div>
           </div>

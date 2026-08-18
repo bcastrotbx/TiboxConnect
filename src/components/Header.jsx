@@ -207,7 +207,7 @@ export function Header({ onContacto }) {
           no competir visualmente con el Nivel 1 (naranja) del hero. */}
       <CtaSecondary href="https://soporte.tibox.cl/Login/LoginCliente" target="_blank" rel="noopener noreferrer">
         <Icon name="ticket" style={{ width: 15, height: 15 }} />
-        Crear Tickets
+        Ir a Portal Clientes
       </CtaSecondary>
 
       <div className="header-secondary-desktop" style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.15)', margin: '0 6px' }}></div>

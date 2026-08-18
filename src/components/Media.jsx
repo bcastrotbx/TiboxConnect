@@ -193,7 +193,7 @@ export function ExploraPanel() {
             <div ref={trackRef} {...dragHandlers} style={{
               flex:1, display:'flex', gap:16,
               overflowX:'auto', scrollSnapType:'x mandatory',
-              scrollbarWidth:'none', cursor:'grab',
+              scrollbarWidth:'none',
               opacity: isRefreshing ? 0.35 : 1, transition:'opacity 220ms ease',
             }} className="hide-scroll">
               {fadeItems.map(v => <VideoCard key={v.id} v={v} catsById={catsById} onOpen={setOpenVideo} />)}
@@ -243,9 +243,21 @@ function InfografiaLeadModal({ contentItemId, onSuccess, onClose }) {
   const up = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
   const inputS = { width:'100%',padding:'9px 12px',border:'1.5px solid var(--gray-200)',borderRadius:8,fontSize:13,outline:'none',fontFamily:'inherit',transition:'border-color 150ms' };
 
+  const LEAD_REQUIRED_FIELDS = [
+    { key: 'name', label: 'Nombre' },
+    { key: 'empresa', label: 'Empresa' },
+    { key: 'cargo', label: 'Cargo' },
+    { key: 'email', label: 'Correo corporativo' },
+  ];
+
   const submit = (e) => {
     e.preventDefault();
     setError('');
+    const missing = LEAD_REQUIRED_FIELDS.find(f => !form[f.key]?.trim());
+    if (missing) {
+      setError(`Error al enviar formulario, falta el campo "${missing.label}".`);
+      return;
+    }
     setSending(true);
     formService.submitInfografiaLead({ ...form, contentItemId })
       .then(() => {
@@ -265,10 +277,10 @@ function InfografiaLeadModal({ contentItemId, onSuccess, onClose }) {
         <div style={{fontSize:18,fontWeight:700,color:'var(--navy-900)'}}>Cuéntanos un poco de ti</div>
         <div style={{fontSize:13,color:'var(--gray-500)',marginTop:6,lineHeight:1.5}}>Completa estos datos la primera vez para descargar material de TIBOX Connect — no te los volveremos a pedir en este navegador.</div>
       </div>
-      <form onSubmit={submit} style={{padding:'18px 26px 26px',display:'flex',flexDirection:'column',gap:14}}>
+      <form onSubmit={submit} noValidate style={{padding:'18px 26px 26px',display:'flex',flexDirection:'column',gap:14}}>
         <div>
           <label style={{fontSize:12,fontWeight:600,color:'var(--gray-600)',display:'block',marginBottom:5}}>Nombre</label>
-          <input value={form.name} onChange={up('name')} required placeholder="Tu nombre completo" style={inputS}
+          <input value={form.name} onChange={up('name')} required placeholder="Nombre" style={inputS}
             onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'} />
         </div>
         <div>
@@ -470,7 +482,7 @@ export function InfographicsPanel() {
             </button>
             <div ref={trackRef} {...dragHandlers} style={{
               flex:1, display:'flex', gap:18,
-              overflowX:'auto', scrollSnapType:'x mandatory', scrollbarWidth:'none', cursor:'grab',
+              overflowX:'auto', scrollSnapType:'x mandatory', scrollbarWidth:'none',
               opacity: isRefreshing ? 0.35 : 1, transition:'opacity 220ms ease',
             }} className="hide-scroll">
               {fadeItems.map(inf => <InfoCard key={inf.id} inf={inf} channelsById={channelsById} onOpen={setOpenInfo} />)}

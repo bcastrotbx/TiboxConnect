@@ -41,6 +41,10 @@ export function HeroSlider() {
   // empiezan sobre un control interactivo, dejando que ese elemento reciba
   // su propio clic sin que el hero intente interpretarlo como arrastre.
   const onHeroPointerDown = (e) => {
+    // Pedido de Braulio: eliminar el arrastre con mouse (clic sostenido) —
+    // el hero avanza solo con las flechas. Se conserva el swipe táctil
+    // (dedo) para navegación en celular.
+    if (e.pointerType === 'mouse') return;
     if (e.target.closest('button, a')) return;
     dragRef.current = { dragging:true, startX:e.clientX };
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -82,7 +86,7 @@ export function HeroSlider() {
         background: 'var(--grad-corporate)',
         position: 'relative', color: 'white',
         display: 'flex', flexDirection: 'column', justifyContent: 'center',
-        cursor: 'grab', touchAction: 'pan-y',
+        touchAction: 'pan-y',
       }}>
       {/* Real background image per slide */}
       <img key={cur} src={slide.bg} alt="" style={{

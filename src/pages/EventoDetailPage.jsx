@@ -146,7 +146,7 @@ export function EventoDetailPage() {
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--brand-cyan-700,#0079a8)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
               <Icon name="info" style={{ width: 13, height: 13 }} />Sobre el evento
             </div>
-            <p style={{ fontSize: 14, color: 'var(--gray-600)', lineHeight: 1.7, margin: '0 0 20px' }}>{event.resena || event.desc || 'Sin descripción disponible.'}</p>
+            <p style={{ fontSize: 16, color: 'var(--gray-600)', lineHeight: 1.7, margin: '0 0 20px' }}>{event.resena || event.desc || 'Sin descripción disponible.'}</p>
 
             {/* Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md):
                 "Inscríbete aquí" y la galería son independientes entre sí —

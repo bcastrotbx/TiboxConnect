@@ -90,7 +90,7 @@ export function VideotecaDetailPage() {
               </span>
             )}
           </div>
-          <p style={{ fontSize: 14, color: 'var(--gray-600)', lineHeight: 1.7, margin: 0 }}>
+          <p style={{ fontSize: 16, color: 'var(--gray-600)', lineHeight: 1.7, margin: 0 }}>
             {description || 'Sin descripción disponible.'}
           </p>
           {!isVideo && !externalUrl && (

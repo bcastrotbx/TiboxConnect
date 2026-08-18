@@ -180,10 +180,26 @@ export function ContactFormSection() {
   const inputStyle = { width:'100%', padding:'10px 13px', border:'1.5px solid var(--gray-200)', borderRadius:9, fontSize:13, fontFamily:'inherit', outline:'none', background:'white', color:'var(--gray-800)', transition:'border-color 150ms' };
   const labelStyle = { fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.75)', display:'block', marginBottom:5 };
 
+  const REQUIRED_FIELDS = [
+    { key: 'name', label: 'Nombre completo' },
+    { key: 'email', label: 'Correo corporativo' },
+    { key: 'empresa', label: 'Empresa' },
+    { key: 'msg', label: 'Mensaje' },
+  ];
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    setSending(true);
     setSubmitError('');
+    const missing = REQUIRED_FIELDS.find(f => !form[f.key]?.trim());
+    if (missing) {
+      setSubmitError(`Error al enviar mensaje, falta el campo "${missing.label}".`);
+      return;
+    }
+    if (!privacyAccepted) {
+      setSubmitError('Error al enviar mensaje, falta aceptar el Aviso de Privacidad.');
+      return;
+    }
+    setSending(true);
     formService.submitContactForm(form)
       .then(() => { setSending(false); setSent(true); })
       .catch(() => { setSending(false); setSubmitError('No pudimos enviar tu mensaje. Inténtalo nuevamente.'); });
@@ -232,7 +248,7 @@ export function ContactFormSection() {
               <button onClick={()=>setSent(false)} style={{ marginTop:20, fontSize:13, fontWeight:600, color:'var(--brand-cyan)', background:'none', border:'none', cursor:'pointer', textDecoration:'underline' }}>Enviar otro mensaje</button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} style={{ position:'relative', display:'flex', flexDirection:'column', gap:10 }}>
+            <form onSubmit={handleSubmit} noValidate style={{ position:'relative', display:'flex', flexDirection:'column', gap:10 }}>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div>
                   <label style={labelStyle}>Nombre completo</label>
@@ -279,7 +295,7 @@ export function ContactFormSection() {
 
               {submitError && <div style={{fontSize:12.5,color:'#ff8a8a'}}>{submitError}</div>}
 
-              <CtaPrimary type="submit" disabled={sending || !privacyAccepted}>
+              <CtaPrimary type="submit" disabled={sending}>
                 {sending
                   ? <React.Fragment><Icon name="loader-2" style={{width:16,height:16}} /> Enviando…</React.Fragment>
                   : <React.Fragment><Icon name="send" style={{width:16,height:16}} /> {settings.ctaText}</React.Fragment>

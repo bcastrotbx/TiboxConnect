@@ -43,7 +43,7 @@ html, body { margin: 0; height: 100%; background: #F0F2F6; font-family: var(--fo
   scrollbar-width: thin; scrollbar-color: var(--gray-300) transparent;
   scroll-behavior: smooth;
 }
-.content-wrap { padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+.content-wrap { padding: 24px; display: flex; flex-direction: column; gap: 24px; max-width: 1440px; margin: 0 auto; width: 100%; }
 /* Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): scroll suave al
    navegar desde el menú del header o los bloques de categoría
    (PortalLayout.jsx usa scrollIntoView({behavior:'smooth'})). El

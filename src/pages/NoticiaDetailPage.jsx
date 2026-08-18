@@ -88,7 +88,7 @@ export function NoticiaDetailPage() {
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--brand-cyan-700,#0079a8)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
             <Icon name="info" style={{ width: 13, height: 13 }} />Sobre esta noticia
           </div>
-          <p style={{ fontSize: 14, color: 'var(--gray-600)', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap' }}>{news.body || 'Sin descripción disponible.'}</p>
+          <p style={{ fontSize: 16, color: 'var(--gray-600)', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap' }}>{news.body || 'Sin descripción disponible.'}</p>
         </div>
       </div>
 

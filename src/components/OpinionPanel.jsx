@@ -22,10 +22,25 @@ export function OpinionPanel() {
   const [sending, setSending] = React.useState(false);
   const [submitError, setSubmitError] = React.useState('');
 
+  const OPINION_REQUIRED_FIELDS = [
+    { key: 'name', label: 'Nombre' },
+    { key: 'email', label: 'Email' },
+    { key: 'msg', label: 'Tu opinión' },
+  ];
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    setSending(true);
     setSubmitError('');
+    const missing = OPINION_REQUIRED_FIELDS.find(f => !form[f.key]?.trim());
+    if (missing) {
+      setSubmitError(`Error al enviar opinión, falta el campo "${missing.label}".`);
+      return;
+    }
+    if (!rating) {
+      setSubmitError('Error al enviar opinión, falta seleccionar tu calificación.');
+      return;
+    }
+    setSending(true);
     formService.submitOpinionForm({ ...form, rating }).then(() => {
       setSending(false);
       setSent(true);
@@ -74,7 +89,7 @@ export function OpinionPanel() {
                     <Icon name="x" style={{width:18,height:18}} />
                   </button>
                 </div>
-                <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:14}}>
+                <form onSubmit={handleSubmit} noValidate style={{display:'flex',flexDirection:'column',gap:14}}>
                   {/* Estrellas de calificación: antes vivían en el bloque
                       principal, ahora quedan dentro del popup junto al resto
                       del formulario (ver ajuste posterior). */}

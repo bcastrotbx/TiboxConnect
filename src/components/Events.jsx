@@ -315,7 +315,7 @@ export function EventosPanel() {
               </button>
               <div ref={trackRef} {...dragHandlers} style={{
                 flex:1, display:'flex', gap:16,
-                overflowX:'auto', scrollSnapType:'x mandatory', scrollbarWidth:'none', cursor:'grab',
+                overflowX:'auto', scrollSnapType:'x mandatory', scrollbarWidth:'none',
               }} className="hide-scroll">
                 {events.map(ev => (
                   <div key={ev.id} style={{flex:'0 0 min(320px, 85vw)', scrollSnapAlign:'start'}}>
