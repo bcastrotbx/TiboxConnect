@@ -142,32 +142,39 @@ export function ExploraPanel() {
   };
 
   return (
-    <div className="section-card">
+    <div style={{
+      borderRadius:18, overflow:'hidden', position:'relative',
+      background:'var(--grad-corporate)',
+      boxShadow:'0 4px 18px rgba(2,18,55,0.18)',
+    }}>
+      <CosmicBg variant={1} />
+      <div style={{position:'absolute',inset:0,background:'linear-gradient(160deg,rgba(2,16,46,0.82),rgba(5,24,72,0.65))',pointerEvents:'none'}}></div>
+
       {/* Header */}
-      <div style={{padding:'20px 24px 0',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16}}>
+      <div style={{position:'relative',padding:'20px 24px 0',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16}}>
         <div>
-          <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'#0050C8',marginBottom:4}}>Videos y Webinars</div>
-          <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'var(--navy-900)'}}>Explora <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>Videos y Webinars</span></div>
-          <div style={{fontSize:13,color:'var(--gray-500)',marginTop:4,maxWidth:560,lineHeight:1.5}}>Webinars, cápsulas, charlas y registros de eventos, reunidos en un solo lugar.</div>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:4}}>Videos y Webinars</div>
+          <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'white'}}>Explora <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>Videos y Webinars</span></div>
+          <div style={{fontSize:13,color:'rgba(255,255,255,0.72)',marginTop:4,maxWidth:560,lineHeight:1.5}}>Webinars, cápsulas, charlas y registros de eventos, reunidos en un solo lugar.</div>
         </div>
         <div style={{flexShrink:0,paddingTop:4}}>
-          <CtaLink onClick={()=>navigate('/videoteca')}>
+          <CtaLink tone="dark" onClick={()=>navigate('/videoteca')}>
             Ver todos los videos <Icon name="arrow-right" style={{width:13,height:13}} />
           </CtaLink>
         </div>
       </div>
 
       {/* Filter chips */}
-      <div style={{padding:'16px 24px 4px',display:'flex',gap:8,flexWrap:'wrap'}}>
+      <div style={{position:'relative',padding:'16px 24px 4px',display:'flex',gap:8,flexWrap:'wrap'}}>
         {cats.map(c => {
           const on = filter === c.id;
           return (
             <button key={c.id} onClick={()=>setFilter(c.id)} style={{
               fontSize:12, fontWeight:700, cursor:'pointer',
               borderRadius:999, padding:'6px 14px',
-              border: on ? '1px solid '+c.color : '1px solid var(--gray-200)',
-              background: on ? c.color : 'white',
-              color: on ? 'white' : 'var(--gray-600)',
+              border: on ? '1px solid '+c.color : '1px solid rgba(255,255,255,0.25)',
+              background: on ? c.color : 'rgba(255,255,255,0.08)',
+              color: on ? 'white' : 'rgba(255,255,255,0.8)',
               transition:'all 150ms', whiteSpace:'nowrap',
             }}>{c.label}</button>
           );
@@ -180,14 +187,14 @@ export function ExploraPanel() {
           categoría se mantiene la última grilla cargada (fadeItems) con
           opacidad reducida durante el refetch, en vez de desmontarla y
           mostrar el spinner — ver useFadeContent. */}
-      {isInitialLoad && <LoadingState label="Cargando videos…" />}
-      {status === 'error' && <ErrorState label="No pudimos cargar la videoteca." onRetry={() => setFilter(f => f)} error={error} />}
+      {isInitialLoad && <div style={{position:'relative'}}><LoadingState label="Cargando videos…" tone="dark" /></div>}
+      {status === 'error' && <div style={{position:'relative'}}><ErrorState label="No pudimos cargar la videoteca." onRetry={() => setFilter(f => f)} error={error} tone="dark" /></div>}
       {!isInitialLoad && status !== 'error' && (
         (fadeItems || []).length === 0 ? (
-          <EmptyState label="No hay videos en esta categoría todavía." icon="film" />
+          <div style={{position:'relative'}}><EmptyState label="No hay videos en esta categoría todavía." icon="film" tone="dark" /></div>
         ) : (
-          <div style={{display:'flex',alignItems:'center',padding:'16px 24px 24px',gap:10}}>
-            <button onClick={()=>scroll(-1)} aria-label="Anterior" style={navBtnStyle}>
+          <div style={{display:'flex',alignItems:'center',padding:'16px 24px 24px',gap:10,position:'relative'}}>
+            <button onClick={()=>scroll(-1)} aria-label="Anterior" style={navBtnGlassStyle}>
               <Icon name="chevron-left" style={{width:18,height:18}} />
             </button>
             <div ref={trackRef} {...dragHandlers} style={{
@@ -198,7 +205,7 @@ export function ExploraPanel() {
             }} className="hide-scroll">
               {fadeItems.map(v => <VideoCard key={v.id} v={v} catsById={catsById} onOpen={setOpenVideo} />)}
             </div>
-            <button onClick={()=>scroll(1)} aria-label="Siguiente" style={navBtnStyle}>
+            <button onClick={()=>scroll(1)} aria-label="Siguiente" style={navBtnGlassStyle}>
               <Icon name="chevron-right" style={{width:18,height:18}} />
             </button>
           </div>
@@ -215,6 +222,13 @@ const navBtnStyle = {
   color:'var(--navy-900)', cursor:'pointer',
   display:'flex', alignItems:'center', justifyContent:'center',
   boxShadow:'0 1px 3px rgba(0,0,0,0.06)', transition:'background 150ms',
+};
+const navBtnGlassStyle = {
+  width:36, height:36, borderRadius:'50%',
+  background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.25)',
+  color:'white', cursor:'pointer',
+  display:'flex', alignItems:'center', justifyContent:'center',
+  transition:'background 150ms',
 };
 
 /* ── Infografías ─────────────────────────────────── */
@@ -427,41 +441,34 @@ export function InfographicsPanel() {
   };
 
   return (
-    <div style={{
-      borderRadius:18, overflow:'hidden', position:'relative',
-      background:'var(--grad-corporate)',
-      boxShadow:'0 4px 18px rgba(2,18,55,0.18)',
-    }}>
-      <CosmicBg variant={2} />
-      <div style={{position:'absolute',inset:0,background:'linear-gradient(160deg,rgba(2,16,46,0.82),rgba(5,24,72,0.65))',pointerEvents:'none'}}></div>
-
+    <div className="section-card">
       {/* Banner */}
-      <div style={{position:'relative',padding:'26px 28px 0',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:20,flexWrap:'wrap'}}>
+      <div style={{padding:'26px 28px 0',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:20,flexWrap:'wrap'}}>
         <div>
-          <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:6}}>Infografías</div>
-          <h2 style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'white',lineHeight:1.18,margin:'0 0 8px',letterSpacing:'-0.01em'}}>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'#0050C8',marginBottom:6}}>Infografías</div>
+          <h2 style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'var(--navy-900)',lineHeight:1.18,margin:'0 0 8px',letterSpacing:'-0.01em'}}>
             Información visual, <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>simple y al alcance</span>
           </h2>
-          <p style={{fontSize:13.5,color:'rgba(255,255,255,0.72)',lineHeight:1.55,maxWidth:540,margin:0}}>
+          <p style={{fontSize:13.5,color:'var(--gray-500)',lineHeight:1.55,maxWidth:540,margin:0}}>
             Las piezas que publicamos en LinkedIn, Instagram y nuestros mailings, listas para descargar y compartir en tu organización.
           </p>
         </div>
-        <CtaLink tone="dark" onClick={()=>navigate('/infografias')} style={{flexShrink:0}}>
+        <CtaLink onClick={()=>navigate('/infografias')} style={{flexShrink:0}}>
           Ver todas las infografías <Icon name="arrow-right" style={{width:13,height:13}} />
         </CtaLink>
       </div>
 
       {/* Filter chips */}
-      <div style={{position:'relative',padding:'18px 28px 2px',display:'flex',gap:8,flexWrap:'wrap'}}>
+      <div style={{padding:'18px 28px 2px',display:'flex',gap:8,flexWrap:'wrap'}}>
         {cats.map(c => {
           const on = filter === c.id;
           return (
             <button key={c.id} onClick={()=>setFilter(c.id)} style={{
               fontSize:12, fontWeight:700, cursor:'pointer',
               borderRadius:999, padding:'6px 15px',
-              border: on ? '1px solid white' : '1px solid rgba(255,255,255,0.25)',
-              background: on ? 'white' : 'rgba(255,255,255,0.08)',
-              color: on ? 'var(--navy-900)' : 'rgba(255,255,255,0.8)',
+              border: on ? '1px solid '+c.color : '1px solid var(--gray-200)',
+              background: on ? c.color : 'white',
+              color: on ? 'white' : 'var(--gray-600)',
               transition:'all 150ms', whiteSpace:'nowrap',
             }}>{c.label}</button>
           );
@@ -470,14 +477,14 @@ export function InfographicsPanel() {
 
       {/* Carousel con flechas laterales — mismo criterio de crossfade que
           ExploraPanel al cambiar de categoría (ver useFadeContent). */}
-      {isInitialLoad && <div style={{position:'relative'}}><LoadingState label="Cargando infografías…" tone="dark" /></div>}
-      {status === 'error' && <div style={{position:'relative'}}><ErrorState label="No pudimos cargar las infografías." tone="dark" error={error} /></div>}
+      {isInitialLoad && <LoadingState label="Cargando infografías…" />}
+      {status === 'error' && <ErrorState label="No pudimos cargar las infografías." error={error} />}
       {!isInitialLoad && status !== 'error' && (
         (fadeItems || []).length === 0 ? (
-          <div style={{position:'relative'}}><EmptyState label="No hay infografías en esta categoría todavía." icon="pie-chart" tone="dark" /></div>
+          <EmptyState label="No hay infografías en esta categoría todavía." icon="pie-chart" />
         ) : (
-          <div style={{display:'flex',alignItems:'center',padding:'18px 20px 28px',gap:10,position:'relative'}}>
-            <button onClick={()=>scroll(-1)} aria-label="Anterior" style={navBtnGlassStyle}>
+          <div style={{display:'flex',alignItems:'center',padding:'18px 20px 28px',gap:10}}>
+            <button onClick={()=>scroll(-1)} aria-label="Anterior" style={navBtnStyle}>
               <Icon name="chevron-left" style={{width:18,height:18}} />
             </button>
             <div ref={trackRef} {...dragHandlers} style={{
@@ -487,7 +494,7 @@ export function InfographicsPanel() {
             }} className="hide-scroll">
               {fadeItems.map(inf => <InfoCard key={inf.id} inf={inf} channelsById={channelsById} onOpen={setOpenInfo} />)}
             </div>
-            <button onClick={()=>scroll(1)} aria-label="Siguiente" style={navBtnGlassStyle}>
+            <button onClick={()=>scroll(1)} aria-label="Siguiente" style={navBtnStyle}>
               <Icon name="chevron-right" style={{width:18,height:18}} />
             </button>
           </div>
@@ -498,10 +505,3 @@ export function InfographicsPanel() {
     </div>
   );
 }
-const navBtnGlassStyle = {
-  width:36, height:36, borderRadius:'50%',
-  background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.25)',
-  color:'white', cursor:'pointer',
-  display:'flex', alignItems:'center', justifyContent:'center',
-  transition:'background 150ms',
-};

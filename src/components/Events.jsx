@@ -158,7 +158,7 @@ export function EventCard({ ev, modalidadById, partnersById, onVerDetalle }) {
       style={{
         border:'1px solid var(--gray-200)', borderRadius:14, overflow:'hidden',
         display:'flex', flexDirection:'column', flex:1,
-        background: hov ? 'white' : 'rgba(255,255,255,0.95)',
+        background: hov ? 'white' : 'var(--gray-50)',
         boxShadow: hov ? '0 6px 18px rgba(0,0,0,0.18)' : '0 1px 4px rgba(0,0,0,0.08)',
         borderColor: hov ? 'var(--gray-300)' : 'var(--gray-200)',
         transition:'box-shadow 180ms, border-color 180ms, background 180ms',
@@ -271,78 +271,72 @@ export function EventosPanel() {
   };
 
   return (
-    <div>
-      <div style={{borderRadius:16,overflow:'hidden',position:'relative',background:'var(--grad-corporate)',boxShadow:'0 4px 18px rgba(2,18,55,0.2)'}}>
-        <CosmicBg variant={1} />
-        <div style={{position:'absolute',inset:0,background:'linear-gradient(160deg,rgba(2,16,46,0.82),rgba(5,24,72,0.65))',pointerEvents:'none'}}></div>
-        <div style={{position:'relative'}}>
-          <div style={{padding:'22px 24px 0',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16,flexWrap:'wrap'}}>
-            <div>
-              <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:6}}>Eventos</div>
-              <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'white'}}>Agenda y <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>Eventos TIBOX</span></div>
-            </div>
-            {/* Ajuste posterior (ver nota corta en
-                FASE-06-07-08-CONTENIDO-REAL.md): "Ver todos los eventos" se
-                movió acá, a la izquierda de "Ver calendario" — antes vivía
-                suelto debajo del panel. */}
-            <div style={{display:'flex',gap:16,flexWrap:'wrap',alignItems:'center'}}>
-              <CtaLink tone="dark" onClick={()=>navigate('/eventos')}>
-                Ver todos los eventos <Icon name="arrow-right" style={{width:13,height:13}} />
-              </CtaLink>
-              {status === 'success' && upcomingEvents.length > 0 && (
-                <button onClick={()=>setShowCal(true)} style={{
-                  fontSize:12,fontWeight:700,color:'white',
-                  background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.22)',borderRadius:9,
-                  padding:'9px 15px',cursor:'pointer',display:'inline-flex',alignItems:'center',gap:7,whiteSpace:'nowrap',
-                  transition:'transform 150ms,background 150ms',
-                }}
-                  onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-1px)';e.currentTarget.style.background='rgba(255,255,255,0.22)';}}
-                  onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.background='rgba(255,255,255,0.12)';}}
-                >
-                  <Icon name="calendar-days" style={{width:14,height:14}} />Ver calendario
-                </button>
-              )}
-            </div>
-          </div>
-
-          {status === 'loading' && <LoadingState label="Cargando eventos…" tone="dark" />}
-          {status === 'error' && <ErrorState label="No pudimos cargar los eventos." tone="dark" error={error} />}
-          {status === 'success' && events.length === 0 && <EmptyState label="Todavía no hay eventos publicados." icon="calendar-check" tone="dark" />}
-          {status === 'success' && events.length > 0 && (
-            <div style={{display:'flex',alignItems:'center',padding:'18px 20px 24px',gap:10}}>
-              <button onClick={()=>scroll(-1)} aria-label="Anterior" style={navBtnGlassStyle}>
-                <Icon name="chevron-left" style={{width:18,height:18}} />
-              </button>
-              <div ref={trackRef} {...dragHandlers} style={{
-                flex:1, display:'flex', gap:16,
-                overflowX:'auto', scrollSnapType:'x mandatory', scrollbarWidth:'none',
-              }} className="hide-scroll">
-                {events.map(ev => (
-                  <div key={ev.id} style={{flex:'0 0 min(320px, 85vw)', scrollSnapAlign:'start'}}>
-                    <EventCard ev={ev} modalidadById={modalidadById} partnersById={partnersById} onVerDetalle={handleVerDetalle} />
-                  </div>
-                ))}
-              </div>
-              <button onClick={()=>scroll(1)} aria-label="Siguiente" style={navBtnGlassStyle}>
-                <Icon name="chevron-right" style={{width:18,height:18}} />
-              </button>
-            </div>
+    <div className="section-card">
+      <div style={{padding:'22px 24px 0',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16,flexWrap:'wrap'}}>
+        <div>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'#0050C8',marginBottom:6}}>Eventos</div>
+          <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'var(--navy-900)'}}>Agenda y <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>Eventos TIBOX</span></div>
+        </div>
+        {/* Ajuste posterior (ver nota corta en
+            FASE-06-07-08-CONTENIDO-REAL.md): "Ver todos los eventos" se
+            movió acá, a la izquierda de "Ver calendario" — antes vivía
+            suelto debajo del panel. */}
+        <div style={{display:'flex',gap:16,flexWrap:'wrap',alignItems:'center'}}>
+          <CtaLink onClick={()=>navigate('/eventos')}>
+            Ver todos los eventos <Icon name="arrow-right" style={{width:13,height:13}} />
+          </CtaLink>
+          {status === 'success' && upcomingEvents.length > 0 && (
+            <button onClick={()=>setShowCal(true)} style={{
+              fontSize:12,fontWeight:700,color:'var(--navy-900)',
+              background:'var(--gray-50)',border:'1px solid var(--gray-200)',borderRadius:9,
+              padding:'9px 15px',cursor:'pointer',display:'inline-flex',alignItems:'center',gap:7,whiteSpace:'nowrap',
+              transition:'transform 150ms,background 150ms',
+            }}
+              onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-1px)';e.currentTarget.style.background='var(--gray-100)';}}
+              onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.background='var(--gray-50)';}}
+            >
+              <Icon name="calendar-days" style={{width:14,height:14}} />Ver calendario
+            </button>
           )}
-
-          {openEvent && <EventDetailModal event={openEvent} modalidadById={modalidadById} onClose={()=>setOpenEvent(null)} />}
-          {openPastEvent && <VistaModal event={openPastEvent} onClose={()=>setOpenPastEvent(null)} />}
-          {showCal && <CalendarModal events={upcomingEvents} modalidadById={modalidadById} onClose={()=>setShowCal(false)} />}
         </div>
       </div>
+
+      {status === 'loading' && <LoadingState label="Cargando eventos…" />}
+      {status === 'error' && <ErrorState label="No pudimos cargar los eventos." error={error} />}
+      {status === 'success' && events.length === 0 && <EmptyState label="Todavía no hay eventos publicados." icon="calendar-check" />}
+      {status === 'success' && events.length > 0 && (
+        <div style={{display:'flex',alignItems:'center',padding:'18px 20px 24px',gap:10}}>
+          <button onClick={()=>scroll(-1)} aria-label="Anterior" style={navBtnStyle}>
+            <Icon name="chevron-left" style={{width:18,height:18}} />
+          </button>
+          <div ref={trackRef} {...dragHandlers} style={{
+            flex:1, display:'flex', gap:16,
+            overflowX:'auto', scrollSnapType:'x mandatory', scrollbarWidth:'none',
+          }} className="hide-scroll">
+            {events.map(ev => (
+              <div key={ev.id} style={{flex:'0 0 min(320px, 85vw)', scrollSnapAlign:'start'}}>
+                <EventCard ev={ev} modalidadById={modalidadById} partnersById={partnersById} onVerDetalle={handleVerDetalle} />
+              </div>
+            ))}
+          </div>
+          <button onClick={()=>scroll(1)} aria-label="Siguiente" style={navBtnStyle}>
+            <Icon name="chevron-right" style={{width:18,height:18}} />
+          </button>
+        </div>
+      )}
+
+      {openEvent && <EventDetailModal event={openEvent} modalidadById={modalidadById} onClose={()=>setOpenEvent(null)} />}
+      {openPastEvent && <VistaModal event={openPastEvent} onClose={()=>setOpenPastEvent(null)} />}
+      {showCal && <CalendarModal events={upcomingEvents} modalidadById={modalidadById} onClose={()=>setShowCal(false)} />}
     </div>
   );
 }
-const navBtnGlassStyle = {
+const navBtnStyle = {
   width:36, height:36, borderRadius:'50%',
-  background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.25)',
-  color:'white', cursor:'pointer', flexShrink:0,
+  background:'white', border:'1px solid var(--gray-200)',
+  color:'var(--navy-900)', cursor:'pointer', flexShrink:0,
   display:'flex', alignItems:'center', justifyContent:'center',
-  transition:'background 150ms',
+  boxShadow:'0 1px 3px rgba(0,0,0,0.06)', transition:'background 150ms',
 };
 
 /* ── Vista modal (evento realizado) ───── */
@@ -488,13 +482,16 @@ export function NoticiasPanel() {
   }, [featuredNews]);
 
   return (
-    <div className="section-card">
+    <div style={{borderRadius:18,overflow:'hidden',position:'relative',background:'var(--grad-corporate)',boxShadow:'0 4px 18px rgba(2,18,55,0.18)'}}>
+      <CosmicBg variant={3} />
+      <div style={{position:'absolute',inset:0,background:'linear-gradient(160deg,rgba(2,16,46,0.82),rgba(5,24,72,0.65))',pointerEvents:'none'}}></div>
+      <div style={{position:'relative'}}>
       <div style={{padding:'20px 24px 0',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16,flexWrap:'wrap'}}>
         <div>
           <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--brand-cyan)',marginBottom:4}}>Tendencias</div>
-          <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'var(--navy-900)'}}>Tendencias <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>de la industria</span></div>
+          <div style={{fontSize:'clamp(1.3rem,2vw,1.7rem)',fontWeight:700,color:'white'}}>Tendencias <span style={{background:'var(--grad-title)',WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}}>de la industria</span></div>
         </div>
-        <CtaLink onClick={()=>navigate('/tendencias')} style={{alignSelf:'center'}}>
+        <CtaLink tone="dark" onClick={()=>navigate('/tendencias')} style={{alignSelf:'center'}}>
           Ver todas las tendencias <Icon name="arrow-right" style={{width:13,height:13}} />
         </CtaLink>
       </div>
@@ -511,10 +508,10 @@ export function NoticiasPanel() {
           contenido; la derecha vuelve a su alto real (el de la tarjeta
           destacada) y ese es el valor correcto que se mide y se aplica a
           la izquierda. */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:0,marginTop:16,borderTop:'1px solid var(--gray-100)',alignItems:'start'}}>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:0,marginTop:16,borderTop:'1px solid rgba(255,255,255,0.15)',alignItems:'start'}}>
         {/* Left: categories + news list — alto fijo en px, igualado al de
             la columna derecha (ver leftColHeight arriba). */}
-        <div style={{padding:'18px 22px',borderRight:'1px solid var(--gray-100)',display:'flex',flexDirection:'column',height:leftColHeight ?? undefined,overflow:'hidden'}}>
+        <div style={{padding:'18px 22px',borderRight:'1px solid rgba(255,255,255,0.15)',display:'flex',flexDirection:'column',height:leftColHeight ?? undefined,overflow:'hidden'}}>
           {/* Category filter */}
           <div style={{display:'flex',gap:7,flexWrap:'wrap',marginBottom:16}}>
             {cats.map(c => {
@@ -523,9 +520,9 @@ export function NoticiasPanel() {
                 <button key={c.id} onClick={()=>setFilter(c.id)} style={{
                   fontSize:11.5, fontWeight:700, cursor:'pointer',
                   borderRadius:999, padding:'5px 12px',
-                  border: on ? '1px solid '+c.color : '1px solid var(--gray-200)',
-                  background: on ? c.color : 'white',
-                  color: on ? 'white' : 'var(--gray-600)',
+                  border: on ? '1px solid '+c.color : '1px solid rgba(255,255,255,0.25)',
+                  background: on ? c.color : 'rgba(255,255,255,0.08)',
+                  color: on ? 'white' : 'rgba(255,255,255,0.8)',
                   transition:'all 150ms', whiteSpace:'nowrap',
                 }}>{c.label}</button>
               );
@@ -536,29 +533,34 @@ export function NoticiasPanel() {
               FASE-06-07-08-CONTENIDO-REAL.md) y mismo criterio de crossfade
               que ExploraPanel/InfographicsPanel al cambiar de categoría (ver
               useFadeContent). */}
-          {isInitialLoad && <LoadingState label="Cargando noticias…" />}
-          {status === 'error' && <ErrorState label="No pudimos cargar las noticias." error={error} />}
-          {!isInitialLoad && status !== 'error' && (fadeItems || []).length === 0 && <EmptyState label="No hay noticias en esta categoría todavía." icon="rss" />}
+          {isInitialLoad && <LoadingState label="Cargando noticias…" tone="dark" />}
+          {status === 'error' && <ErrorState label="No pudimos cargar las noticias." error={error} tone="dark" />}
+          {!isInitialLoad && status !== 'error' && (fadeItems || []).length === 0 && <EmptyState label="No hay noticias en esta categoría todavía." icon="rss" tone="dark" />}
           {!isInitialLoad && status !== 'error' && (fadeItems || []).length > 0 && (
             <div style={{position:'relative',flex:1,minHeight:0}}>
-              <div style={{display:'flex',flexDirection:'column',height:'100%',overflowY:'auto',scrollbarWidth:'thin',scrollbarColor:'var(--gray-300) transparent',paddingRight:4,opacity:isRefreshing?0.35:1,transition:'opacity 220ms ease'}}>
+              <div style={{display:'flex',flexDirection:'column',height:'100%',overflowY:'auto',scrollbarWidth:'thin',scrollbarColor:'rgba(255,255,255,0.25) transparent',paddingRight:4,opacity:isRefreshing?0.35:1,transition:'opacity 220ms ease'}}>
                 {fadeItems.map((n,idx) => {
                   const c = catsById[n.cat] || {};
                   return (
                     <div key={n.id} onClick={() => setOpenNews({ title:n.title, img:n.img, body:n.body, slug:n.slug, catLabel:c.label, catColor:c.color })}
-                      style={{display:'flex',gap:13,padding:'13px 0',borderTop: idx===0?'none':'1px solid var(--gray-100)',cursor:'pointer'}}
+                      style={{display:'flex',gap:13,padding:'13px 0',borderTop: idx===0?'none':'1px solid rgba(255,255,255,0.12)',cursor:'pointer'}}
                       onMouseEnter={e=>e.currentTarget.style.opacity='0.72'}
                       onMouseLeave={e=>e.currentTarget.style.opacity='1'}
                     >
                       <div style={{width:4,borderRadius:999,background:c.color,flexShrink:0,alignSelf:'stretch'}}></div>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:5}}>
-                          <span style={{fontSize:10,fontWeight:700,color:c.color,textTransform:'uppercase',letterSpacing:'0.04em'}}>{c.label}</span>
-                          <span style={{fontSize:10.5,color:'var(--gray-400)'}}>·</span>
-                          <span style={{fontSize:10.5,color:'var(--gray-400)'}}>{n.source}</span>
+                          {/* Pastilla con fondo blanco translúcido detrás del
+                              nombre de categoría: c.color es dinámico (lo
+                              define el admin) y sobre fondo azul algunos
+                              tonos claros perderían contraste como texto
+                              plano — con esta pastilla queda garantizado. */}
+                          <span style={{fontSize:10,fontWeight:700,color:c.color,textTransform:'uppercase',letterSpacing:'0.04em',background:'rgba(255,255,255,0.9)',borderRadius:999,padding:'2px 8px'}}>{c.label}</span>
+                          <span style={{fontSize:10.5,color:'rgba(255,255,255,0.55)'}}>·</span>
+                          <span style={{fontSize:10.5,color:'rgba(255,255,255,0.55)'}}>{n.source}</span>
                         </div>
-                        <div style={{fontSize:13,fontWeight:600,color:'var(--navy-900)',lineHeight:1.4}}>{n.title}</div>
-                        <div style={{fontSize:10.5,color:'var(--gray-400)',marginTop:5,display:'flex',alignItems:'center',gap:4}}>
+                        <div style={{fontSize:13,fontWeight:600,color:'white',lineHeight:1.4}}>{n.title}</div>
+                        <div style={{fontSize:10.5,color:'rgba(255,255,255,0.55)',marginTop:5,display:'flex',alignItems:'center',gap:4}}>
                           <Icon name="clock" style={{width:11,height:11}} />{n.date}
                         </div>
                       </div>
@@ -566,7 +568,7 @@ export function NoticiasPanel() {
                   );
                 })}
               </div>
-              <div style={{position:'absolute',bottom:0,left:0,right:4,height:60,background:'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.97) 100%)',pointerEvents:'none'}}></div>
+              <div style={{position:'absolute',bottom:0,left:0,right:4,height:60,background:'linear-gradient(to bottom, rgba(5,20,60,0) 0%, rgba(5,20,60,0.92) 100%)',pointerEvents:'none'}}></div>
             </div>
           )}
         </div>
@@ -582,12 +584,12 @@ export function NoticiasPanel() {
               <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(2,12,36,0.1),rgba(2,12,36,0.5))'}}></div>
               {fc && <span style={{position:'absolute',top:12,left:12,fontSize:10.5,fontWeight:700,color:'white',background:fc.color,borderRadius:999,padding:'4px 11px'}}>{fc.label}</span>}
             </div>
-            <div style={{display:'flex',alignItems:'center',gap:12,fontSize:11,color:'var(--gray-400)',marginBottom:9}}>
+            <div style={{display:'flex',alignItems:'center',gap:12,fontSize:11,color:'rgba(255,255,255,0.55)',marginBottom:9}}>
               <span style={{display:'inline-flex',alignItems:'center',gap:4}}><Icon name="calendar" style={{width:12,height:12}} />{featuredNews.date}</span>
               <span style={{display:'inline-flex',alignItems:'center',gap:4}}><Icon name="book-open" style={{width:12,height:12}} />{featuredNews.readtime}</span>
             </div>
-            <h3 style={{fontSize:17,fontWeight:700,color:'var(--navy-900)',lineHeight:1.3,margin:'0 0 9px'}}>{featuredNews.title}</h3>
-            <p style={{fontSize:13,color:'var(--gray-600)',lineHeight:1.6,margin:'0 0 18px'}}>{featuredNews.excerpt}</p>
+            <h3 style={{fontSize:17,fontWeight:700,color:'white',lineHeight:1.3,margin:'0 0 9px'}}>{featuredNews.title}</h3>
+            <p style={{fontSize:13,color:'rgba(255,255,255,0.7)',lineHeight:1.6,margin:'0 0 18px'}}>{featuredNews.excerpt}</p>
             {/* Ajuste posterior (ver FASE-09-NOTICIAS-DETALLE-Y-ADMIN.md):
                 antes abría el mismo popup que la lista de la izquierda; ahora
                 navega directo a la página propia de la noticia destacada. */}
@@ -598,6 +600,7 @@ export function NoticiasPanel() {
         )}
 
         {openNews && <NoticiaModal noticia={openNews} onClose={() => setOpenNews(null)} />}
+      </div>
       </div>
     </div>
   );

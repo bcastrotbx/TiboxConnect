@@ -5,8 +5,8 @@ import { Icon } from './Icon.jsx';
 // consumen src/services/* vía useAsyncData. `tone="dark"` es para paneles
 // sobre fondo navy (--grad-corporate); por defecto es para tarjetas claras.
 const TONES = {
-  light: { text:'var(--gray-500)', textStrong:'var(--navy-900)', border:'var(--gray-200)' },
-  dark:  { text:'rgba(255,255,255,0.65)', textStrong:'white', border:'rgba(255,255,255,0.15)' },
+  light: { text:'var(--gray-500)', textStrong:'var(--navy-900)', border:'var(--gray-200)', accent:'#0050C8' },
+  dark:  { text:'rgba(255,255,255,0.65)', textStrong:'white', border:'rgba(255,255,255,0.15)', accent:'var(--brand-cyan)' },
 };
 
 export function LoadingState({ label = 'Cargando…', tone = 'light', minHeight = 160 }) {
@@ -36,7 +36,7 @@ export function ErrorState({ label = 'No pudimos cargar este contenido. Inténta
       <Icon name="alert-triangle" style={{ width:24, height:24, color:'#c0392b' }} />
       <span style={{ fontSize:13.5, fontWeight:600, color:t.textStrong, maxWidth:340 }}>{label}</span>
       {onRetry && (
-        <button onClick={onRetry} style={{ marginTop:2, fontSize:12.5, fontWeight:700, color:'#0050C8', background:'none', border:`1px solid ${t.border}`, borderRadius:8, padding:'7px 14px', cursor:'pointer' }}>
+        <button onClick={onRetry} style={{ marginTop:2, fontSize:12.5, fontWeight:700, color:t.accent, background:'none', border:`1px solid ${t.border}`, borderRadius:8, padding:'7px 14px', cursor:'pointer' }}>
           Reintentar
         </button>
       )}
