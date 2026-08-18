@@ -13,19 +13,34 @@
 //      (anon key + su JWT) para esto — RLS se aplica normalmente, no hace
 //      falta la service_role key todavía.
 //   2. Recién si lo anterior pasa, se crea un segundo cliente con la
-//      service_role key y se invita al nuevo usuario
-//      (auth.admin.inviteUserByEmail). Esto crea la fila en auth.users, lo
-//      que dispara el trigger on_auth_user_created (Fase 4) y crea su
-//      profiles con role='user' por defecto.
+//      service_role key y se genera la invitación con
+//      auth.admin.generateLink({ type: 'invite', ... }). Esto crea la fila
+//      en auth.users (dispara el trigger on_auth_user_created de la Fase 4,
+//      que crea su profiles con role='user' por defecto) y devuelve un
+//      enlace de invitación utilizable (properties.action_link).
 //   3. Se promueve esa fila a role='admin' inmediatamente, llamando a la
 //      función SQL public.promote_to_admin() (Fase 5,
 //      20260728100000_promote_to_admin_function.sql). Ver ADR-005 para la
 //      justificación de por qué se promueve de inmediato en vez de dejar un
 //      estado intermedio "invitado pero no admin todavía".
+//   4. El enlace de invitación se devuelve en la respuesta para que el panel
+//      lo muestre con un botón "Copiar" — ver ajuste posterior en
+//      FASE-05-AUTENTICACION.md.
 //
-// Límite conocido: el correo de invitación lo envía el servicio de correo
-// por defecto de Supabase (no hay SMTP propio configurado — ver
-// docs/phases/FASE-05-AUTENTICACION.md). Puede demorar o caer en spam.
+// Ajuste posterior (ver FASE-05-AUTENTICACION.md): se cambió de
+// auth.admin.inviteUserByEmail() a auth.admin.generateLink({type:'invite'}).
+// La primera crea la cuenta Y dispara automáticamente el envío de un correo
+// con el servicio de correo por defecto de Supabase (sin SMTP propio
+// configurado — ver Fase 9 pendiente), pero no expone el enlace generado en
+// la respuesta, así que si ese correo no llegaba (demora, spam, límites de
+// volumen del servicio gratuito) no había ninguna alternativa desde el
+// panel más que ir manualmente al dashboard de Supabase. generateLink crea
+// la misma cuenta y el mismo tipo de enlace, pero SIN depender del envío de
+// correo — lo devuelve directamente para copiar y enviar por cualquier
+// medio (WhatsApp, Slack, un correo normal). Es la opción más confiable
+// mientras no exista un SMTP propio (SendGrid, Fase 9): un solo camino que
+// siempre funciona, en vez de dos (correo automático + fallback manual) que
+// mantener sincronizados.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 
@@ -106,11 +121,15 @@ Deno.serve(async (req) => {
     }
 
     // Paso 2: recién aquí se usa la service_role key. Nunca antes de
-    // confirmar que quien llama ya es admin.
+    // confirmar que quien llama ya es admin. generateLink({type:'invite'})
+    // crea la cuenta igual que inviteUserByEmail, pero no depende del envío
+    // de correo — devuelve el enlace directamente (ver nota extensa arriba).
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
-      data: { full_name: fullName },
+    const { data: inviteData, error: inviteError } = await adminClient.auth.admin.generateLink({
+      type: 'invite',
+      email,
+      options: { data: { full_name: fullName } },
     });
 
     if (inviteError) {
@@ -118,8 +137,9 @@ Deno.serve(async (req) => {
     }
 
     const invitedUserId = inviteData?.user?.id;
-    if (!invitedUserId) {
-      return json({ error: 'La invitación se envió pero no se pudo confirmar el id del usuario creado.' }, 500);
+    const actionLink = inviteData?.properties?.action_link;
+    if (!invitedUserId || !actionLink) {
+      return json({ error: 'La invitación se creó pero no se pudo generar el enlace o confirmar el id del usuario.' }, 500);
     }
 
     // Paso 3: promover a role='admin' de inmediato (ver ADR-005). El trigger
@@ -137,7 +157,7 @@ Deno.serve(async (req) => {
       }, 500);
     }
 
-    return json({ data: { invited: true, userId: invitedUserId } }, 200);
+    return json({ data: { invited: true, userId: invitedUserId, actionLink } }, 200);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido.';
     return json({ error: `Error inesperado: ${message}` }, 500);
