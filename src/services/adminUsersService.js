@@ -27,7 +27,15 @@ export async function inviteAdmin({ email, fullName }) {
   if (data?.error) {
     return { data: null, error: data.error };
   }
-  return { data, error: null };
+  // Ajuste posterior (confirmado en vivo por el cliente): la Edge Function
+  // responde con { data: { invited, userId, actionLink } } — su propio
+  // helper `json()` envuelve el body en una clave `data`. Antes de este
+  // ajuste se devolvía ese objeto completo tal cual, así que
+  // `data.actionLink` en UsuariosPage.jsx siempre era `undefined` (el valor
+  // real vivía en `data.data.actionLink`) y el bloque de enlace/botón
+  // "Copiar" nunca se mostraba, aunque el mensaje de éxito sí. Se desenvuelve
+  // acá para que el llamador reciba directamente { invited, userId, actionLink }.
+  return { data: data.data, error: null };
 }
 
 // Fase 9 (ver FASE-09-NOTICIAS-DETALLE-Y-ADMIN.md, punto 2.3) — listado de
