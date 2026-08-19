@@ -180,7 +180,7 @@ export function UsuariosPage() {
       <div className="adm-card" style={{ padding: '16px 20px', display: 'flex', gap: 12, alignItems: 'flex-start', maxWidth: 640 }}>
         <Icon name="info" style={{ width: 16, height: 16, color: 'var(--gray-400)', flexShrink: 0, marginTop: 1 }} />
         <p style={{ fontSize: 12.5, color: 'var(--gray-500)', lineHeight: 1.6, margin: 0 }}>
-          El enlace de invitación se genera al instante y funciona de inmediato — no depende de que llegue un correo automático (todavía no se configuró un dominio propio de envío, ver <code>docs/phases/FASE-05-AUTENTICACION.md</code>). Envíaselo tú mismo a la persona invitada por el medio que prefieras.
+          El enlace de invitación se genera al instante y funciona de inmediato — no depende de que llegue un correo automático (todavía no se configuró un dominio propio de envío, ver <code>docs/phases/FASE-05-AUTENTICACION.md</code>). Envíaselo tú mismo a la persona invitada por el medio que prefieras. Este enlace ahora es seguro frente a vistas previas automáticas de Slack, Teams o WhatsApp — el enlace anterior (directo a Supabase) podía invalidarse si la app de mensajería generaba una tarjeta de previsualización antes de que la persona invitada hiciera clic.
         </p>
       </div>
 

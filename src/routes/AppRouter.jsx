@@ -15,6 +15,7 @@ import { EventoDetailPage } from '../pages/EventoDetailPage.jsx';
 import { NotFound } from '../pages/NotFound.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';
 import { UpdatePasswordPage } from '../pages/UpdatePasswordPage.jsx';
+import { AceptarInvitacionPage } from '../pages/AceptarInvitacionPage.jsx';
 import { Unauthorized } from '../pages/Unauthorized.jsx';
 import { AdminRoute } from './AdminRoute.jsx';
 import { DashboardPage } from '../admin/pages/DashboardPage.jsx';
@@ -32,8 +33,8 @@ import { UsuariosPage } from '../admin/pages/UsuariosPage.jsx';
 import { PortadaPage } from '../admin/PortadaWidgets.jsx';
 
 // Rutas de la Fase 2, actualizadas en la Fase 5 con autenticación real (ver
-// docs/decisions/ADR-004): /login, /actualizar-contrasena y
-// /acceso-no-autorizado son públicas, pero no hay ningún flujo de registro
+// docs/decisions/ADR-004): /login, /actualizar-contrasena, /aceptar-invitacion
+// y /acceso-no-autorizado son públicas, pero no hay ningún flujo de registro
 // público — solo sirven para el login/recuperación de cuentas de
 // administrador ya creadas por invitación. /admin/* ahora exige sesión de
 // administrador activa vía <AdminRoute/>.
@@ -75,6 +76,7 @@ const router = createBrowserRouter([
   },
   { path: '/login', element: <LoginPage /> },
   { path: '/actualizar-contrasena', element: <UpdatePasswordPage /> },
+  { path: '/aceptar-invitacion', element: <AceptarInvitacionPage /> },
   { path: '/acceso-no-autorizado', element: <Unauthorized /> },
   {
     path: '/admin',

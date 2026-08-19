@@ -1,5 +1,31 @@
 import { supabase } from '../lib/supabase.js';
 
+// Ajuste posterior (caso real: invitación a pfarias@tibox.cl, otp_expired):
+// el action_link crudo que devuelve generateLink() es una URL GET de un
+// solo uso (.../auth/v1/verify?token=...&type=invite&redirect_to=...).
+// Slack/Teams/WhatsApp generan automáticamente una tarjeta de vista previa
+// al pegar un link — para eso hacen su propio GET a esa URL apenas se pega
+// el mensaje, antes de que la persona invitada haga clic real. Esa petición
+// automática consume el token de un solo uso; cuando la persona invitada
+// hace clic de verdad, el enlace ya está muerto (otp_expired). No cambia
+// nada de cómo Supabase/la Edge Function generan el link — solo se extrae
+// el token y el type acá, del lado del cliente, y se arma un enlace propio
+// del portal (/aceptar-invitacion) que no dispara ninguna verificación
+// automática al cargar (ver AceptarInvitacionPage.jsx) — un GET de vista
+// previa no ejecuta el clic real del botón "Aceptar invitación", así que el
+// token queda intacto hasta que la persona invitada de verdad abre el link.
+function buildSecureInviteLink(actionLink) {
+  try {
+    const url = new URL(actionLink);
+    const token = url.searchParams.get('token');
+    const type = url.searchParams.get('type') || 'invite';
+    if (!token) return actionLink; // no debería pasar; fallback al link original
+    return `${window.location.origin}/aceptar-invitacion?token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}`;
+  } catch {
+    return actionLink; // fallback si el parseo falla por lo que sea
+  }
+}
+
 // Fase 5 — invitar administradores adicionales (ver ADR-005 y ADR-004).
 // A diferencia del resto de src/services/*, esta función SÍ está conectada
 // a Supabase desde ya (no simula datos de seed): la invitación de admins no
@@ -35,7 +61,10 @@ export async function inviteAdmin({ email, fullName }) {
   // real vivía en `data.data.actionLink`) y el bloque de enlace/botón
   // "Copiar" nunca se mostraba, aunque el mensaje de éxito sí. Se desenvuelve
   // acá para que el llamador reciba directamente { invited, userId, actionLink }.
-  return { data: data.data, error: null };
+  return {
+    data: { ...data.data, actionLink: buildSecureInviteLink(data.data.actionLink) },
+    error: null,
+  };
 }
 
 // Fase 9 (ver FASE-09-NOTICIAS-DETALLE-Y-ADMIN.md, punto 2.3) — listado de
