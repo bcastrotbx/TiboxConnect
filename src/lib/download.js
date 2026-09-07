@@ -29,8 +29,36 @@ function sanitizeFilename(title) {
 }
 
 function guessExtension(url) {
-  const match = /\.(png|jpe?g|webp|gif|svg)(\?|$)/i.exec(url || '');
-  return match ? match[1].toLowerCase() : 'jpg';
+  const match = /\.(png|jpe?g|webp|gif|svg|pdf|docx?|xlsx?|pptx?)(\?|$)/i.exec(url || '');
+  return match ? match[1].toLowerCase() : null;
+}
+
+// Ajuste posterior (pedido de Braulio): el "Link de la publicación" que se
+// pega en el admin ya no es siempre una imagen — puede ser un PDF, y no
+// siempre trae la extensión en la URL (p.ej. un link de Drive o de otro
+// gestor de archivos). Antes se asumía "jpg" a ciegas si la URL no calzaba
+// con el patrón de imagen, lo que dejaba un PDF descargado como
+// "archivo.jpg" (se abre igual, pero con el ícono/extensión equivocada).
+// Ahora, si la URL no trae una extensión reconocible, se usa el
+// Content-Type real de la respuesta para decidir la extensión.
+const MIME_EXTENSIONS = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+  'image/svg+xml': 'svg',
+  'application/pdf': 'pdf',
+  'application/msword': 'doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'application/vnd.ms-excel': 'xls',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+  'application/vnd.ms-powerpoint': 'ppt',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
+};
+
+function extensionFromMime(mime) {
+  const clean = (mime || '').split(';')[0].trim().toLowerCase();
+  return MIME_EXTENSIONS[clean] || null;
 }
 
 // Ajuste posterior (auditoría de bugs, ver docs/AUDITORIA-2026-08-17.md): el
@@ -43,11 +71,12 @@ function guessExtension(url) {
 // para que el llamador pueda reflejar el resultado real.
 export async function downloadImageWithFallback(url, title) {
   if (!url) return { ok: false, method: 'none' };
-  const filename = `${sanitizeFilename(title)}.${guessExtension(url)}`;
   try {
     const res = await fetch(url, { mode: 'cors' });
-    if (!res.ok) throw new Error('No se pudo leer la imagen');
+    if (!res.ok) throw new Error('No se pudo leer el archivo');
     const blob = await res.blob();
+    const extension = guessExtension(url) || extensionFromMime(blob.type) || 'jpg';
+    const filename = `${sanitizeFilename(title)}.${extension}`;
     const blobUrl = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = blobUrl;
