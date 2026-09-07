@@ -230,9 +230,26 @@ const navBtnGlassStyle = {
 // aceptada de esta solución, no hay forma de identificar a la persona sin
 // pedirle datos). Se guarda un JSON con la fecha de la primera descarga en
 // vez de solo `'true'`, por si en el futuro se quiere mostrar o vencer esa
-// marca — hoy no se usa el valor de la fecha para nada, solo la presencia
-// de la clave.
+// marca.
 const INFOGRAFIA_LEAD_KEY = 'tibox_infografia_lead_completado';
+// Ajuste posterior (pedido de Braulio): la marca de "ya completó el
+// formulario" ya no dura para siempre en el navegador — vence a las 24h
+// desde el último envío. Al vencer, se vuelve a pedir el formulario (una
+// vez), y al reenviarlo se libera de nuevo la descarga de cualquier
+// infografía (la marca sigue siendo global, no por pieza) por otras 24h.
+const INFOGRAFIA_LEAD_TTL_MS = 24 * 60 * 60 * 1000;
+
+function isInfografiaLeadValid() {
+  const raw = localStorage.getItem(INFOGRAFIA_LEAD_KEY);
+  if (!raw) return false;
+  try {
+    const { completedAt } = JSON.parse(raw);
+    if (!completedAt) return false;
+    return Date.now() - new Date(completedAt).getTime() < INFOGRAFIA_LEAD_TTL_MS;
+  } catch {
+    return false;
+  }
+}
 // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): el envío ahora
 // guarda de verdad en `infographic_leads` (antes solo simulaba con
 // setTimeout). `contentItemId` identifica la infografía que originó la
@@ -334,8 +351,7 @@ export function InfografiaModal({ info, channelsById, onClose }) {
     setTimeout(() => setDownloadState('idle'), 2600);
   };
   const handleDownloadClick = () => {
-    const leadOk = localStorage.getItem(INFOGRAFIA_LEAD_KEY) != null;
-    if (leadOk) startDownload();
+    if (isInfografiaLeadValid()) startDownload();
     else setShowLead(true);
   };
   return (
