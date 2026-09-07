@@ -14,7 +14,6 @@ import * as formService from '../services/formService.js';
 import { extractYouTubeVideoId } from '../lib/youtube.js';
 import { downloadImageWithFallback } from '../lib/download.js';
 import { trackVideoPlay, trackVideoProgress, trackVideoComplete } from '../lib/analytics.js';
-
 /* ── Video player modal — Fase 6/7/8, ajuste posterior: reproductor real de
    YouTube en vez del reproductor decorativo heredado del prototipo original
    (barra de progreso falsa + texto "Reproducción de demostración"). Se
@@ -28,7 +27,6 @@ export function VideoModal({ video, catsById, onClose }) {
   const navigate = useNavigate();
   const cat = catsById[video.cat] || { color:'var(--navy-900)', label:'' };
   const youtubeId = extractYouTubeVideoId(video.externalUrl);
-
   return (
     <ModalShell onClose={onClose} maxWidth={680}>
       <div style={{position:'relative'}}>
@@ -68,7 +66,6 @@ export function VideoModal({ video, catsById, onClose }) {
     </ModalShell>
   );
 }
-
 /* ── Poster video card (formato "imagen + título + etiqueta + meta") ── */
 function VideoCard({ v, catsById, onOpen }) {
   const cat = catsById[v.cat] || { color:'var(--navy-900)', label:'' };
@@ -123,7 +120,6 @@ function VideoCard({ v, catsById, onOpen }) {
     </div>
   );
 }
-
 export function ExploraPanel() {
   const navigate = useNavigate();
   const { data: categories } = useAsyncData(() => contentService.getVideoCategories(), []);
@@ -133,14 +129,12 @@ export function ExploraPanel() {
   const [openVideo, setOpenVideo] = React.useState(null);
   const trackRef = React.useRef(null);
   const dragHandlers = useDragScroll(trackRef);
-
   const cats = categories || [];
   const catsById = React.useMemo(() => Object.fromEntries((categories || []).map(c => [c.id, c])), [categories]);
   const scroll = (dir) => {
     const el = trackRef.current; if (!el) return;
     el.scrollBy({ left: dir * (el.clientWidth * 0.8), behavior:'smooth' });
   };
-
   return (
     <div style={{
       borderRadius:18, overflow:'hidden', position:'relative',
@@ -149,7 +143,6 @@ export function ExploraPanel() {
     }}>
       <CosmicBg variant={1} />
       <div style={{position:'absolute',inset:0,background:'linear-gradient(160deg,rgba(2,16,46,0.82),rgba(5,24,72,0.65))',pointerEvents:'none'}}></div>
-
       {/* Header */}
       <div style={{position:'relative',padding:'20px 24px 0',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16}}>
         <div>
@@ -163,7 +156,6 @@ export function ExploraPanel() {
           </CtaLink>
         </div>
       </div>
-
       {/* Filter chips */}
       <div style={{position:'relative',padding:'16px 24px 4px',display:'flex',gap:8,flexWrap:'wrap'}}>
         {cats.map(c => {
@@ -180,7 +172,6 @@ export function ExploraPanel() {
           );
         })}
       </div>
-
       {/* Carousel con flechas laterales (mismo criterio que
           InfographicsPanel/EventosPanel — vertical centradas respecto a
           las tarjetas, ya no arriba junto al título). Al cambiar de
@@ -211,7 +202,6 @@ export function ExploraPanel() {
           </div>
         )
       )}
-
       {openVideo && <VideoModal video={openVideo} catsById={catsById} onClose={()=>setOpenVideo(null)} />}
     </div>
   );
@@ -230,9 +220,7 @@ const navBtnGlassStyle = {
   display:'flex', alignItems:'center', justifyContent:'center',
   transition:'background 150ms',
 };
-
 /* ── Infografías ─────────────────────────────────── */
-
 // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): pedido de
 // Braulio — el formulario debe pedirse solo la primera vez que la persona
 // descarga una infografía desde ese navegador, no una vez por visita.
@@ -245,7 +233,6 @@ const navBtnGlassStyle = {
 // marca — hoy no se usa el valor de la fecha para nada, solo la presencia
 // de la clave.
 const INFOGRAFIA_LEAD_KEY = 'tibox_infografia_lead_completado';
-
 // Ajuste posterior (ver FASE-06-07-08-CONTENIDO-REAL.md): el envío ahora
 // guarda de verdad en `infographic_leads` (antes solo simulaba con
 // setTimeout). `contentItemId` identifica la infografía que originó la
@@ -256,14 +243,12 @@ function InfografiaLeadModal({ contentItemId, onSuccess, onClose }) {
   const [error, setError] = React.useState('');
   const up = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
   const inputS = { width:'100%',padding:'9px 12px',border:'1.5px solid var(--gray-200)',borderRadius:8,fontSize:13,outline:'none',fontFamily:'inherit',transition:'border-color 150ms' };
-
   const LEAD_REQUIRED_FIELDS = [
     { key: 'name', label: 'Nombre' },
     { key: 'empresa', label: 'Empresa' },
     { key: 'cargo', label: 'Cargo' },
     { key: 'email', label: 'Correo corporativo' },
   ];
-
   const submit = (e) => {
     e.preventDefault();
     setError('');
@@ -283,7 +268,6 @@ function InfografiaLeadModal({ contentItemId, onSuccess, onClose }) {
         setError(err.message || 'No pudimos guardar tus datos. Intenta nuevamente.');
       });
   };
-
   return (
     <ModalShell onClose={onClose} maxWidth={440}>
       <div style={{padding:'24px 26px 4px'}}>
@@ -325,7 +309,6 @@ function InfografiaLeadModal({ contentItemId, onSuccess, onClose }) {
     </ModalShell>
   );
 }
-
 // Exportado (ver ajuste posterior "páginas propias" en
 // FASE-06-07-08-CONTENIDO-REAL.md): la página /infografias reutiliza este
 // mismo popup (incluido el flujo de lead) en vez de duplicar la lógica de
@@ -339,20 +322,22 @@ export function InfografiaModal({ info, channelsById, onClose }) {
   // resultado real de downloadImageWithFallback. Ahora refleja si la
   // descarga (o su fallback de pestaña nueva) realmente funcionó.
   const [downloadState, setDownloadState] = React.useState('idle');
-
   const startDownload = async () => {
     setDownloadState('downloading');
-    const result = await downloadImageWithFallback(info.img, info.title);
+    // Ajuste posterior (pedido de Braulio): descargar el archivo real (imagen
+    // o PDF, alojado en otro sitio) que el admin pega en "Link de la
+    // publicación" — antes se descargaba siempre `info.img` (la miniatura
+    // mostrada en el popup). Si la infografía no tiene link cargado todavía
+    // (contenido antiguo), se cae a la miniatura para no romper la descarga.
+    const result = await downloadImageWithFallback(info.link || info.img, info.title);
     setDownloadState(result.ok ? 'success' : 'error');
     setTimeout(() => setDownloadState('idle'), 2600);
   };
-
   const handleDownloadClick = () => {
     const leadOk = localStorage.getItem(INFOGRAFIA_LEAD_KEY) != null;
     if (leadOk) startDownload();
     else setShowLead(true);
   };
-
   return (
     <ModalShell onClose={onClose} maxWidth={560}>
       <div style={{position:'relative',background:'#0b1a3a'}}>
@@ -389,7 +374,6 @@ export function InfografiaModal({ info, channelsById, onClose }) {
     </ModalShell>
   );
 }
-
 // Exportado: reutilizado por la página /infografias (misma tarjeta, dentro
 // de una grilla en vez de un carrusel).
 export function InfoCard({ inf, channelsById, onOpen }) {
@@ -421,7 +405,6 @@ export function InfoCard({ inf, channelsById, onOpen }) {
     </div>
   );
 }
-
 export function InfographicsPanel() {
   const navigate = useNavigate();
   const { data: channels } = useAsyncData(() => contentService.getChannels(), []);
@@ -432,14 +415,12 @@ export function InfographicsPanel() {
   const [openInfo, setOpenInfo] = React.useState(null);
   const trackRef = React.useRef(null);
   const dragHandlers = useDragScroll(trackRef);
-
   const channelsById = channels || {};
   const cats = allCats || [];
   const scroll = (dir) => {
     const el = trackRef.current; if (!el) return;
     el.scrollBy({ left: dir * el.clientWidth, behavior:'smooth' });
   };
-
   return (
     <div className="section-card">
       {/* Banner */}
@@ -457,7 +438,6 @@ export function InfographicsPanel() {
           Ver todas las infografías <Icon name="arrow-right" style={{width:13,height:13}} />
         </CtaLink>
       </div>
-
       {/* Filter chips */}
       <div style={{padding:'18px 28px 2px',display:'flex',gap:8,flexWrap:'wrap'}}>
         {cats.map(c => {
@@ -474,7 +454,6 @@ export function InfographicsPanel() {
           );
         })}
       </div>
-
       {/* Carousel con flechas laterales — mismo criterio de crossfade que
           ExploraPanel al cambiar de categoría (ver useFadeContent). */}
       {isInitialLoad && <LoadingState label="Cargando infografías…" />}
@@ -500,7 +479,6 @@ export function InfographicsPanel() {
           </div>
         )
       )}
-
       {openInfo && <InfografiaModal info={openInfo} channelsById={channelsById} onClose={()=>setOpenInfo(null)} />}
     </div>
   );
