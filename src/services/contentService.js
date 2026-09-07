@@ -113,6 +113,12 @@ export async function getInfographics({ category } = {}) {
     channel: null, // sin equivalente en el modelo de datos — ver decisión
     title: row.title,
     summary: row.summary,
+    // Ajuste posterior (pedido de Braulio): "Link de la publicación" del
+    // admin (external_url) — el archivo real (imagen o PDF) que se debe
+    // descargar, alojado en otro sitio. Antes no se exponía aquí y el botón
+    // "Descargar" del portal público terminaba descargando `thumb`
+    // (la miniatura) en su lugar. Ver InfografiaModal en components/Media.jsx.
+    link: row.external_url || null,
   }));
   return category && category !== 'all' ? items.filter((i) => i.cat === category) : items;
 }
