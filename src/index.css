@@ -69,6 +69,17 @@ html, body { margin: 0; height: 100%; background: #F0F2F6; font-family: var(--fo
   .contact-grid { grid-template-columns: 1fr; }
   .contact-grid > .contact-col-form { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.14); }
 }
+/* Panel "Tendencias de la industria" (home): mismo patrón responsive que
+   .contact-grid (lista + destacada, sin quiebre hasta este ajuste) — bajo
+   los 760px se apila en una sola columna y la línea divisoria pasa de
+   borde derecho a borde inferior. El alto de la lista (leftColHeight,
+   Events.jsx) sigue calculándose igual — el ResizeObserver mide el alto
+   real de la tarjeta destacada apilada arriba, así que el scroll interno
+   de la lista sigue funcionando correctamente en una sola columna. */
+@media (max-width: 760px) {
+  .tendencias-grid { grid-template-columns: 1fr !important; }
+  .tendencias-col-left { border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.15); }
+}
 /* Bloques de categoría bajo el hero (ver ajuste posterior en
    FASE-06-07-08-CONTENIDO-REAL.md): 5 bloques — una fila en escritorio
    ancho, 3+2 en pantallas medianas, apilados en móvil. */

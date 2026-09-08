@@ -251,13 +251,13 @@ export function ContactFormSection() {
             <form onSubmit={handleSubmit} noValidate style={{ position:'relative', display:'flex', flexDirection:'column', gap:10 }}>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div>
-                  <label style={labelStyle}>Nombre completo</label>
+                  <label style={labelStyle}>Nombre completo <span style={{color:'#FF8A65'}}>*</span></label>
                   <input value={form.name} onChange={update('name')} placeholder="Juan Pérez" required style={inputStyle}
                     onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'}
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>Correo corporativo</label>
+                  <label style={labelStyle}>Correo corporativo <span style={{color:'#FF8A65'}}>*</span></label>
                   <input type="email" value={form.email} onChange={update('email')} placeholder="tu@empresa.cl" required style={inputStyle}
                     onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'}
                   />
@@ -266,13 +266,13 @@ export function ContactFormSection() {
 
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div>
-                  <label style={labelStyle}>Empresa</label>
+                  <label style={labelStyle}>Empresa <span style={{color:'#FF8A65'}}>*</span></label>
                   <input value={form.empresa} onChange={update('empresa')} placeholder="Empresa S.A." required style={inputStyle}
                     onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'}
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>Teléfono</label>
+                  <label style={labelStyle}>Teléfono <span style={{fontWeight:400,color:'rgba(255,255,255,0.45)'}}>(opcional)</span></label>
                   <input value={form.phone} onChange={update('phone')} placeholder="+56 9 XXXX XXXX" style={inputStyle}
                     onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'}
                   />
@@ -280,7 +280,7 @@ export function ContactFormSection() {
               </div>
 
               <div>
-                <label style={labelStyle}>Mensaje</label>
+                <label style={labelStyle}>Mensaje <span style={{color:'#FF8A65'}}>*</span></label>
                 <textarea value={form.msg} onChange={update('msg')} placeholder="Cuéntanos en qué podemos ayudarte…" rows={2} required
                   style={{...inputStyle, resize:'vertical', minHeight:56}}
                   onFocus={e=>e.target.style.borderColor='#0050C8'} onBlur={e=>e.target.style.borderColor='var(--gray-200)'}
@@ -294,6 +294,8 @@ export function ContactFormSection() {
               </label>
 
               {submitError && <div style={{fontSize:12.5,color:'#ff8a8a'}}>{submitError}</div>}
+
+              <div style={{fontSize:11,color:'rgba(255,255,255,0.45)'}}><span style={{color:'#FF8A65'}}>*</span> Campos obligatorios</div>
 
               <CtaPrimary type="submit" disabled={sending}>
                 {sending
