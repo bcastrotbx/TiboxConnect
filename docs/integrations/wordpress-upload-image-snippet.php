@@ -23,6 +23,15 @@
  * Body:                multipart/form-data con un campo "file"
  * Respuesta exitosa:   { "url": "https://www.tibox.cl/wp-content/uploads/..." }
  * Respuesta de error:  { "code": "...", "message": "...", "data": { "status": ... } }
+ *
+ * ACTUALIZACIÓN 08-sep-2026 (soporte de PDF): este snippet cambió para
+ * aceptar también application/pdf, no solo imágenes (ver $allowed_types
+ * más abajo) — necesario para "Imagen de la infografía" (el archivo
+ * descargable), que ahora se sube como archivo en vez de pegar un link a
+ * mano. Este archivo vive en el repositorio solo como referencia: el
+ * snippet real corre en el sitio (Code Snippets), así que hay que volver a
+ * pegar el contenido actualizado ahí a mano — cambiar este archivo del
+ * repo no actualiza el sitio.
  */
 
 add_action('rest_api_init', function () {
@@ -54,15 +63,17 @@ function tibox_handle_image_upload($request) {
     $file = $files['file'];
 
     // 3) Restringir tipo y tamaño — mismo criterio que el resto del
-    //    portal (JPG/PNG/WEBP, máximo 8MB).
-    $allowed_types = array('image/jpeg', 'image/png', 'image/webp');
+    //    portal (JPG/PNG/WEBP/PDF, máximo 8MB). PDF se sumó cuando el
+    //    campo "Imagen de la infografía" (el archivo descargable) pasó de
+    //    ser un link pegado a mano a subirse como archivo.
+    $allowed_types = array('image/jpeg', 'image/png', 'image/webp', 'application/pdf');
     if (!in_array($file['type'], $allowed_types, true)) {
-        return new WP_Error('tibox_invalid_type', 'Formato no permitido. Usa JPG, PNG o WEBP.', array('status' => 400));
+        return new WP_Error('tibox_invalid_type', 'Formato no permitido. Usa JPG, PNG, WEBP o PDF.', array('status' => 400));
     }
 
     $max_bytes = 8 * 1024 * 1024;
     if ($file['size'] > $max_bytes) {
-        return new WP_Error('tibox_too_large', 'La imagen supera el tamaño máximo permitido (8MB).', array('status' => 400));
+        return new WP_Error('tibox_too_large', 'El archivo supera el tamaño máximo permitido (8MB).', array('status' => 400));
     }
 
     // 4) Cargar las dependencias de wp-admin que media_handle_upload()
