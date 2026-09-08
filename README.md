@@ -102,7 +102,7 @@ src/
   services/                  # contentService/newsService/eventService/homeService/categoryService ya
                               # leen de Supabase (Fase 6-7-8). adminContentService/adminEventsService/
                               # adminUsersService/storageService son de escritura real (Fases 5 y 6-7-8).
-                              # formService.js sigue simulado (mensajes/opiniones/leads, fuera de alcance).
+                              # formService.js también es real (contact_messages/feedback/infographic_leads).
   hooks/useAsyncData.js       # Patrón loading/success/error para los servicios
   context/
     DesignSystemContext.jsx  # Carga perezosa del bundle del design system (solo en /admin/*)
