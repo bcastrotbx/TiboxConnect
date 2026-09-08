@@ -113,6 +113,9 @@ function CalendarModal({ events, modalidadById, onClose }) {
               <div style={{minWidth:46,textAlign:'center',background:'var(--navy-900)',borderRadius:8,padding:'6px 6px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                 <div style={{fontSize:7,fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--brand-cyan)',lineHeight:1.2}}>{ev.month}</div>
                 <div style={{fontSize:17,fontWeight:700,color:'white',lineHeight:1}}>{ev.day}</div>
+                {ev.year && Number(ev.year) !== new Date().getFullYear() && (
+                  <div style={{fontSize:8,fontWeight:600,color:'rgba(255,255,255,0.55)',lineHeight:1.2,marginTop:1}}>{ev.year}</div>
+                )}
               </div>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:12.5,fontWeight:700,color:'var(--navy-900)',lineHeight:1.3}}>{ev.title}</div>
@@ -186,6 +189,9 @@ export function EventCard({ ev, modalidadById, partnersById, onVerDetalle }) {
           <div style={{minWidth:48,textAlign:'center',background:'var(--navy-900)',borderRadius:9,padding:'7px 6px',display:'flex',flexDirection:'column',alignItems:'center',flexShrink:0}}>
             <div style={{fontSize:8,fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--brand-cyan)',lineHeight:1.2}}>{ev.month}</div>
             <div style={{fontSize:19,fontWeight:700,color:'white',lineHeight:1}}>{ev.day}</div>
+            {ev.year && Number(ev.year) !== new Date().getFullYear() && (
+              <div style={{fontSize:8.5,fontWeight:600,color:'rgba(255,255,255,0.55)',lineHeight:1.2,marginTop:1}}>{ev.year}</div>
+            )}
           </div>
           <div style={{flex:1,minWidth:0}}>
             <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:5,flexWrap:'wrap'}}>
@@ -544,10 +550,10 @@ export function NoticiasPanel() {
           contenido; la derecha vuelve a su alto real (el de la tarjeta
           destacada) y ese es el valor correcto que se mide y se aplica a
           la izquierda. */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:0,marginTop:16,borderTop:'1px solid rgba(255,255,255,0.15)',alignItems:'start'}}>
+      <div className="tendencias-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:0,marginTop:16,borderTop:'1px solid rgba(255,255,255,0.15)',alignItems:'start'}}>
         {/* Left: categories + news list — alto fijo en px, igualado al de
             la columna derecha (ver leftColHeight arriba). */}
-        <div style={{padding:'18px 22px',borderRight:'1px solid rgba(255,255,255,0.15)',display:'flex',flexDirection:'column',height:leftColHeight ?? undefined,overflow:'hidden'}}>
+        <div className="tendencias-col-left" style={{padding:'18px 22px',borderRight:'1px solid rgba(255,255,255,0.15)',display:'flex',flexDirection:'column',height:leftColHeight ?? undefined,overflow:'hidden'}}>
           {/* Category filter */}
           <div style={{display:'flex',gap:7,flexWrap:'wrap',marginBottom:16}}>
             {cats.map(c => {
