@@ -345,6 +345,89 @@ function ImageUploadField({ label, value, onChange }) {
   );
 }
 
+// Usado solo en Infografías para "Imagen de la infografía" (external_url):
+// el archivo real que se descarga desde el portal público (ver
+// InfografiaModal en components/Media.jsx y downloadImageWithFallback en
+// lib/download.js, que ya sabía manejar PDFs). Ajuste posterior (pedido de
+// Braulio): antes era un campo de texto donde se pegaba a mano cualquier
+// link (a menudo a un PDF alojado en otro sitio); ahora se sube como
+// archivo al mismo destino que el resto de las imágenes del portal
+// (comunidad.tiboxlab.cl, vía portalImageUploadService), aceptando imagen
+// o PDF — a diferencia de ImageUploadOrUrlField, acá no se ofrece la
+// alternativa de pegar una URL, es solo subida de archivo.
+function DownloadableFileUploadField({ label, value, onChange }) {
+  const [uploading, setUploading] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [dragOver, setDragOver] = React.useState(false);
+
+  // No tenemos el tipo MIME real una vez subido (solo la URL resultante),
+  // así que la extensión decide cómo se previsualiza: como imagen si no
+  // termina en .pdf, como tarjeta de archivo si sí.
+  const isPdfUrl = /\.pdf(\?.*)?$/i.test(value || '');
+
+  const processFile = async (file) => {
+    if (!file) return;
+    setUploading(true);
+    setError('');
+    try {
+      const url = await portalImageUploadService.uploadPortalImage(file);
+      onChange(url);
+    } catch (err) {
+      setError(err.message || 'No se pudo subir el archivo.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const file = e.target.files?.[0];
+    processFile(file);
+    // Permite volver a elegir el mismo archivo dos veces seguidas (el
+    // navegador no dispara "change" si el value no cambió).
+    e.target.value = '';
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    processFile(e.dataTransfer.files?.[0]);
+  };
+
+  return (
+    <Field label={label}>
+      {value && (
+        isPdfUrl ? (
+          <div style={{ marginBottom:10, display:'flex', alignItems:'center', gap:8, padding:'10px 12px', borderRadius:10, border:'1px solid var(--gray-200)', background:'var(--gray-50)' }}>
+            <Icon name="file-text" style={{ width:18, height:18, color:'var(--gray-500)', flexShrink:0 }} />
+            <a href={value} target="_blank" rel="noopener noreferrer" style={{ fontSize:12.5, color:'#0050C8', wordBreak:'break-all' }}>{value.split('/').pop()}</a>
+          </div>
+        ) : (
+          <div style={{ marginBottom:10, borderRadius:10, overflow:'hidden', border:'1px solid var(--gray-200)', maxHeight:140 }}>
+            <img src={value} alt="" style={{ width:'100%', maxHeight:140, objectFit:'cover', display:'block' }} />
+          </div>
+        )
+      )}
+      <label
+        className="adm-upload"
+        style={{
+          display: 'block',
+          cursor: uploading ? 'default' : 'pointer',
+          borderColor: dragOver ? '#0050C8' : undefined,
+          background: dragOver ? 'rgba(0,80,200,0.03)' : undefined,
+        }}
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+      >
+        <Icon name="upload-cloud" style={{ width:24, height:24, marginBottom:8 }} />
+        <div style={{ fontSize:13, fontWeight:600 }}>{uploading ? 'Subiendo…' : value ? 'Reemplazar archivo' : 'Arrastra una imagen o PDF, o haz clic para subir'}</div>
+        <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" style={{ display:'none' }} onChange={handleInputChange} disabled={uploading} />
+      </label>
+      {error && <div style={{ fontSize:12, color:'#c0392b', marginTop:6 }}>{error}</div>}
+    </Field>
+  );
+}
+
 const GALLERY_MAX = 10;
 const IMAGE_EXTENSION_RE = /\.(jpe?g|png|webp|gif|avif|svg)(\?.*)?$/i;
 
@@ -667,7 +750,7 @@ export function NewContentModal({ section, item, onClose }) {
 
             {section === 'infographics' && (
               <React.Fragment>
-                <ImageUploadOrUrlField label="Imagen" value={thumbnailUrl} onChange={setThumbnailUrl} />
+                <ImageUploadOrUrlField label="Imagen de miniatura" value={thumbnailUrl} onChange={setThumbnailUrl} />
                 <Field label="Título"><input type="text" placeholder="Título de la infografía" value={title} onChange={e => setTitle(e.target.value)} /></Field>
                 <Field label="Resumen"><textarea placeholder="Breve resumen de la infografía…" value={summary} onChange={e => setSummary(e.target.value)}></textarea></Field>
                 <Field label="Categoría">
@@ -676,7 +759,7 @@ export function NewContentModal({ section, item, onClose }) {
                     {cats.map(cat => <option key={cat.dbId} value={cat.dbId}>{cat.label}</option>)}
                   </select>
                 </Field>
-                <Field label="Link de la publicación"><input type="url" placeholder="https://…" value={externalUrl} onChange={e => setExternalUrl(e.target.value)} /></Field>
+                <DownloadableFileUploadField label="Imagen de la infografía" value={externalUrl} onChange={setExternalUrl} />
               </React.Fragment>
             )}
 
