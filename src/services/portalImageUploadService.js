@@ -24,11 +24,24 @@
 // automáticamente en el navegador, para cualquier imagen que se pasaría del
 // límite real de la plataforma, sin que el usuario tenga que hacer nada.
 
-const ALLOWED_TYPES = { 'image/jpeg': true, 'image/png': true, 'image/webp': true };
-const MAX_SIZE_BYTES = 8 * 1024 * 1024; // 8MB — límite "oficial" que se le muestra al usuario si aun así no entra
+// Ajuste posterior (pedido de Braulio): el archivo descargable de una
+// infografía ("Imagen de la infografía", antes "Link de la publicación" —
+// un campo de texto donde se pegaba a mano cualquier URL) ahora se sube
+// como archivo por este mismo servicio, y puede ser una imagen o un PDF —
+// antes solo se aceptaban imágenes. application/pdf no se puede comprimir
+// con el <canvas> de compressImage() (no es una imagen decodificable por
+// createImageBitmap), así que un PDF que supere SAFE_UPLOAD_BYTES se
+// rechaza directo en vez de intentar comprimirlo — ver MAX_PDF_BYTES más
+// abajo.
+const ALLOWED_TYPES = { 'image/jpeg': true, 'image/png': true, 'image/webp': true, 'application/pdf': true };
+const MAX_SIZE_BYTES = 8 * 1024 * 1024; // 8MB — límite "oficial" que se le muestra al usuario si aun así no entra (solo imágenes, que sí se comprimen)
 // Margen de seguridad bajo el límite real de Vercel (~4.5MB) — cualquier
-// archivo por encima de esto se comprime antes de intentar subirlo.
+// imagen por encima de esto se comprime antes de intentar subirla.
 const SAFE_UPLOAD_BYTES = 4 * 1024 * 1024; // 4MB
+// Los PDF no pasan por compressImage(), así que su límite es directamente
+// el margen de seguridad de Vercel — no el de 8MB que sí alcanzan las
+// imágenes gracias a la compresión previa.
+const MAX_PDF_BYTES = SAFE_UPLOAD_BYTES; // 4MB
 const MAX_DIMENSION = 2000; // px, lado más largo — de sobra para cualquier uso del portal
 const JPEG_QUALITY = 0.82; // mismo criterio de calidad que se usó a mano con `sips` en la carga de eventos
 
@@ -64,24 +77,33 @@ export async function uploadPortalImage(file) {
     throw new InvalidImageError('No se seleccionó ningún archivo.');
   }
   if (!ALLOWED_TYPES[file.type]) {
-    throw new InvalidImageError('Formato no permitido. Usa una imagen JPG, PNG o WEBP.');
+    throw new InvalidImageError('Formato no permitido. Usa una imagen JPG, PNG, WEBP o un PDF.');
   }
 
+  const isPdf = file.type === 'application/pdf';
   let toUpload = file;
-  if (file.size > SAFE_UPLOAD_BYTES) {
-    try {
-      toUpload = await compressImage(file);
-    } catch {
-      // Si la compresión falla por lo que sea (navegador sin soporte de
-      // createImageBitmap, imagen corrupta, etc.), se sigue con el archivo
-      // original — el chequeo de MAX_SIZE_BYTES de abajo decide si se
-      // rechaza con un mensaje claro.
-      toUpload = file;
-    }
-  }
 
-  if (toUpload.size > MAX_SIZE_BYTES) {
-    throw new InvalidImageError('La imagen supera el tamaño máximo permitido (8MB), incluso después de comprimirla. Prueba con una imagen más liviana.');
+  if (isPdf) {
+    // Sin compresión posible — el límite es directo (ver MAX_PDF_BYTES).
+    if (file.size > MAX_PDF_BYTES) {
+      throw new InvalidImageError('El PDF supera el tamaño máximo permitido (4MB) — a diferencia de las imágenes, los PDF no se comprimen automáticamente. Reduce su tamaño antes de subirlo.');
+    }
+  } else {
+    if (file.size > SAFE_UPLOAD_BYTES) {
+      try {
+        toUpload = await compressImage(file);
+      } catch {
+        // Si la compresión falla por lo que sea (navegador sin soporte de
+        // createImageBitmap, imagen corrupta, etc.), se sigue con el archivo
+        // original — el chequeo de MAX_SIZE_BYTES de abajo decide si se
+        // rechaza con un mensaje claro.
+        toUpload = file;
+      }
+    }
+
+    if (toUpload.size > MAX_SIZE_BYTES) {
+      throw new InvalidImageError('La imagen supera el tamaño máximo permitido (8MB), incluso después de comprimirla. Prueba con una imagen más liviana.');
+    }
   }
 
   const response = await fetch('/api/upload-image', {

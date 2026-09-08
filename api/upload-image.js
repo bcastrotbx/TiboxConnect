@@ -18,7 +18,7 @@
 // activarlas en el sitio (pedido de Braulio) — este endpoint + clave
 // secreta fija es la alternativa.
 
-const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'application/pdf']);
 const MAX_BYTES = 8 * 1024 * 1024; // 8MB — mismo límite en el snippet de WordPress y en el frontend
 const WP_ENDPOINT = 'https://comunidad.tiboxlab.cl/upload-image.php';
 
@@ -48,7 +48,7 @@ export default async function handler(req, res) {
 
   const contentType = req.headers['content-type'] || '';
   if (!ALLOWED_TYPES.has(contentType)) {
-    res.status(400).json({ error: 'Formato no permitido. Usa una imagen JPG, PNG o WEBP.' });
+    res.status(400).json({ error: 'Formato no permitido. Usa una imagen JPG, PNG, WEBP o un PDF.' });
     return;
   }
 
