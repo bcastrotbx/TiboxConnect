@@ -447,6 +447,21 @@ export function NoticiaModal({ noticia, onClose }) {
   );
 }
 
+// Ajuste posterior (pedido de Braulio): tope de noticias que se muestran en
+// la columna izquierda del inicio — antes se listaban TODAS las noticias
+// publicadas ahí (newsService.getNews no pagina), lo que solo se notaba
+// cuando el bug de altura de abajo dejaba la lista sin scroll y crecía sin
+// límite. Con scroll siempre activo el límite ya no es indispensable para
+// que no "reviente" el layout, pero se mantiene para no forzar un scroll
+// larguísimo dentro de una columna angosta — quien quiera ver el resto usa
+// el botón "Ver más" (va a /tendencias, la página con paginación real).
+const NEWS_LIST_LIMIT = 12;
+// Alto de respaldo (px) para la columna izquierda cuando NO hay publicación
+// destacada que medir (ver ajuste posterior debajo) — aproxima el alto que
+// tendría la columna derecha con una destacada real, para que la lista se
+// vea consistente exista o no una publicación marcada como destacada.
+const NEWS_LIST_FALLBACK_HEIGHT = 460;
+
 export function NoticiasPanel() {
   const navigate = useNavigate();
   const { data: allCats } = useAsyncData(() => newsService.getNewsCategories(), []);
@@ -455,6 +470,7 @@ export function NoticiasPanel() {
   const { status, data: items, error } = useAsyncData(() => newsService.getNews({ category: filter }), [filter]);
   const { displayData: fadeItems, isInitialLoad, isRefreshing } = useFadeContent(status, items);
   const [openNews, setOpenNews] = React.useState(null);
+  const visibleItems = (fadeItems || []).slice(0, NEWS_LIST_LIMIT);
 
   const cats = allCats || [];
   const catsById = React.useMemo(() => Object.fromEntries((allCats || []).map(c => [c.id, c])), [allCats]);
@@ -469,9 +485,29 @@ export function NoticiasPanel() {
   // explícito (no un porcentaje contra un ancestro de alto ambiguo) es lo
   // que permite que flex:1 + overflow:auto funcionen de forma predecible
   // y la lista quede con scroll interno en vez de expandir el bloque.
+  //
+  // Bug real corregido acá (reporte de Braulio): esta medición depende de
+  // que la columna derecha exista — `rightColRef` solo se asigna al div de
+  // la publicación destacada, que ni siquiera se renderiza cuando no hay
+  // ninguna marcada como destacada (`{featuredNews && (...)}` más abajo).
+  // Sin destacada, el efecto de abajo encontraba `el` nulo, hacía return
+  // temprano y `leftColHeight` se quedaba en `null` para siempre — la
+  // columna izquierda perdía su alto explícito, `overflow:auto` dejaba de
+  // tener límite contra el cual recortar, y la lista completa (sin tope,
+  // ver NEWS_LIST_LIMIT arriba) se mostraba entera empujando el layout
+  // hacia abajo en vez de scrollear. Con destacada sí funcionaba porque el
+  // ResizeObserver encontraba el elemento real. La condición añadida usa un
+  // alto fijo de respaldo en ese caso, así la columna siempre queda acotada
+  // y con scroll propio, haya o no publicación destacada.
   const rightColRef = React.useRef(null);
-  const [leftColHeight, setLeftColHeight] = React.useState(null);
+  const [leftColHeight, setLeftColHeight] = React.useState(
+    featuredNews ? null : NEWS_LIST_FALLBACK_HEIGHT
+  );
   React.useEffect(() => {
+    if (!featuredNews) {
+      setLeftColHeight(NEWS_LIST_FALLBACK_HEIGHT);
+      return;
+    }
     const el = rightColRef.current;
     if (!el) return;
     const update = () => setLeftColHeight(el.offsetHeight);
@@ -535,11 +571,11 @@ export function NoticiasPanel() {
               useFadeContent). */}
           {isInitialLoad && <LoadingState label="Cargando noticias…" tone="dark" />}
           {status === 'error' && <ErrorState label="No pudimos cargar las noticias." error={error} tone="dark" />}
-          {!isInitialLoad && status !== 'error' && (fadeItems || []).length === 0 && <EmptyState label="No hay noticias en esta categoría todavía." icon="rss" tone="dark" />}
-          {!isInitialLoad && status !== 'error' && (fadeItems || []).length > 0 && (
+          {!isInitialLoad && status !== 'error' && visibleItems.length === 0 && <EmptyState label="No hay noticias en esta categoría todavía." icon="rss" tone="dark" />}
+          {!isInitialLoad && status !== 'error' && visibleItems.length > 0 && (
             <div style={{position:'relative',flex:1,minHeight:0}}>
               <div style={{display:'flex',flexDirection:'column',height:'100%',overflowY:'auto',scrollbarWidth:'thin',scrollbarColor:'rgba(255,255,255,0.25) transparent',paddingRight:4,opacity:isRefreshing?0.35:1,transition:'opacity 220ms ease'}}>
-                {fadeItems.map((n,idx) => {
+                {visibleItems.map((n,idx) => {
                   const c = catsById[n.cat] || {};
                   return (
                     <div key={n.id} onClick={() => setOpenNews({ title:n.title, img:n.img, body:n.body, slug:n.slug, catLabel:c.label, catColor:c.color })}
@@ -567,6 +603,22 @@ export function NoticiasPanel() {
                     </div>
                   );
                 })}
+                {/* Ajuste posterior (pedido de Braulio): con la lista ahora
+                    siempre acotada y con scroll (ver NEWS_LIST_LIMIT y el
+                    fix de leftColHeight arriba), este botón al final del
+                    scroll es la salida hacia el resto de las noticias —
+                    misma página que "Ver todas las tendencias" arriba. Se
+                    agrega padding-bottom extra al contenedor para que quede
+                    legible por sobre el degradado de abajo en vez de tapado
+                    justo en el borde. */}
+                <button
+                  onClick={() => navigate('/tendencias')}
+                  style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6,margin:'6px 0 4px',padding:'10px 0',fontSize:12.5,fontWeight:700,color:'white',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:9,cursor:'pointer'}}
+                  onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.16)'}
+                  onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.08)'}
+                >
+                  Ver más <Icon name="arrow-right" style={{width:13,height:13}} />
+                </button>
               </div>
               <div style={{position:'absolute',bottom:0,left:0,right:4,height:60,background:'linear-gradient(to bottom, rgba(5,20,60,0) 0%, rgba(5,20,60,0.92) 100%)',pointerEvents:'none'}}></div>
             </div>
